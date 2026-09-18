@@ -32,9 +32,8 @@ ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 SLOT = {0:'ground', 1:'wuku', 2:'castle', 3:'cang', 4:'yao', 5:'ambush', 6:'water',
         7:'rock', 8:'forest', 9:'rock', 10:'forest', 11:'forest', 12:'grass'}
 
-# 城跨 3×2 格来画：逻辑上仍只有那一格（移动消耗、守军判定都不变），
-# 只是美术画大，否则一格的城混在地形里根本认不出是座城。
-CASTLE_W, CASTLE_H = 3, 2
+# 城就占一格——原版如此，画大了和「一图一个格子」的数据对不上。
+CASTLE_W, CASTLE_H = 1, 1
 
 def load(slot, cells=(1, 1)):
     fs = glob.glob(os.path.join(TILEDIR, 'bt_%s_%s*.png' % (THEME, slot)))
