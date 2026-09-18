@@ -62,29 +62,16 @@ public class CityView
         statGrid = dp.rectTransform;
         y += 153;
 
-        city = Load("city.jpg"); mask = Load("mask.png");
-        meta = JsonUtility.FromJson<CityMeta>(File.ReadAllText(Path.Combine(ArtDir,"city.json")));
-        float imgW = W, imgH = W*city.height/(float)city.width;
-        picRT = Node("City", Root); Place(picRT, PAD, y, imgW, imgH);
+        picW = W; picY = y;
+        picRT = Node("City", Root); Place(picRT, PAD, y, W, W*1.5f);
         cityImg = picRT.gameObject.AddComponent<RawImage>();
-        cityImg.texture = city; cityImg.raycastTarget = true;
-        f = imgW/meta.size[0];
+        cityImg.raycastTarget = true;
 
         var hl = Node("HL", picRT); Fill(hl);
         hlImg = hl.gameObject.AddComponent<RawImage>(); hlImg.raycastTarget = false; hlImg.enabled = false;
 
         plaqueSprite = Slice(Load("plaque.png"), 264, 9);
-        foreach (var b in meta.buildings)
-        {
-            float fs = 11f, pw = fs*(b.name.Length+b.func.Length+1)*.82f+16, ph = fs*1.95f;
-            var pl = Panel(picRT, "pl_"+b.key, plaqueSprite);
-            Place(pl.rectTransform, (b.box[0]+b.box[2])/2f*f-pw/2, b.box[3]*f-ph*.62f, pw, ph);
-            var nm = Label(pl.transform, b.name, (int)fs, Color.white, TextAnchor.MiddleLeft, FontStyle.Bold);
-            Place(nm.rectTransform, 8, 0, pw, ph);
-            var fn = Label(pl.transform, "·"+b.func, (int)(fs*.62f), Color.white, TextAnchor.MiddleRight);
-            Place(fn.rectTransform, 0, 1, pw-8, ph);
-            plaques[b.key] = (pl, nm, fn);
-        }
+        plaqueRoot = Node("Plaques", picRT); Fill(plaqueRoot);
 
         popBg = Panel(picRT, "Pop", Slice(Load("menu.png"), 62, 11));
         popRT = popBg.rectTransform;
@@ -97,13 +84,53 @@ public class CityView
         btnSprite = Slice(Load("btn.png"), 30, 90, 6, 9);
         popBg.gameObject.SetActive(false);
     }
-    RectTransform backRT;
+    RectTransform backRT, plaqueRoot;
+    float picW, picY;
+    string curKey;
 
-    public void Show(MapData.Stat s)
+    /// 换城：旧贴图立刻销毁——一张 1024×1536 的 RGBA 就是 6MB，
+    /// 36 座全缓存着要 200 多 MB，没必要。
+    void LoadCity(string key)
     {
+        if (curKey == key) return;
+        if (city) Object.Destroy(city);
+        if (mask) Object.Destroy(mask);
+        foreach (var t in hlCache.Values) if (t) Object.Destroy(t);
+        hlCache.Clear();
+        curKey = key;
+
+        city = Load("cityview/" + key + ".jpg");
+        mask = Load("cityview/" + key + "_mask.png");
+        meta = JsonUtility.FromJson<CityMeta>(
+            File.ReadAllText(Path.Combine(ArtDir, "cityview/" + key + ".json")));
+        cityImg.texture = city;
+
+        float imgH = picW * city.height / (float)city.width;
+        Place(picRT, 12f, picY, picW, imgH);
+        f = picW / meta.size[0];
+
+        foreach (Transform t in plaqueRoot) Object.Destroy(t.gameObject);
+        plaques.Clear();
+        foreach (var b in meta.buildings)
+        {
+            float fs = 11f, pw = fs*(b.name.Length+b.func.Length+1)*.82f+16, ph = fs*1.95f;
+            var pl = Panel(plaqueRoot, "pl_"+b.key, plaqueSprite);
+            Place(pl.rectTransform, (b.box[0]+b.box[2])/2f*f-pw/2, b.box[3]*f-ph*.62f, pw, ph);
+            var nm = Label(pl.transform, b.name, (int)fs, Color.white, TextAnchor.MiddleLeft, FontStyle.Bold);
+            Place(nm.rectTransform, 8, 0, pw, ph);
+            var fn = Label(pl.transform, "·"+b.func, (int)(fs*.62f), Color.white, TextAnchor.MiddleRight);
+            Place(fn.rectTransform, 0, 1, pw-8, ph);
+            plaques[b.key] = (pl, nm, fn);
+        }
+        popBg.rectTransform.SetAsLastSibling();
+    }
+
+    public void Show(MapData.Stat s, string key)
+    {
+        LoadCity(key);
         st = s;
         hName.text = s.name; hTier.text = s.tierName;
-        hOwner.text = "◼ " + s.owner; hTok.text = s.令牌.ToString();
+        hOwner.text = "◼ " + Ruler(s.owner); hTok.text = s.令牌.ToString();
         foreach (Transform t in statGrid) Object.Destroy(t.gameObject);
         string[,] rows = {{"君主",s.ruler},{"太守",s.governor},{"武将",s.武将.ToString()},
             {"人口",Wan(s.人口)},{"兵力",Wan(s.兵力)},{"治安",s.治安.ToString()},
@@ -206,6 +233,10 @@ public class CityView
         var t = new Texture2D(w,h,TextureFormat.RGBA32,false);
         t.SetPixels32(outp); t.Apply(); return t;
     }
+
+    static string Ruler(string k) => k switch {
+        "han"=>"汉室·献帝", "caocao"=>"曹操", "yuanshao"=>"袁绍", "sunjian"=>"孙坚",
+        "lvbu"=>"吕布", "liuyan"=>"刘焉", "liubiao"=>"刘表", "player"=>"我军", _=>"无主" };
 
     [System.Serializable] public class B { public string key,name,func; public int[] mask,box; }
     [System.Serializable] public class CityMeta { public int[] size; public List<B> buildings; }

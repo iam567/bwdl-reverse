@@ -29,9 +29,8 @@ public class Game : MonoBehaviour
         cityView.Root.gameObject.SetActive(false);
 
         mapView.OnEnter = c => {
-            if (c.name != "洛阳") { Toast(c.name + " 的城内图还没生成（目前只做了洛阳）"); return; }
             mapView.Root.gameObject.SetActive(false);
-            cityView.Show(data.stats.Find(s => s.id == c.id));
+            cityView.Show(data.stats.Find(s => s.id == c.id), c.key);
         };
         cityView.OnBack = () => {
             cityView.Root.gameObject.SetActive(false);

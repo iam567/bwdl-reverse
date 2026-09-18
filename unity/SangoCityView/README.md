@@ -4,7 +4,7 @@
 批处理构建，不用开编辑器。
 
 跑起来是主地图：拖动平移、滚轮缩放、点城池选中、再点一次进城。
-洛阳能进城内（其余 35 座的城内图还没生成），城内右上角「地图」返回。
+**36 座城都能进**，城内右上角「地图」返回。
 
 | 文件 | 作用 |
 |---|---|
@@ -87,5 +87,19 @@ Sliced 显示的边框厚度 = `borderPx × (100 / pixelsPerUnit)`，
 省掉一堆 TextureImporter 设置（可读、Sprite 模式、边框），
 批处理里也不会因为导入设置没配好而渲出错东西。
 
-数据来自 `Assets/Art/stats.json`（洛阳），建筑框来自 `city.json`
-（`buildings` 已从对象字典转成数组——`JsonUtility` 不吃字典）。
+## 城内素材怎么进工程
+
+用 `extract/mapgen/pack_unity.py` 打包，**不要直接拷**：
+
+```bash
+python3 extract/mapgen/pack_unity.py assets/cityview \
+        unity/SangoCityView/Assets/StreamingAssets/Art
+```
+
+它会把每座城的 JSON 转一道——`clean_mask.py` 输出的 `buildings` 是**对象字典**
+（网页版 `for...in` 直接用），而 **`JsonUtility` 不吃字典**，
+必须转成数组并把 key 塞进每项里。直接拷的话 Unity 那边 `meta.buildings` 是空的，
+名匾不出现、点击也查不到建筑，而且**不报任何错**——洛阳和这次 36 座各踩了一遍。
+
+换城时旧贴图立刻 `Destroy`：一张 1024×1536 的 RGBA 就是 6MB，
+36 座全缓存着要 200 多 MB。

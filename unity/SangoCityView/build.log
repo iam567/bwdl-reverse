@@ -7,11 +7,11 @@ Darwin version:          25.6.0
 Architecture:            arm64
 Running under Rosetta:   NO
 Available memory:        18432 MB
-Date:                    2026-09-18T09:36:14Z
+Date:                    2026-09-18T14:29:23Z
 [Licensing::Module] Trying to connect to existing licensing client channel...
 [Licensing::IpcConnector] Channel LicenseClient-jingtaoliang doesn't exist
 Launching external process: /Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Helpers/UnityLicensingClient.app/Contents/MacOS/Unity.Licensing.Client
-[Licensing::Module] Successfully launched the LicensingClient (PId: 31871)
+[Licensing::Module] Successfully launched the LicensingClient (PId: 48130)
 Launching external process: /Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Helpers/PackageManager/Server/UnityPackageManager
 
 COMMAND LINE ARGUMENTS:
@@ -63,25 +63,25 @@ Successfully changed project path to: /Users/jingtaoliang/Documents/New project/
     "memorysetup-job-temp-allocator-reduction-small-platforms=262144"
 Player connection [8439456128]  Target information:
 
-Player connection [8439456128]  * "[IP] 192.168.1.202 [Port] 55504 [Flags] 2 [Guid] 862003324 [EditorId] 862003324 [Version] 1048832 [Id] OSXEditor(0,JingtaodeMacBook-Pro.local) [Debug] 1 [PackageName] OSXEditor [ProjectName] Editor" 
+Player connection [8439456128]  * "[IP] 10.71.186.80 [Port] 55504 [Flags] 2 [Guid] 150439442 [EditorId] 150439442 [Version] 1048832 [Id] OSXEditor(0,JingtaodeMacBook-Pro.local) [Debug] 1 [PackageName] OSXEditor [ProjectName] Editor" 
 
 Player connection [8439456128] Host joined multi-casting on [225.0.0.222:54997]...
 Player connection [8439456128] Host joined alternative multi-casting on [225.0.0.222:34997]...
 Input System module state changed to: Initialized.
 [Physics::Module] Initialized fallback backend.
 [Physics::Module] Id: 0xdecafbad
-[Package Manager] Connected to IPC stream "Upm-31870" after 0.1 seconds.
+[Package Manager] Connected to IPC stream "Upm-48129" after 0.3 seconds.
 [Licensing::Module] Licensing is not yet initialized.
-[Licensing::IpcConnector] Successfully connected to: "LicenseClient-jingtaoliang" at "2026-09-18T09:36:15.289547Z"
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-jingtaoliang" at "2026-09-18T14:29:23.715954Z"
 [Licensing::Client] Handshaking with LicensingClient:
   Version:                 1.18.1+9fbee8e
-  Session Id:              aaed6d655724453099a6fea88f9422f5
-  Correlation Id:          d3c32df6bb340ce6ec6b4201928e33bd
-  External correlation Id: 2526096617220770037
+  Session Id:              60273e0bb7624edda76689af60ea9e7a
+  Correlation Id:          af1fff80a1a756afd0098c1322d991b2
+  External correlation Id: 4756689977850211634
   Machine Id:              bLjVzwTrupiFMN4ccKMpPhN1Avg=
-[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-jingtaoliang" (connect: 0.38s, validation: 0.02s, handshake: 0.23s)
-[Licensing::IpcConnector] Successfully connected to: "LicenseClient-jingtaoliang-notifications" at "2026-09-18T09:36:15.539297Z"
-[Licensing::Module] Connected to LicensingClient (PId: 31871, launch time: 0.00, total connection time: 0.63s)
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-jingtaoliang" (connect: 0.58s, validation: 0.03s, handshake: 0.22s)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-jingtaoliang-notifications" at "2026-09-18T14:29:23.959082Z"
+[Licensing::Module] Connected to LicensingClient (PId: 48130, launch time: 0.00, total connection time: 0.82s)
 [Licensing::Module] Error: Access token is unavailable; failed to update
 [Licensing::Client] Successfully resolved entitlement details
 [Licensing::Module] License group:
@@ -91,8 +91,8 @@ Input System module state changed to: Initialized.
   Expiration: Unlimited
 [Licensing::Client] Successfully updated license, isAsync: True, time: 0.00
 [Licensing::Client] Successfully resolved entitlement details
-[Licensing::Module] Licensing Background thread has ended after 0.64s
-[Licensing::Module] Licensing is initialized (took 0.41s).
+[Licensing::Module] Licensing Background thread has ended after 0.83s
+[Licensing::Module] Licensing is initialized (took 0.38s).
 [Licensing::Client] Successfully resolved entitlement details
 Library Redirect Path: Library/
 [Physics::Module] Selected backend.
@@ -120,7 +120,7 @@ Initialize mono
 Mono path[0] = '/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/Managed'
 Mono path[1] = '/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos'
 Mono config path = '/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/etc'
-Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56870
+Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56129
 CodeReloadManager initialized
 Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
 Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
@@ -134,7 +134,7 @@ Register platform support module: /Applications/Unity/Hub/Editor/6000.4.1f1/Unit
 Register platform support module: /Applications/Unity/Hub/Editor/6000.4.1f1/PlaybackEngines/AndroidPlayer/UnityEditor.Android.Extensions.dll
 [Licensing::Client] Successfully resolved entitlement details
 Register platform support module: /Applications/Unity/Hub/Editor/6000.4.1f1/PlaybackEngines/iOSSupport/UnityEditor.iOS.Extensions.dll
-Registered in 0.003979 seconds.
+Registered in 0.003177 seconds.
 [usbmuxd] Start listen thread
 [usbmuxd] Listen thread started
 [usbmuxd] Send listen message
@@ -145,24 +145,24 @@ Native extension for WebGL target not found
 Package Manager log level set to [2]
 ScheduleIndexationOnStartup MainProcess:False IndexOnStartup:False
 Mono: successfully reloaded assembly
-- Finished resetting the current domain, in  0.267 seconds
-Domain Reload Profiling: 589ms
-	BeginReloadAssembly (86ms)
-		CreateAndSetChildDomain (16ms)
-	RebuildCommonClasses (29ms)
+- Finished resetting the current domain, in  0.256 seconds
+Domain Reload Profiling: 567ms
+	BeginReloadAssembly (101ms)
+		CreateAndSetChildDomain (21ms)
+	RebuildCommonClasses (26ms)
 	RebuildNativeTypeToScriptingClass (9ms)
-	initialDomainReloadingComplete (41ms)
-	LoadAllAssembliesAndSetupDomain (158ms)
-		LoadAssemblies (73ms)
-		AnalyzeDomain (150ms)
-			TypeCache.Refresh (149ms)
-				TypeCache.ScanAssembly (136ms)
-	FinalizeReload (267ms)
+	initialDomainReloadingComplete (36ms)
+	LoadAllAssembliesAndSetupDomain (138ms)
+		LoadAssemblies (81ms)
+		AnalyzeDomain (132ms)
+			TypeCache.Refresh (131ms)
+				TypeCache.ScanAssembly (119ms)
+	FinalizeReload (257ms)
 		SetupLoadedEditorAssemblies (0ms)
-			InitializePlatformSupportModulesInManaged (68ms)
-			BeforeProcessingInitializeOnLoad (44ms)
+			InitializePlatformSupportModulesInManaged (64ms)
+			BeforeProcessingInitializeOnLoad (46ms)
 			ProcessInitializeOnLoadAttributes (55ms)
-			ProcessInitializeOnLoadMethodAttributes (62ms)
+			ProcessInitializeOnLoadMethodAttributes (54ms)
 [Licensing::Client] Successfully resolved entitlement details
 Application.AssetDatabase Initial Refresh Start
 [Package Manager] Restoring resolved packages state from cache
@@ -194,13 +194,13 @@ info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
 info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
       Executed endpoint 'gRPC - /UnityILPP.PostProcessing/Ping'
 info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
-      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/Ping - 200 - application/grpc 21.7183ms
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/Ping - 200 - application/grpc 21.4456ms
 Starting: /Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/BuildPipeline/bee_backend --ipc --defer-dag-verification --dagfile="Library/Bee/200b0aE.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssemblies
 WorkingDir: /Users/jingtaoliang/Documents/New project/sango/unity/SangoCityView
 DisplayProgressbar: Compiling Scripts
-ExitCode: 0 Duration: 0s40ms
+ExitCode: 0 Duration: 0s38ms
 *** Tundra build success (0.02 seconds), 0 items updated, 221 evaluated
-AssetDatabase: script compilation time: 0.488831s
+AssetDatabase: script compilation time: 0.542907s
 Begin MonoManager ReloadAssembly
 Assembly Assembly-CSharp-Editor-firstpass.dll at Library/ScriptAssemblies/Assembly-CSharp-Editor-firstpass.dll not valid. Loading of assembly skipped.
 Assembly Assembly-CSharp-firstpass.dll at Library/ScriptAssemblies/Assembly-CSharp-firstpass.dll not valid. Loading of assembly skipped.
@@ -215,77 +215,77 @@ Native extension for OSXStandalone target not found
 Native extension for WebGL target not found
 ScheduleIndexationOnStartup MainProcess:True IndexOnStartup:True
 Mono: successfully reloaded assembly
-- Finished resetting the current domain, in  0.214 seconds
-Domain Reload Profiling: 476ms
-	BeginReloadAssembly (191ms)
+- Finished resetting the current domain, in  0.223 seconds
+Domain Reload Profiling: 494ms
+	BeginReloadAssembly (193ms)
 		DisableScriptedObjects (5ms)
-		CreateAndSetChildDomain (131ms)
-	RebuildCommonClasses (22ms)
+		CreateAndSetChildDomain (128ms)
+	RebuildCommonClasses (25ms)
 	RebuildNativeTypeToScriptingClass (9ms)
-	initialDomainReloadingComplete (16ms)
-	LoadAllAssembliesAndSetupDomain (23ms)
-		LoadAssemblies (42ms)
-		AnalyzeDomain (16ms)
-			TypeCache.Refresh (13ms)
-				TypeCache.ScanAssembly (8ms)
-	FinalizeReload (214ms)
+	initialDomainReloadingComplete (18ms)
+	LoadAllAssembliesAndSetupDomain (26ms)
+		LoadAssemblies (49ms)
+		AnalyzeDomain (17ms)
+			TypeCache.Refresh (14ms)
+				TypeCache.ScanAssembly (9ms)
+	FinalizeReload (223ms)
 		SetupLoadedEditorAssemblies (0ms)
-			InitializePlatformSupportModulesInManaged (20ms)
-			BeforeProcessingInitializeOnLoad (56ms)
-			ProcessInitializeOnLoadAttributes (39ms)
-			ProcessInitializeOnLoadMethodAttributes (22ms)
+			InitializePlatformSupportModulesInManaged (23ms)
+			BeforeProcessingInitializeOnLoad (57ms)
+			ProcessInitializeOnLoadAttributes (41ms)
+			ProcessInitializeOnLoadMethodAttributes (23ms)
 (Values over 0.050ms)
-Asset Pipeline Refresh (id=b4fe88d4f24274039bcf6fb57bd73ff5): Total: 1.045 seconds - Initiated by InitialRefreshV2(ForceSynchronousImport)
+Asset Pipeline Refresh (id=911e9a1b7e36a48459c3b7083180e478): Total: 1.123 seconds - Initiated by InitialRefreshV2(ForceSynchronousImport)
 	Summary:
 		Imports: total=0 (actual=0, local cache=0, cache server=0)
-		Asset DB Process Time: managed=0 ms, native=277 ms
-		Asset DB Callback time: managed=10 ms, native=2 ms
-		Scripting: domain reloads=1, domain reload time=262 ms, compile time=490 ms, other=2 ms
-		Project Asset Count: scripts=129, non-scripts=82
+		Asset DB Process Time: managed=0 ms, native=290 ms
+		Asset DB Callback time: managed=11 ms, native=3 ms
+		Scripting: domain reloads=1, domain reload time=271 ms, compile time=544 ms, other=2 ms
+		Project Asset Count: scripts=130, non-scripts=187
 		Asset File Changes: new=0, changed=0, moved=0, deleted=0
 		Scan Filter Count: 1
-	InvokePackagesCallback: 3.299ms
-	ApplyChangesToAssetFolders: 0.060ms
-	Scan: 30.559ms
-	CategorizeScriptCompilationAssets: 0.818ms
-	ProcessAssetsWithTransientArtifactChanges: 3.245ms
-	CategorizeAssets: 1.068ms
-	CompileScripts: 489.689ms
-	ImportOutOfDateAssets: 214.369ms (214.147ms without children)
-		UnloadImportedAssets: 0.094ms
-		OnDemandSchedulerStart: 0.099ms
-	PostProcessAllAssets: 10.297ms
-		MonoPostProcessAllAssets: 10.271ms
-			WindowAssetPostprocessingWatcher.OnPostprocessAllAssets 4.578ms
-			SpeedTree9Postprocessor.OnPostprocessAllAssets 0.476ms
-			SyncVS.PostprocessSyncProject 0.472ms
-			ReferencedClipsPostProcessor.OnPostprocessAllAssets 0.171ms
-			TerrainToolbarOverlayPostProcessor.OnPostprocessAllAssets 0.104ms
+	InvokePackagesCallback: 3.830ms
+	ApplyChangesToAssetFolders: 0.058ms
+	Scan: 32.263ms
+	CategorizeScriptCompilationAssets: 0.650ms
+	ProcessAssetsWithTransientArtifactChanges: 3.585ms
+	CategorizeAssets: 0.929ms
+	CompileScripts: 543.815ms
+	ImportOutOfDateAssets: 223.918ms (223.640ms without children)
+		UnloadImportedAssets: 0.130ms
+		OnDemandSchedulerStart: 0.110ms
+	PostProcessAllAssets: 11.206ms
+		MonoPostProcessAllAssets: 11.175ms
+			WindowAssetPostprocessingWatcher.OnPostprocessAllAssets 4.927ms
+			SpeedTree9Postprocessor.OnPostprocessAllAssets 0.519ms
+			SyncVS.PostprocessSyncProject 0.511ms
+			ReferencedClipsPostProcessor.OnPostprocessAllAssets 0.174ms
+			TerrainToolbarOverlayPostProcessor.OnPostprocessAllAssets 0.108ms
 			AssetDatabaseCallbacks.OnPostprocessAllAssets 0.074ms
-	UnloadStreamsBegin: 0.523ms
-	Untracked: 290.548ms
+	UnloadStreamsBegin: 0.538ms
+	Untracked: 301.358ms
 
 Application.AssetDatabase Initial Refresh End
 Launching external process: /Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Helpers/UnityShaderCompiler
 Launched and connected shader compiler UnityShaderCompiler after 0.05 seconds
-Scanning for USB devices : 0.143ms
+Scanning for USB devices : 0.044ms
 Initializing Unity extensions:
 [MODES] ModeService[none].Initialize
 [MODES] ModeService[none].LoadModes
 [MODES] Loading mode Default (0) for mode-current-id-SangoCityView
-2026-09-18 18:36:17.627 Unity[31870:29340220] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x7b5febb60 SDF, ke='Command-F12'>, but is only supported for system-provided menu items; will not be used
+2026-09-18 23:29:26.132 Unity[48129:29540886] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0xb67a8ba20 SDF, ke='Command-F12'>, but is only supported for system-provided menu items; will not be used
 Unloading 4 Unused Serialized files (Serialized files now loaded: 0)
-Unloading 381 unused Assets / (1.0 MB). Loaded Objects now: 986.
+Unloading 381 unused Assets / (1.1 MB). Loaded Objects now: 986.
 Memory consumption went from 107.2 MB to 106.2 MB.
-Total: 3.635625 ms (FindLiveObjects: 0.035166 ms CreateObjectMapping: 0.009625 ms MarkObjects: 3.239583 ms  DeleteObjects: 0.350875 ms)
+Total: 4.579709 ms (FindLiveObjects: 0.041250 ms CreateObjectMapping: 0.012709 ms MarkObjects: 4.037041 ms  DeleteObjects: 0.487875 ms)
 
 Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
-Unloading 0 unused Assets / (153.8 KB). Loaded Objects now: 996.
-Memory consumption went from 106.2 MB to 106.1 MB.
-Total: 3.478959 ms (FindLiveObjects: 0.023541 ms CreateObjectMapping: 0.006750 ms MarkObjects: 3.445584 ms  DeleteObjects: 0.002750 ms)
+Unloading 0 unused Assets / (1.0 MB). Loaded Objects now: 996.
+Memory consumption went from 106.1 MB to 105.2 MB.
+Total: 3.526250 ms (FindLiveObjects: 0.024375 ms CreateObjectMapping: 0.007541 ms MarkObjects: 3.490959 ms  DeleteObjects: 0.003041 ms)
 
-Start importing Assets/Scenes/City.unity using Guid(159526c5b8153476ca5d782e346e458f) (DefaultImporter) -> (Import Result ID: '2c4fcd70248678c4406e67ea3b23c5b4') in 0.003587916 seconds [static dependencies only]. Details - ImportResultOutputID=20d8abd839d81102822893f2f31a5ec1 DependenciesID=94e2fc995702bab7e87f216e5b803c2f StaticDependenciesID=e2a3d3903776840396f41a006d7f47ca 
-Asset Pipeline Refresh (id=5cb59e4e7ef7a4d4fbb952b6b23ec012): Total: 0.024 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Scenes/City.unity using Guid(159526c5b8153476ca5d782e346e458f) (DefaultImporter) -> (Import Result ID: '073616d0e26ba8084f81adf40f7a2943') in 0.002554291 seconds [static dependencies only]. Details - ImportResultOutputID=20d8abd839d81102822893f2f31a5ec1 DependenciesID=81ed32d9f50745341e8aaaa16d299802 StaticDependenciesID=3554d1d4593463813167bfafdcb714d5 
+Asset Pipeline Refresh (id=c57c19308348f479d9cf54e28401a873): Total: 0.023 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
 Found installed macOS SDK 26.2.
 info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
       Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/Ping - application/grpc -
@@ -294,17 +294,17 @@ info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
 info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
       Executed endpoint 'gRPC - /UnityILPP.PostProcessing/Ping'
 info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
-      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/Ping - 200 - application/grpc 1.1427ms
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/Ping - 200 - application/grpc 1.2582ms
 Starting: /Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/BuildPipeline/bee_backend --ipc --defer-dag-verification --dagfile="Library/Bee/200b0aESkipCompile.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssembliesAndTypeDB
 WorkingDir: /Users/jingtaoliang/Documents/New project/sango/unity/SangoCityView
-ExitCode: 0 Duration: 0s232ms
+ExitCode: 0 Duration: 0s244ms
 [2/3        0s] BuildPlayerDataGenerator Library/BuildPlayerData/Editor/TypeDb-All.json
-*** Tundra build success (0.22 seconds), 1 items updated, 3 evaluated
-Asset Pipeline Refresh (id=8752497a976354cb3b7df5cfb63c482c): Total: 0.006 seconds - Initiated by RefreshV2(NoUpdateAssetOptions)
+*** Tundra build success (0.23 seconds), 1 items updated, 3 evaluated
+Asset Pipeline Refresh (id=869b294e0e4564641ba83a337209db12): Total: 0.007 seconds - Initiated by RefreshV2(NoUpdateAssetOptions)
 [ScriptCompilation] Requested script compilation because: Recompiling scripts for player build.
 BuildPlayer: start building target 2
 Total cache size 209388588
-Total cache size after purge 209388588, took 00:00:00.0505613
+Total cache size after purge 209388588, took 00:00:00.0587249
 info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
       Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/Ping - application/grpc -
 info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
@@ -312,25 +312,25 @@ info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
 info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
       Executed endpoint 'gRPC - /UnityILPP.PostProcessing/Ping'
 info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
-      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/Ping - 200 - application/grpc 0.3619ms
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/Ping - 200 - application/grpc 0.3980ms
 Starting: /Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/BuildPipeline/bee_backend --ipc --defer-dag-verification --dagfile="Library/Bee/200b0aP.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssembliesAndTypeDB
 WorkingDir: /Users/jingtaoliang/Documents/New project/sango/unity/SangoCityView
 Total cache size 209388588
-Total cache size after purge 209388588, took 00:00:00.0386099
-ExitCode: 0 Duration: 1s301ms
-[75/89      0s] CopyFiles Library/Bee/PlayerScriptAssemblies/UnityEngine.UI.pdb
-[76/89      0s] CopyFiles Library/Bee/PlayerScriptAssemblies/UnityEngine.UI.dll
-[78/89      0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.InternalAPIEngineBridge.004.dll
-[79/89      0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.InternalAPIEngineBridge.004.pdb
+Total cache size after purge 209388588, took 00:00:00.0371225
+ExitCode: 0 Duration: 1s281ms
+[73/89      0s] CopyFiles Library/Bee/PlayerScriptAssemblies/UnityEngine.UI.dll
+[76/89      0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.InternalAPIEngineBridge.004.pdb
+[77/89      0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.InternalAPIEngineBridge.004.dll
+[78/89      0s] CopyFiles Library/Bee/PlayerScriptAssemblies/UnityEngine.UI.pdb
 [82/89      0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.TextMeshPro.pdb
 [83/89      0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Unity.TextMeshPro.dll
 [84/89      1s] Csc Library/Bee/artifacts/200b0aP.dag/Assembly-CSharp.dll (+2 others)
-[85/89      0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Assembly-CSharp.dll
-[86/89      0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Assembly-CSharp.pdb
+[85/89      0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Assembly-CSharp.pdb
+[86/89      0s] CopyFiles Library/Bee/PlayerScriptAssemblies/Assembly-CSharp.dll
 [88/89      0s] BuildPlayerDataGenerator Library/BuildPlayerData/Player/RuntimeInitializeOnLoads.json (+1 other)
-*** Tundra build success (1.19 seconds), 10 items updated, 89 evaluated
+*** Tundra build success (1.17 seconds), 10 items updated, 89 evaluated
 Rebuilding Data files because Assets/Scenes/City.unity is dirty (hash)
-2026-09-18 18:36:19.507 Unity[31870:29340220] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x7b5feab20 SDF, ke='Command-F12'>, but is only supported for system-provided menu items; will not be used
+2026-09-18 23:29:28.018 Unity[48129:29540886] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0xb67a8bd40 SDF, ke='Command-F12'>, but is only supported for system-provided menu items; will not be used
 
 
 Mono dependencies included in the build
@@ -625,30 +625,30 @@ Dependency assembly - System.Reactive.PlatformServices.dll
 Opening scene 'Assets/Scenes/City.unity'
 Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
 Loaded scene 'Assets/Scenes/City.unity'
-	Deserialize:            0.414 ms
-	Integration:            3.063 ms
+	Deserialize:            0.360 ms
+	Integration:            3.021 ms
 	Integration of assets:  0.001 ms
-	Thread Wait Time:       2.427 ms
-	Total Operation Time:   5.905 ms
+	Thread Wait Time:       2.264 ms
+	Total Operation Time:   5.646 ms
 Unloading 26 unused Assets / (1.1 MB). Loaded Objects now: 1024.
-Memory consumption went from 131.0 MB to 129.9 MB.
-Total: 4.462958 ms (FindLiveObjects: 0.031458 ms CreateObjectMapping: 0.007167 ms MarkObjects: 3.957791 ms  DeleteObjects: 0.466084 ms)
+Memory consumption went from 131.5 MB to 130.4 MB.
+Total: 4.266750 ms (FindLiveObjects: 0.027250 ms CreateObjectMapping: 0.006875 ms MarkObjects: 3.810542 ms  DeleteObjects: 0.421750 ms)
 
-Created GICache directory at /Users/jingtaoliang/Library/Caches/com.unity3d.UnityEditor/GiCache. Took: 0.007s, timestamps: [4.661 - 4.668]
+Created GICache directory at /Users/jingtaoliang/Library/Caches/com.unity3d.UnityEditor/GiCache. Took: 0.006s, timestamps: [4.937 - 4.943]
 Unloading 4 Unused Serialized files (Serialized files now loaded: 0)
 Unloading 24 unused Assets / (25.6 MB). Loaded Objects now: 1020.
-Memory consumption went from 131.8 MB to 106.2 MB.
-Total: 5.047917 ms (FindLiveObjects: 0.023958 ms CreateObjectMapping: 0.007166 ms MarkObjects: 3.649375 ms  DeleteObjects: 1.367209 ms)
+Memory consumption went from 132.3 MB to 106.7 MB.
+Total: 5.106250 ms (FindLiveObjects: 0.036916 ms CreateObjectMapping: 0.009042 ms MarkObjects: 4.012625 ms  DeleteObjects: 1.047125 ms)
 
 Unloading 0 Unused Serialized files (Serialized files now loaded: 0)
 Unloading 0 unused Assets / (0 B). Loaded Objects now: 1020.
-Memory consumption went from 106.2 MB to 106.2 MB.
-Total: 3.405250 ms (FindLiveObjects: 0.020958 ms CreateObjectMapping: 0.005167 ms MarkObjects: 3.377292 ms  DeleteObjects: 0.001584 ms)
+Memory consumption went from 106.7 MB to 106.7 MB.
+Total: 3.642250 ms (FindLiveObjects: 0.025959 ms CreateObjectMapping: 0.006084 ms MarkObjects: 3.607500 ms  DeleteObjects: 0.002334 ms)
 
 Unloading 1 Unused Serialized files (Serialized files now loaded: 0)
 Unloading 179 unused Assets / (147.9 MB). Loaded Objects now: 1020.
-Memory consumption went from 254.6 MB to 106.7 MB.
-Total: 12.612834 ms (FindLiveObjects: 0.024542 ms CreateObjectMapping: 0.006709 ms MarkObjects: 3.938083 ms  DeleteObjects: 8.642958 ms)
+Memory consumption went from 255.1 MB to 107.2 MB.
+Total: 12.964416 ms (FindLiveObjects: 0.020834 ms CreateObjectMapping: 0.006583 ms MarkObjects: 3.797625 ms  DeleteObjects: 9.139000 ms)
 
 Compiling shader "Skybox/Procedural"
   Pass "" (vp)
@@ -714,17 +714,17 @@ Compiling shader "Legacy Shaders/VertexLit"
     After built-in stripping:   2
     After scriptable stripping: 2
     Processed in 0.00 seconds
-  Pass  (vp, metal) finished in 0.00 seconds. Local cache hits 3 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+  Pass  (vp, metal) finished in 0.00 seconds. Local cache hits 3 (0.01s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
     Prepared data for serialisation in 0.00s
-  Pass  (fp, metal) finished in 0.00 seconds. Local cache hits 3 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+  Pass  (fp, metal) finished in 0.01 seconds. Local cache hits 3 (0.01s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
     Prepared data for serialisation in 0.00s
-  Pass  (vp, metal) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+  Pass  (vp, metal) finished in 0.01 seconds. Local cache hits 1 (0.01s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
     Prepared data for serialisation in 0.00s
-  Pass  (fp, metal) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+  Pass  (fp, metal) finished in 0.01 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
     Prepared data for serialisation in 0.00s
-  Pass ShadowCaster (vp, metal) finished in 0.00 seconds. Local cache hits 2 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+  Pass ShadowCaster (vp, metal) finished in 0.01 seconds. Local cache hits 2 (0.01s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
     Prepared data for serialisation in 0.00s
-  Pass ShadowCaster (fp, metal) finished in 0.00 seconds. Local cache hits 2 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+  Pass ShadowCaster (fp, metal) finished in 0.00 seconds. Local cache hits 2 (0.01s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
     Prepared data for serialisation in 0.00s
 Serialized binary data for shader Legacy Shaders/VertexLit in 0.00s
     metal (total internal programs: 12, unique: 12)
@@ -777,9 +777,9 @@ Compiling shader "Legacy Shaders/Diffuse"
     Prepared data for serialisation in 0.00s
   Pass FORWARD (vp, metal) finished in 0.00 seconds. Local cache hits 5 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
     Prepared data for serialisation in 0.00s
-  Pass FORWARD (fp, metal) finished in 0.00 seconds. Local cache hits 5 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+  Pass FORWARD (fp, metal) finished in 0.00 seconds. Local cache hits 5 (0.01s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
     Prepared data for serialisation in 0.00s
-  Pass DEFERRED (vp, metal) finished in 0.00 seconds. Local cache hits 4 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+  Pass DEFERRED (vp, metal) finished in 0.00 seconds. Local cache hits 4 (0.01s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
     Prepared data for serialisation in 0.00s
   Pass DEFERRED (fp, metal) finished in 0.00 seconds. Local cache hits 4 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
     Prepared data for serialisation in 0.00s
@@ -1717,7 +1717,7 @@ Compiling shader "Hidden/Internal-UIRDefault"
     Processed in 0.00 seconds
   Pass  (vp, metal) finished in 0.00 seconds. Local cache hits 40 (0.02s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
     Prepared data for serialisation in 0.00s
-  Pass  (fp, metal) finished in 0.00 seconds. Local cache hits 40 (0.03s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
+  Pass  (fp, metal) finished in 0.00 seconds. Local cache hits 40 (0.02s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
     Prepared data for serialisation in 0.00s
 Serialized binary data for shader Hidden/Internal-UIRDefault in 0.00s
     metal (total internal programs: 80, unique: 80)
@@ -2208,7 +2208,7 @@ Compiling shader "Hidden/VR/BlitFromTex2DToTexArraySlice"
     Prepared data for serialisation in 0.00s
   Pass  (fp, metal) finished in 0.00 seconds. Local cache hits 1 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 0 variants.
     Prepared data for serialisation in 0.00s
-  Pass  (vp, metal) finished in -0.00 seconds. Local cache hits 0 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 1 variants.
+  Pass  (vp, metal) finished in 0.00 seconds. Local cache hits 0 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 1 variants.
     Prepared data for serialisation in 0.00s
   Pass  (fp, metal) finished in -0.00 seconds. Local cache hits 0 (0.00s CPU time), remote cache hits 0 (0.00s CPU time), compiled 0 variants (0.00s CPU time), skipped 1 variants.
     Prepared data for serialisation in 0.00s
@@ -2521,7 +2521,7 @@ Compiling shader "Hidden/Physics2D/SDF_Point"
     Prepared data for serialisation in 0.00s
 Serialized binary data for shader Hidden/Physics2D/SDF_Point in 0.00s
     metal (total internal programs: 2, unique: 2)
-Asset Pipeline Refresh (id=6aaba4806d03843058add88a035be50e): Total: 0.012 seconds - Initiated by RefreshV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=859d6f991d70042f490335017ecf8d0d): Total: 0.025 seconds - Initiated by RefreshV2(NoUpdateAssetOptions)
 info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
       Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/Ping - application/grpc -
 info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
@@ -2529,182 +2529,287 @@ info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
 info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
       Executed endpoint 'gRPC - /UnityILPP.PostProcessing/Ping'
 info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
-      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/Ping - 200 - application/grpc 0.1587ms
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/Ping - 200 - application/grpc 0.1623ms
 Starting: /Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/BuildPipeline/bee_backend --ipc --dagfile="Library/Bee/Playerc6e8b992.dag" --profile="Library/Bee/backend1.traceevents" Player
 WorkingDir: /Users/jingtaoliang/Documents/New project/sango/unity/SangoCityView
-[  5/388    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/browscap.ini
-[  7/388    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/4.5/web.config
-[  8/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/MainMenu.nib/designable.nib
-[  9/388    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/4.5/settings.map
-[ 10/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/DefaultPreferences.plist
-[ 11/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/PrivacyInfo.xcprivacy
-[ 12/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/app.info
-[ 13/388    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/mconfig/config.xml
-[ 14/388    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/4.5/machine.config
-[ 15/388    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/config
-[ 16/388    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/4.5/DefaultWsdlHelpGenerator.aspx
-[ 17/388    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/4.5/Browsers/Compat.browser
-[ 18/388    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/4.0/settings.map
-[ 19/388    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/4.0/DefaultWsdlHelpGenerator.aspx
-[ 20/388    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/4.0/web.config
-[ 21/388    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/4.0/machine.config
-[ 22/388    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/4.0/Browsers/Compat.browser
-[ 23/388    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/2.0/settings.map
-[ 24/388    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/2.0/DefaultWsdlHelpGenerator.aspx
-[ 25/388    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/2.0/web.config
-[ 26/388    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/2.0/machine.config
-[ 27/388    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/2.0/Browsers/Compat.browser
-[ 28/388    0s] CopyFiles Build/SangoCityView.app/Contents/Frameworks/libmono-native.dylib
-[ 29/388    0s] CopyFiles Build/SangoCityView.app/Contents/Frameworks/libMonoPosixHelper.dylib
-[ 30/388    0s] CopyFiles Build/SangoCityView.app/Contents/Frameworks/libmonobdwgc-2.0.dylib
-[ 31/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/globalgamemanagers.assets.resS
-[ 32/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/globalgamemanagers
-[ 33/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/MainMenu.nib/keyedobjects.nib
-[ 34/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/level0
-[ 35/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Resources/unity default resources
-[ 36/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Resources/unity_builtin_extra
-[ 37/388    0s] WriteText Build/SangoCityView.app/Contents/Info.plist
-[ 38/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/sharedassets0.assets
-[ 39/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/RuntimeInitializeOnLoads.json
-[ 40/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/ScriptingAssemblies.json
-[ 41/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/sharedassets0.assets.resS
-[ 42/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/bg.jpg
-[ 43/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/btn.png
-[ 44/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/city.jpg
-[ 45/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/flags/han.png
-[ 46/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/DatDisplayProgressbar: Incremental Player Build
-a/StreamingAssets/Art/flags/lvbu.png
-[ 47/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/flags/caocao.png
-[ 48/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/flags/liuyan.png
-[ 49/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/city.json
-[ 50/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/flags/liubiao.png
-[ 51/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/flags/spare.png
-[ 52/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/flags/player.png
-[ 53/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/flags/none.png
-[ 54/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/flags/sunjian.png
-[ 55/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/flags/yuanshao.png
-[ 56/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/map.jpg
-[ 57/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/mask.png
-[ 58/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/menu.png
-[ 60/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/map.json
-[ 69/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/globalgamemanagers.assets
-[ 75/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/plaque.png
-[ 76/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/panel.png
-[ 77/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/stats.json
-[171/388    0s] AddBootConfigGUID Library/Bee/artifacts/MacStandalonePlayerBuildProgram/boot.config
-[172/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/boot.config
-[173/388    0s] MacOSCodeSignDylibCopy Build/SangoCityView.app/Contents/Frameworks/UnityPlayer.dylib
-[174/388    0s] UnityLinker /Users/jingtaoliang/Documents/New project/sango/unity/SangoCityView/Library/Bee/artifacts/unitylinker_hph0.traceevents
+DisplayProgressbar: Incremental Player Build
+[  2/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/MainMenu.nib/designable.nib
+[  6/493    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/browscap.ini
+[  8/493    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/config
+[  9/493    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/mconfig/config.xml
+[ 10/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/DefaultPreferences.plist
+[ 11/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/app.info
+[ 12/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/PrivacyInfo.xcprivacy
+[ 13/493    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/4.5/settings.map
+[ 14/493    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/4.5/DefaultWsdlHelpGenerator.aspx
+[ 15/493    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/4.5/machine.config
+[ 16/493    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/4.0/settings.map
+[ 17/493    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/4.5/Browsers/Compat.browser
+[ 18/493    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/4.5/web.config
+[ 19/493    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/4.0/DefaultWsdlHelpGenerator.aspx
+[ 20/493    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/4.0/web.config
+[ 21/493    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/4.0/Browsers/Compat.browser
+[ 22/493    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/4.0/machine.config
+[ 23/493    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/2.0/settings.map
+[ 24/493    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/2.0/DefaultWsdlHelpGenerator.aspx
+[ 25/493    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/2.0/web.config
+[ 26/493    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/2.0/machine.config
+[ 27/493    0s] CopyFiles Build/SangoCityView.app/Contents/Frameworks/libmono-native.dylib
+[ 28/493    0s] CopyFiles Build/SangoCityView.app/Contents/MonoBleedingEdge/etc/mono/2.0/Browsers/Compat.browser
+[ 29/493    0s] CopyFiles Build/SangoCityView.app/Contents/Frameworks/libmonobdwgc-2.0.dylib
+[ 30/493    0s] CopyFiles Build/SangoCityView.app/Contents/Frameworks/libMonoPosixHelper.dylib
+[ 31/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/MainMenu.nib/keyedobjects.nib
+[ 32/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/globalgamemanagers.assets
+[ 33/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/globalgamemanagers.assets.resS
+[ 34/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/level0
+[ 35/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Resources/unity default resources
+[ 36/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Resources/unity_builtin_extra
+[ 37/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/sharedassets0.assets
+[ 38/493    0s] WriteText Build/SangoCityView.app/Contents/Info.plist
+[ 39/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/sharedassets0.assets.resS
+[ 40/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/bg.jpg
+[ 41/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/btn.png
+[ 42/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/RuntimeInitializeOnLoads.json
+[ 43/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/beihai.jpg
+[ 44/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/beihai_mask.png
+[ 45/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/beiping.jpg
+[ 46/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/ScriptingAssemblies.json
+[ 47/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/beiping_mask.png
+[ 48/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/changan.jpg
+[ 49/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/changan_mask.png
+[ 50/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/changsha_mask.png
+[ 51/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/changsha.jpg
+[ 52/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/chengdu.jpg
+[ 53/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/changan.json
+[ 54/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/beihai.json
+[ 55/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/beiping.json
+[ 56/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/chengdu_mask.png
+[ 57/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/chenliu.jpg
+[ 58/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/chenliu_mask.png
+[ 59/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/chengdu.json
+[ 60/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/chenliu.json
+[ 61/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/guangling.jpg
+[ 62/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/changsha.json
+[ 63/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/guiyang.jpg
+[ 64/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/guangling_mask.png
+[ 65/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/guiyang_mask.png
+[ 66/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/guangling.json
+[ 67/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/guiyang.json
+[ 68/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/hanzhong.jpg
+[ 69/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/huainan.jpg
+[ 70/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/hanzhong_mask.png
+[ 71/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/huainan_mask.png
+[ 72/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/jiangling.jpg
+[ 73/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/jiangling_mask.png
+[ 74/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/jiangxia.jpg
+[ 75/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/hanzhong.json
+[ 76/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/jiangling.json
+[ 77/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/jiangxia_mask.png
+[ 78/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/jiangzhou.jpg
+[ 79/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/huainan.json
+[ 80/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/jiangxia.json
+[ 81/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/jiangzhou_mask.png
+[ 82/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/jiangzhou.json
+[ 83/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/jianning.jpg
+[ 84/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/jianning_mask.png
+[ 85/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/jianye.jpg
+[ 86/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/jianye.json
+[ 87/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/jianye_mask.png
+[ 88/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/jinyang.jpg
+[ 89/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/jianning.json
+[ 90/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/jinyang.json
+[ 91/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/lingling.jpg
+[ 92/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/kuaiji_mask.png
+[ 93/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/jinyang_mask.png
+[ 94/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/kuaiji.jpg
+[ 95/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/lingling_mask.png
+[ 96/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/lujiang.jpg
+[ 97/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/luoyang.jpg
+[ 98/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/lujiang_mask.png
+[ 99/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/kuaiji.json
+[100/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/lingling.json
+[101/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/luoyang_mask.png
+[102/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/pingyuan.jpg
+[103/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/pingyuan_mask.png
+[104/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/shangyong.jpg
+[105/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/lujiang.json
+[106/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/pingyuan.json
+[107/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/luoyang.json
+[108/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/puyang.json
+[109/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/puyang.jpg
+[110/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/puyang_mask.png
+[111/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/shangyong.json
+[112/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/shanyue_mask.png
+[113/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/shangyong_mask.png
+[114/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/shanyue.jpg
+[115/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/tianshui.jpg
+[116/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/shouchun.jpg
+[117/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/shouchun_mask.png
+[118/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/shanyue.json
+[119/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/shouchun.json
+[120/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/wuwei.jpg
+[121/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/tianshui_mask.png
+[122/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/wuwei_mask.png
+[123/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/tianshui.json
+[124/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/xiangping.jpg
+[125/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/xiangping_mask.png
+[126/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/wuwei.json
+[127/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/xiangping.json
+[128/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/xiangyang.jpg
+[129/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/xiangyang_mask.png
+[130/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/xiping_mask.png
+[131/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/xiping.jpg
+[132/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/xiping.json
+[133/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/xiangyang.json
+[134/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/xuzhou_mask.png
+[135/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/xuzhou.jpg
+[136/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/yecheng.jpg
+[137/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/xuzhou.json
+[138/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/globalgamemanagers
+[139/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/yecheng.json
+[140/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/stats.json
+[141/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/plaque.png
+[142/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/panel.png
+[143/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/menu.png
+[144/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/map.jpg
+[145/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/map.json
+[146/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/flags/yuanshao.png
+[147/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/flags/sunjian.png
+[148/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/flags/spare.png
+[149/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/flags/player.png
+[150/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/flags/none.png
+[151/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/flags/lvbu.png
+[152/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/flags/liuyan.png
+[153/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/flags/liubiao.png
+[154/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/flags/han.png
+[155/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/zitong_mask.png
+[156/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/zitong.jpg
+[157/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/flags/caocao.png
+[158/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/yuzhang_mask.png
+[159/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/zitong.json
+[160/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/yuzhang.jpg
+[161/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/yuzhang.json
+[162/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/yunnan_mask.png
+[163/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/yunnan.jpg
+[164/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/yizhou_mask.png
+[170/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/yizhou.jpg
+[178/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/yecheng_mask.png
+[179/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/yunnan.json
+[188/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/StreamingAssets/Art/cityview/yizhou.json
+[276/493    0s] AddBootConfigGUID Library/Bee/artifacts/MacStandalonePlayerBuildProgram/boot.config
+[277/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/boot.config
+[278/493    0s] MacOSCodeSignDylibCopy Build/SangoCityView.app/Contents/Frameworks/UnityPlayer.dylib
+[279/493    0s] UnityLinker /Users/jingtaoliang/Documents/New project/sango/unity/SangoCityView/Library/Bee/artifacts/unitylinker_hph0.traceevents
 /Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/il2cpp/build/deploy/UnityLinker --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/Unity.Scripting.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.AIModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.ARModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.AccessibilityModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.AdaptivePerformanceModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.AndroidJNIModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.AnimationModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.AssetBundleModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.AudioModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.ClothModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.ClusterInputModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.ClusterRendererModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.ContentLoadModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.CoreModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.CrashReportingModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.DSPGraphModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.DirectorModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.GIModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.GameCenterModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.GraphicsStateCollectionSerializerModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.GridModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.HierarchyCoreModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.HierarchyModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.HotReloadModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.IMGUIModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.IdentifiersModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.ImageConversionModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.InputForUIModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.InputLegacyModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.InputModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.InsightsModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.JSONSerializeModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.LocalizationModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.MarshallingModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.MultiplayerModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.ParticleSystemModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.PerformanceReportingModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.Physics2DModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.PhysicsBackendPhysXModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.PhysicsModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.PropertiesModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.RenderAs2DModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.RuntimeInitializeOnLoadManagerInitializerModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.ScreenCaptureModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.ScriptingModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.ShaderVariantAnalyticsModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.SharedInternalsModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.SpriteMaskModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.SpriteShapeModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.StreamingModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.SubstanceModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.SubsystemsModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.TLSModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.TerrainModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.TerrainPhysicsModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.TextCoreFontEngineModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.TextCoreTextEngineModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.TextRenderingModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.TilemapModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UIElementsModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UIModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UmbraModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UnityAnalyticsCommonModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UnityAnalyticsModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UnityConnectModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UnityConsentModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UnityCurlModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UnityWebRequestAssetBundleModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UnityWebRequestAudioModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UnityWebRequestModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UnityWebRequestTextureModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UnityWebRequestWWWModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.VFXModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.VRModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.VectorGraphicsModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.VehiclesModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.VideoModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.VirtualTexturingModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.WindModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.XRModule.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.dll --allowed-assembly=/Users/jingtaoliang/Documents/New project/sango/unity/SangoCityView/Library/Bee/PlayerScriptAssemblies/Assembly-CSharp.dll --allowed-assembly=/Users/jingtaoliang/Documents/New project/sango/unity/SangoCityView/Library/Bee/PlayerScriptAssemblies/Unity.InternalAPIEngineBridge.004.dll --allowed-assembly=/Users/jingtaoliang/Documents/New project/sango/unity/SangoCityView/Library/Bee/PlayerScriptAssemblies/Unity.TextMeshPro.dll --allowed-assembly=/Users/jingtaoliang/Documents/New project/sango/unity/SangoCityView/Library/Bee/PlayerScriptAssemblies/UnityEngine.UI.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Accessibility.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Commons.Xml.Relaxng.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/CustomMarshalers.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/Microsoft.Win32.Primitives.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/Microsoft.Win32.Registry.AccessControl.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/Microsoft.Win32.Registry.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.AppContext.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Buffers.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Collections.Concurrent.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Collections.NonGeneric.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Collections.Specialized.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Collections.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.ComponentModel.Annotations.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.ComponentModel.EventBasedAsync.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.ComponentModel.Primitives.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.ComponentModel.TypeConverter.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.ComponentModel.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Console.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Data.Common.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Data.SqlClient.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Diagnostics.Contracts.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Diagnostics.Debug.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Diagnostics.FileVersionInfo.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Diagnostics.Process.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Diagnostics.StackTrace.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Diagnostics.TextWriterTraceListener.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Diagnostics.Tools.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Diagnostics.TraceEvent.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Diagnostics.TraceSource.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Diagnostics.Tracing.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Drawing.Primitives.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Dynamic.Runtime.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Globalization.Calendars.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Globalization.Extensions.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Globalization.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.IO.Compression.ZipFile.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.IO.FileSystem.AccessControl.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.IO.FileSystem.DriveInfo.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.IO.FileSystem.Primitives.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.IO.FileSystem.Watcher.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.IO.FileSystem.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.IO.IsolatedStorage.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.IO.MemoryMappedFiles.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.IO.Pipes.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.IO.UnmanagedMemoryStream.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.IO.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Linq.Expressions.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Linq.Parallel.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Linq.Queryable.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Linq.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Memory.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Net.AuthenticationManager.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Net.Cache.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Net.Http.Rtc.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Net.HttpListener.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Net.Mail.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Net.NameResolution.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Net.NetworkInformation.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Net.Ping.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Net.Primitives.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Net.Requests.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Net.Security.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Net.ServicePoint.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Net.Sockets.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Net.Utilities.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Net.WebHeaderCollection.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Net.WebSockets.Client.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Net.WebSockets.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.ObjectModel.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Reflection.DispatchProxy.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Reflection.Emit.ILGeneration.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Reflection.Emit.Lightweight.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Reflection.Emit.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Reflection.Extensions.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Reflection.Primitives.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Reflection.TypeExtensions.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Reflection.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Resources.Reader.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Resources.ReaderWriter.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Resources.ResourceManager.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Resources.Writer.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Runtime.CompilerServices.VisualC.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Runtime.Extensions.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Runtime.Handles.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Runtime.InteropServices.RuntimeInformation.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Runtime.InteropServices.WindowsRuntime.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Runtime.InteropServices.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Runtime.Loader.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Runtime.Numerics.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Runtime.Serialization.Formatters.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Runtime.Serialization.Json.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Runtime.Serialization.Primitives.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Runtime.Serialization.Xml.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Runtime.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Security.AccessControl.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Security.Claims.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Security.Cryptography.Algorithms.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Security.Cryptography.Cng.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Security.Cryptography.Csp.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Security.Cryptography.DeriveBytes.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Security.Cryptography.Encoding.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Security.Cryptography.Encryption.Aes.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Security.Cryptography.Encryption.ECDiffieHellman.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Security.Cryptography.Encryption.ECDsa.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Security.Cryptography.Encryption.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Security.Cryptography.Hashing.Algorithms.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Security.Cryptography.Hashing.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Security.Cryptography.OpenSsl.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Security.Cryptography.Pkcs.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Security.Cryptography.Primitives.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Security.Cryptography.ProtectedData.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Security.Cryptography.RSA.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Security.Cryptography.RandomNumberGenerator.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Security.Cryptography.X509Certificates.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Security.Principal.Windows.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Security.Principal.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Security.SecureString.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.ServiceModel.Duplex.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.ServiceModel.Http.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.ServiceModel.NetTcp.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.ServiceModel.Primitives.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.ServiceModel.Security.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.ServiceProcess.ServiceController.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Text.Encoding.CodePages.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Text.Encoding.Extensions.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Text.Encoding.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Text.RegularExpressions.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Threading.AccessControl.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Threading.Overlapped.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Threading.Tasks.Extensions.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Threading.Tasks.Parallel.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Threading.Tasks.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Threading.Thread.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Threading.ThreadPool.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Threading.Timer.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Threading.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.ValueTuple.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Xml.ReaderWriter.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Xml.XDocument.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Xml.XPath.XDocument.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Xml.XPath.XmlDocument.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Xml.XPath.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Xml.XmlDocument.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Xml.XmlSerializer.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/System.Xml.Xsl.Primitives.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades/netstandard.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/I18N.CJK.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/I18N.MidEast.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/I18N.Other.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/I18N.Rare.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/I18N.West.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/I18N.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/IBM.Data.DB2.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/ICSharpCode.SharpZipLib.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Microsoft.Build.Engine.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Microsoft.Build.Framework.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Microsoft.Build.Tasks.v4.0.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Microsoft.Build.Utilities.v4.0.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Microsoft.Build.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Microsoft.CSharp.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Microsoft.VisualC.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Microsoft.Web.Infrastructure.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Mono.Btls.Interface.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Mono.C5.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Mono.CSharp.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Mono.Cairo.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Mono.CompilerServices.SymbolWriter.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Mono.Data.Sqlite.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Mono.Data.Tds.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Mono.Http.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Mono.Management.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Mono.Messaging.RabbitMQ.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Mono.Messaging.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Mono.Options.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Mono.Parallel.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Mono.Posix.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Mono.Profiler.Log.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Mono.Security.Win32.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Mono.Security.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Mono.Simd.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Mono.Tasklets.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Mono.WebBrowser.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Mono.XBuild.Tasks.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Novell.Directory.Ldap.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/PEAPI.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/RabbitMQ.Client.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/SMDiagnostics.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.ComponentModel.Composition.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.ComponentModel.DataAnnotations.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Configuration.Install.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Configuration.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Core.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Data.DataSetExtensions.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Data.Entity.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Data.Linq.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Data.OracleClient.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Data.Services.Client.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Data.Services.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Data.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Deployment.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Design.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.DirectoryServices.Protocols.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.DirectoryServices.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Drawing.Design.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Drawing.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Dynamic.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.EnterpriseServices.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.IO.Compression.FileSystem.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.IO.Compression.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.IdentityModel.Selectors.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.IdentityModel.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Json.Microsoft.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Json.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Management.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Messaging.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Net.Http.Formatting.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Net.Http.WebRequest.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Net.Http.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Net.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Numerics.Vectors.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Numerics.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Reactive.Core.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Reactive.Debugger.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Reactive.Experimental.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Reactive.Interfaces.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Reactive.Linq.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Reactive.Observable.Aliases.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Reactive.PlatformServices.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Reactive.Providers.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Reactive.Runtime.Remoting.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Reactive.Windows.Forms.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Reactive.Windows.Threading.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Reflection.Context.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Runtime.Caching.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Runtime.DurableInstancing.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Runtime.Remoting.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Runtime.Serialization.Formatters.Soap.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Runtime.Serialization.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Security.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.ServiceModel.Activation.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.ServiceModel.Discovery.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.ServiceModel.Internals.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.ServiceModel.Routing.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.ServiceModel.Web.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.ServiceModel.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.ServiceProcess.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Threading.Tasks.Dataflow.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Transactions.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Web.Abstractions.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Web.ApplicationServices.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Web.DynamicData.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Web.Extensions.Design.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Web.Extensions.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Web.Http.SelfHost.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Web.Http.WebHost.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Web.Http.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Web.Mobile.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Web.Mvc.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Web.Razor.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Web.RegularExpressions.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Web.Routing.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Web.Services.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Web.WebPages.Deployment.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Web.WebPages.Razor.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Web.WebPages.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Web.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Windows.Forms.DataVisualization.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Windows.Forms.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Windows.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Workflow.Activities.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Workflow.ComponentModel.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Workflow.Runtime.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Xaml.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Xml.Linq.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Xml.Serialization.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.Xml.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/System.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/SystemWebTestShim.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/WebMatrix.Data.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/WindowsBase.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/cscompmgd.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/monodoc.dll --allowed-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/mscorlib.dll --out=Library/Bee/artifacts/MacStandalonePlayerBuildProgram/ManagedStripped --include-link-xml=/Users/jingtaoliang/Documents/New project/sango/unity/SangoCityView/Library/Bee/artifacts/UnityLinkerInputs/TypesInScenes.xml --include-directory=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed --include-directory=/Users/jingtaoliang/Documents/New project/sango/unity/SangoCityView/Library/Bee/PlayerScriptAssemblies --include-directory=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos --include-directory=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos/Facades --rule-set=Copy --profiler-report --profiler-output-file=/Users/jingtaoliang/Documents/New project/sango/unity/SangoCityView/Library/Bee/artifacts/unitylinker_hph0.traceevents --dotnetprofile=unityaot-macos --dotnetruntime=Mono --platform=MacOSX --use-editor-options --engine-modules-asset-file=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/modules.asset --editor-data-file=/Users/jingtaoliang/Documents/New project/sango/unity/SangoCityView/Library/Bee/artifacts/UnityLinkerInputs/EditorToUnityLinkerData.json --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/Unity.Scripting.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.AIModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.ARModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.AccessibilityModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.AdaptivePerformanceModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.AndroidJNIModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.AnimationModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.AssetBundleModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.AudioModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.ClothModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.ClusterInputModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.ClusterRendererModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.ContentLoadModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.CoreModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.CrashReportingModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.DSPGraphModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.DirectorModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.GIModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.GameCenterModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.GraphicsStateCollectionSerializerModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.GridModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.HierarchyCoreModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.HierarchyModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.HotReloadModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.IMGUIModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.IdentifiersModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.ImageConversionModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.InputForUIModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.InputLegacyModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.InputModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.InsightsModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.JSONSerializeModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.LocalizationModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.MarshallingModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.MultiplayerModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.ParticleSystemModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.PerformanceReportingModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.Physics2DModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.PhysicsBackendPhysXModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.PhysicsModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.PropertiesModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.RenderAs2DModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.RuntimeInitializeOnLoadManagerInitializerModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.ScreenCaptureModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.ScriptingModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.ShaderVariantAnalyticsModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.SharedInternalsModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.SpriteMaskModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.SpriteShapeModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.StreamingModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.SubstanceModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.SubsystemsModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.TLSModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.TerrainModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.TerrainPhysicsModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.TextCoreFontEngineModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.TextCoreTextEngineModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.TextRenderingModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.TilemapModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UIElementsModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UIModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UmbraModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UnityAnalyticsCommonModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UnityAnalyticsModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UnityConnectModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UnityConsentModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UnityCurlModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UnityWebRequestAssetBundleModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UnityWebRequestAudioModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UnityWebRequestModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UnityWebRequestTextureModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.UnityWebRequestWWWModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.VFXModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.VRModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.VectorGraphicsModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.VehiclesModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.VideoModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.VirtualTexturingModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.WindModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.XRModule.dll --include-unity-root-assembly=/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed/UnityEngine.dll --include-unity-root-assembly=/Users/jingtaoliang/Documents/New project/sango/unity/SangoCityView/Library/Bee/PlayerScriptAssemblies/Assembly-CSharp.dll --include-unity-root-assembly=/Users/jingtaoliang/Documents/New project/sango/unity/SangoCityView/Library/Bee/PlayerScriptAssemblies/Unity.InternalAPIEngineBridge.004.dll --include-unity-root-assembly=/Users/jingtaoliang/Documents/New project/sango/unity/SangoCityView/Library/Bee/PlayerScriptAssemblies/Unity.TextMeshPro.dll --include-unity-root-assembly=/Users/jingtaoliang/Documents/New project/sango/unity/SangoCityView/Library/Bee/PlayerScriptAssemblies/UnityEngine.UI.dll --print-command-line --enable-analytics
-[175/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.MultiplayerModule.dll
-[176/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.AssetBundleModule.dll
-[177/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.SpriteShapeModule.dll
-[178/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.IdentifiersModule.dll
-[179/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.RuntimeInitializeOnLoadManagerInitializerModule.dll
-[180/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.TerrainPhysicsModule.dll
-[181/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.ContentLoadModule.dll
-[182/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.InputLegacyModule.dll
-[183/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UnityAnalyticsModule.dll
-[184/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.ScreenCaptureModule.dll
-[185/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.MarshallingModule.dll
-[186/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.JSONSerializeModule.dll
-[187/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UnityWebRequestAudioModule.dll
-[188/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.CrashReportingModule.dll
-[189/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UnityWebRequestWWWModule.dll
-[190/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.Data.DataSetExtensions.dll
-[191/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.WindModule.dll
-[192/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.HierarchyCoreModule.dll
-[193/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.GridModule.dll
-[194/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.EnterpriseServices.dll
-[195/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.ParticleSystemModule.dll
-[196/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.TextRenderingModule.dll
-[197/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.VectorGraphicsModule.dll
-[198/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UmbraModule.dll
-[199/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.Runtime.Serialization.dll
-[200/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.dll
-[201/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.VideoModule.dll
-[202/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.IMGUIModule.dll
-[203/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/netstandard.dll
-[204/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.ClothModule.dll
-[205/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UI.dll
-[206/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.Drawing.dll
-[207/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.VirtualTexturingModule.dll
-[208/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.GraphicsStateCollectionSerializerModule.dll
-[209/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.InputModule.dll
-[210/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.AudioModule.dll
-[211/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.ClusterRendererModule.dll
-[212/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.HotReloadModule.dll
-[213/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.ScriptingModule.dll
-[214/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.SubstanceModule.dll
-[215/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/Unity.InternalAPIEngineBridge.004.dll
-[216/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UnityWebRequestModule.dll
-[217/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.Xml.dll
-[218/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.SpriteMaskModule.dll
-[219/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.CoreModule.dll
-[220/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.RenderAs2DModule.dll
-[221/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.InputForUIModule.dll
-[222/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.GameCenterModule.dll
-[223/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.SubsystemsModule.dll
-[224/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.Data.dll
-[225/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.TextCoreFontEngineModule.dll
-[226/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.Core.dll
-[227/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.Physics2DModule.dll
-[228/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.StreamingModule.dll
-[229/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UnityWebRequestAssetBundleModule.dll
-[230/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.TextCoreTextEngineModule.dll
-[231/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.TilemapModule.dll
-[232/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.ServiceModel.Internals.dll
-[233/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.HierarchyModule.dll
-[234/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UnityCurlModule.dll
-[235/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.AndroidJNIModule.dll
-[236/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.ShaderVariantAnalyticsModule.dll
-[237/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.PropertiesModule.dll
-[238/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.ARModule.dll
-[239/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.XRModule.dll
-[240/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.GIModule.dll
-[241/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.PhysicsModule.dll
-[242/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.VRModule.dll
-[243/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UIModule.dll
-[244/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.AIModule.dll
-[245/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.TerrainModule.dll
-[246/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.AnimationModule.dll
-[247/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.DirectorModule.dll
-[248/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UnityWebRequestTextureModule.dll
-[249/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.SharedInternalsModule.dll
-[250/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.ImageConversionModule.dll
-[251/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UnityAnalyticsCommonModule.dll
-[252/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.PerformanceReportingModule.dll
-[253/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/Assembly-CSharp.dll
-[254/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.ComponentModel.Composition.dll
-[255/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.InsightsModule.dll
-[256/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.Configuration.dll
-[257/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UIElementsModule.dll
-[258/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.Xml.Linq.dll
-[259/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.VehiclesModule.dll
-[260/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.DSPGraphModule.dll
-[261/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/Unity.Scripting.dll
-[262/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.Numerics.dll
-[263/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.Security.dll
-[264/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.PhysicsBackendPhysXModule.dll
-[265/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.Transactions.dll
-[266/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UnityConsentModule.dll
-[267/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.AccessibilityModule.dll
-[268/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.ClusterInputModule.dll
-[269/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.LocalizationModule.dll
-[272/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UnityConnectModule.dll
-[298/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.Net.Http.dll
-[309/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.IO.Compression.FileSystem.dll
-[314/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/Unity.TextMeshPro.dll
-[315/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.TLSModule.dll
-[327/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.dll
-[338/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/mscorlib.dll
-[348/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.IO.Compression.dll
-[350/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.AdaptivePerformanceModule.dll
-[353/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.VFXModule.dll
-[373/388    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/Mono.Security.dll
-[386/388    0s] ExtractUsedFeatures Library/Bee/artifacts/MacStandalonePlayerBuildProgram/Features/Assembly-CSharp-FeaturesChecked.txt
-[387/388    0s] MacOSCodeSignBundleInPlace Build/SangoCityView.app/Contents/MacOS/SangoCityView (+1 other)
-*** Tundra build success (0.60 seconds), 170 items updated, 388 evaluated
+[280/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.RuntimeInitializeOnLoadManagerInitializerModule.dll
+[281/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.ContentLoadModule.dll
+[282/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.IdentifiersModule.dll
+[283/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.MultiplayerModule.dll
+[284/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.AssetBundleModule.dll
+[285/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.TerrainPhysicsModule.dll
+[286/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.InputLegacyModule.dll
+[287/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.SpriteShapeModule.dll
+[288/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.ScreenCaptureModule.dll
+[289/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.JSONSerializeModule.dll
+[290/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.MarshallingModule.dll
+[291/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.CrashReportingModule.dll
+[292/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UnityAnalyticsModule.dll
+[293/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.Data.DataSetExtensions.dll
+[294/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UnityWebRequestWWWModule.dll
+[295/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.WindModule.dll
+[296/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UnityWebRequestAudioModule.dll
+[297/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.EnterpriseServices.dll
+[298/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.ParticleSystemModule.dll
+[299/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.GridModule.dll
+[300/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.VectorGraphicsModule.dll
+[301/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.HierarchyCoreModule.dll
+[302/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.TextRenderingModule.dll
+[303/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UmbraModule.dll
+[304/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.Runtime.Serialization.dll
+[305/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.AudioModule.dll
+[306/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.ClothModule.dll
+[307/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UI.dll
+[308/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.dll
+[309/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/netstandard.dll
+[310/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.GraphicsStateCollectionSerializerModule.dll
+[311/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.InputModule.dll
+[312/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.ClusterRendererModule.dll
+[313/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.VideoModule.dll
+[314/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.IMGUIModule.dll
+[315/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.HotReloadModule.dll
+[316/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.ScriptingModule.dll
+[317/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.Drawing.dll
+[318/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.VirtualTexturingModule.dll
+[319/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.SubstanceModule.dll
+[320/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.Xml.dll
+[321/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/Unity.InternalAPIEngineBridge.004.dll
+[322/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UnityWebRequestModule.dll
+[323/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.CoreModule.dll
+[324/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.RenderAs2DModule.dll
+[325/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.SpriteMaskModule.dll
+[326/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.Core.dll
+[327/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.InputForUIModule.dll
+[328/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.SubsystemsModule.dll
+[329/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.GameCenterModule.dll
+[330/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.AndroidJNIModule.dll
+[331/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.Data.dll
+[332/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.TextCoreFontEngineModule.dll
+[333/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.StreamingModule.dll
+[334/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.Physics2DModule.dll
+[335/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UnityWebRequestAssetBundleModule.dll
+[336/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.ServiceModel.Internals.dll
+[337/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.AnimationModule.dll
+[338/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.TilemapModule.dll
+[339/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UnityCurlModule.dll
+[340/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.PropertiesModule.dll
+[341/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.ShaderVariantAnalyticsModule.dll
+[342/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.TextCoreTextEngineModule.dll
+[343/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.ARModule.dll
+[344/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.GIModule.dll
+[345/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.VRModule.dll
+[346/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.PhysicsModule.dll
+[347/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.TerrainModule.dll
+[348/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.HierarchyModule.dll
+[349/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UIModule.dll
+[350/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.SharedInternalsModule.dll
+[351/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UnityWebRequestTextureModule.dll
+[352/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.XRModule.dll
+[353/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.AIModule.dll
+[354/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UnityAnalyticsCommonModule.dll
+[355/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.ImageConversionModule.dll
+[356/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.DirectorModule.dll
+[357/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.Configuration.dll
+[358/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/Assembly-CSharp.dll
+[359/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.PerformanceReportingModule.dll
+[360/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.ComponentModel.Composition.dll
+[361/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.InsightsModule.dll
+[362/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/Unity.Scripting.dll
+[363/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.VehiclesModule.dll
+[364/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.Numerics.dll
+[365/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.AccessibilityModule.dll
+[366/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.PhysicsBackendPhysXModule.dll
+[367/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.Xml.Linq.dll
+[368/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.DSPGraphModule.dll
+[369/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UnityConsentModule.dll
+[370/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.Transactions.dll
+[371/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UIElementsModule.dll
+[372/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.Net.Http.dll
+[373/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.ClusterInputModule.dll
+[374/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.Security.dll
+[375/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.LocalizationModule.dll
+[382/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.UnityConnectModule.dll
+[389/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.IO.Compression.FileSystem.dll
+[390/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.TLSModule.dll
+[391/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.AdaptivePerformanceModule.dll
+[410/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/UnityEngine.VFXModule.dll
+[412/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.IO.Compression.dll
+[421/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/Unity.TextMeshPro.dll
+[433/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/System.dll
+[441/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/Mono.Security.dll
+[478/493    0s] CopyFiles Build/SangoCityView.app/Contents/Resources/Data/Managed/mscorlib.dll
+[491/493    0s] ExtractUsedFeatures Library/Bee/artifacts/MacStandalonePlayerBuildProgram/Features/Assembly-CSharp-FeaturesChecked.txt
+[492/493    0s] MacOSCodeSignBundleInPlace Build/SangoCityView.app/Contents/MacOS/SangoCityView (+1 other)
+*** Tundra build success (0.81 seconds), 275 items updated, 493 evaluated
 
 -------------------------------------------------------------------------------
 Build Report
@@ -2718,11 +2823,11 @@ Other Assets           22.2 mb	 87.4%
 Levels                 2.0 kb	 0.0% 
 File headers           5.4 kb	 0.0% 
 Total User Assets      25.4 mb	 100.0% 
-Complete build size    137.5 mb
+Complete build size    167.7 mb
 Used Assets and files from the Resources folder, sorted by uncompressed size:
- 22.2 mb	 16.1% Assets/Fonts/CJK.ttf
- 2.7 mb	 1.9% Built-in Texture2D: Splash Screen Unity Logo
- 520.7 kb	 0.4% Resources/unity_builtin_extra
+ 22.2 mb	 13.2% Assets/Fonts/CJK.ttf
+ 2.7 mb	 1.6% Built-in Texture2D: Splash Screen Unity Logo
+ 520.7 kb	 0.3% Resources/unity_builtin_extra
  0.4 kb	 0.0% Built-in Sprite: 
  0.1 kb	 0.0% Packages/com.unity.ugui/Runtime/UGUI/EventSystem/UIElements/UIToolkitInteroperabilityBridge.cs
  0.1 kb	 0.0% Packages/com.unity.ugui/Runtime/TMP/TMP_SpriteAssetImportFormats.cs
@@ -2874,26 +2979,26 @@ Used Assets and files from the Resources folder, sorted by uncompressed size:
 Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
 Unloading 7 unused Assets / (22.2 MB). Loaded Objects now: 1068.
 Memory consumption went from 132.8 MB to 110.6 MB.
-Total: 5.691375 ms (FindLiveObjects: 0.053625 ms CreateObjectMapping: 0.012292 ms MarkObjects: 4.406833 ms  DeleteObjects: 1.218500 ms)
+Total: 6.675208 ms (FindLiveObjects: 0.159625 ms CreateObjectMapping: 0.017042 ms MarkObjects: 5.716333 ms  DeleteObjects: 0.782000 ms)
 
 Build Finished, Result: Success.
 Total cache size 209388588
-Total cache size after purge 209388588, took 00:00:00.0495617
-ExitCode: 0 Duration: 0s717ms
+Total cache size after purge 209388588, took 00:00:00.0574561
+ExitCode: 0 Duration: 0s925ms
 Launching external process: /Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/Resources/Scripting/il2cpp/build/deploy/Analytics
-##utp:{"type":"PlayerBuildInfo","version":2,"phase":"Immediate","time":1789724180743,"processId":31870,"steps":[{"description":"Preprocess Player","duration":4},{"description":"Prepare For Build","duration":23},{"description":"ProducePlayerScriptAssemblies","duration":1735},{"description":"Verify Build setup","duration":6},{"description":"Prepare assets for target platform","duration":2},{"description":"Prepare splash screen","duration":1},{"description":"Build scripts DLLs","duration":8},{"description":"Building scenes","duration":45},{"description":"Build GlobalGameManagers file","duration":72},{"description":"Writing asset files","duration":50},{"description":"Building Resources/unity_builtin_extra","duration":51},{"description":"Write data build dirty tracking information","duration":11},{"description":"Postprocess built player","duration":777}],"duration":2785}
+##utp:{"type":"PlayerBuildInfo","version":2,"phase":"Immediate","time":1789741769592,"processId":48129,"steps":[{"description":"Preprocess Player","duration":5},{"description":"Prepare For Build","duration":23},{"description":"ProducePlayerScriptAssemblies","duration":1735},{"description":"Verify Build setup","duration":6},{"description":"Prepare assets for target platform","duration":2},{"description":"Prepare splash screen","duration":1},{"description":"Build scripts DLLs","duration":9},{"description":"Building scenes","duration":44},{"description":"Build GlobalGameManagers file","duration":85},{"description":"Writing asset files","duration":36},{"description":"Building Resources/unity_builtin_extra","duration":58},{"description":"Write data build dirty tracking information","duration":12},{"description":"Postprocess built player","duration":1128}],"duration":3144}
 Unloading 1 Unused Serialized files (Serialized files now loaded: 0)
 Loaded scene 'Temp/__Backupscenes/0.backup'
-	Deserialize:            4.771 ms
-	Integration:            2.406 ms
-	Integration of assets:  0.425 ms
-	Thread Wait Time:       0.006 ms
-	Total Operation Time:   7.608 ms
+	Deserialize:            5.460 ms
+	Integration:            2.717 ms
+	Integration of assets:  0.497 ms
+	Thread Wait Time:       0.018 ms
+	Total Operation Time:   8.692 ms
 Unloading 0 unused Assets / (0 B). Loaded Objects now: 1073.
 Memory consumption went from 130.4 MB to 130.4 MB.
-Total: 3.941958 ms (FindLiveObjects: 0.031791 ms CreateObjectMapping: 0.006625 ms MarkObjects: 3.900792 ms  DeleteObjects: 0.002541 ms)
+Total: 4.095083 ms (FindLiveObjects: 0.034625 ms CreateObjectMapping: 0.007125 ms MarkObjects: 4.049875 ms  DeleteObjects: 0.003125 ms)
 
-构建结果: Succeeded 用时 00:00:03.0305430
+构建结果: Succeeded 用时 00:00:03.3723220
 UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
 UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:35)
 UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
@@ -2904,8 +3009,8 @@ Builder:BuildMac () (at Assets/Editor/Builder.cs:55)
 
 (Filename: Assets/Editor/Builder.cs Line: 55)
 
-Killing ADB server in 0.040557 seconds.
-Thread 0x173713000 may have been prematurely finalized
+Killing ADB server in 0.039097 seconds.
+Thread 0x173f07000 may have been prematurely finalized
 Input System module state changed to: ShutdownInProgress.
 Input Polling Thread exited.
 Input System module state changed to: Shutdown.
@@ -2913,8 +3018,8 @@ Input System module state changed to: Shutdown.
 [Physics::Module] Id: 0xf2b8ea05
 [Licensing::IpcConnector] LicenseClient-jingtaoliang-notifications channel disconnected successfully.
 [Licensing::IpcConnector] LicenseClient-jingtaoliang channel disconnected successfully.
-Thread 0x16fa27000 may have been prematurely finalized
-Thread 0x16f99b000 may have been prematurely finalized
+Thread 0x16c83b000 may have been prematurely finalized
+Thread 0x16c8c7000 may have been prematurely finalized
 AcceleratorClientConnectionCallback - disconnected - :0
 info: Microsoft.Hosting.Lifetime[0]
       Application is shutting down...
