@@ -17,15 +17,78 @@ const NEGATIVE =
   '避免：动漫风、赛璐璐平涂、3D渲染感、塑料质感、过曝高饱和、现代服装、' +
   '多个人物、全身像、文字水印、对称正面证件照构图。';
 
+
+/* ============ 女性武将 ============
+   原表没有性别字段，且靠名字会误判（如「董茶奴」实为南蛮男将董荼那）。
+   下列 ID 是逐张比对 228 张原始头像后确认的，共 20 人。 */
+const MYSTIC_YOUNG = new Set([4]);   // 南斗：原画是年轻男子，不是白须老者
+const FEMALE = new Set([30,33,41,74,82,130,131,132,134,141,149,179,187,188,197,198,214,216,225,226]);
+
+/* 女性细分：女将 / 才女 / 贵妇 */
+function femaleRole(wu, zhi) {
+  if (wu >= 75) return 'warrior_f';
+  if (zhi >= 85) return 'talent_f';
+  return 'noble_f';
+}
+/* 年龄段（原画里明确是长者/中年的，单独标出） */
+const ELDER_F  = new Set([132]);              // 吴国太
+const MATRON_F = new Set([74,216,225,226]);   // 卞氏、蔡氏、刘氏
+
+/* 既定形象过强的女性，显式覆盖 */
+const ICONIC_F = {
+  '貂蝉':   '绝色舞姬，柳眉杏目，肌肤胜雪，云鬓高绾插步摇，着绯红广袖舞衣，披帛垂落，神情含愁带媚',
+  '小乔':   '江东美人，清丽婉约，鹅蛋脸，发髻简洁插碧玉簪，着淡青色曲裾深衣，气质温婉',
+  '大乔':   '江东美人，端庄沉静，较小乔更显成熟，发髻端整，着月白曲裾深衣，眉宇间有轻愁',
+  '孙尚香': '弓腰姬，英气勃勃，高马尾束发，着轻便女式鳞甲外罩绯色战裙，腰佩双剑，眼神锐利自信',
+  '祝融夫人': '南中蛮族女王，深色肌肤，编发缀骨饰与羽毛，着兽皮与青铜片拼接的战装，手持飞刀，神情剽悍',
+  '花鬘':   '南中蛮族少女，深色肌肤，散发编小辫缀彩珠，着轻便皮甲与藤编护具，年轻矫健',
+  '黄月英': '才女，相貌平实但眼神极为聪慧专注，发髻朴素，着素色深衣，手边有精巧木制机关器械',
+  '蔡琰':   '才女，气质清冷孤高，长发半束，着素色广袖深衣，怀抱古琴或胡笳，眉间有流离之苦',
+  '吕玲绮': '将门之女，银白色女式明光甲，高束马尾，面容冷峻英挺，手按长枪',
+  '马云禄': '西凉女将，健美英挺，着西凉样式轻甲外罩赭色披风，发辫束起，肤色微深，神情爽利',
+  '鲍三娘': '女武将，红色抹额束发，着朴素扎甲，身形精悍，神情坚毅',
+  '孙鲁班': '权门贵女，容貌明艳但眼神凌厉多疑，华贵发饰，着织锦深衣，气场逼人'
+};
+
+function femaleBody(role, id) {
+  const elder  = ELDER_F.has(id), matron = MATRON_F.has(id);
+  if (elder)  return '年长妇人，body 端坐雍容，银发梳作端整高髻插金饰，着深色织锦广袖礼服，不着甲'
+                     .replace('body ', '');
+  if (matron) return '中年贵妇，仪态端严，发髻梳整插玉饰，着深色曲裾深衣，不着甲';
+  if (role === 'warrior_f')
+    return '身形挺拔矫健而不魁梧，着合身的女式轻甲（收腰、护肩、护臂），衣甲之下露出行动便利的战裙';
+  if (role === 'talent_f')
+    return '身形纤秀，不着甲，着广袖交领深衣，衣料柔软有垂坠感';
+  return '身形纤柔，不着甲，着曲裾深衣或襦裙，衣饰精致';
+}
+function femaleFace(role, de, id) {
+  if (ELDER_F.has(id))  return '面容慈和而有威仪，眼角有细纹，神情沉稳';
+  if (MATRON_F.has(id)) return '面容端丽，神情持重内敛';
+  let m = role === 'warrior_f' ? '眉目英挺，眼神明亮果决，肤色健康'
+        : role === 'talent_f'  ? '眉目清秀，眼神沉静聪慧，气质书卷'
+        :                        '眉目柔美，肌肤细腻，神情温婉';
+  if (de >= 90)      m += '，气度端方';
+  else if (de <= 35) m += '，眼神微冷，带一丝算计';
+  return m;
+}
+const FEMALE_NEGATIVE =
+  '严禁：胡须、络腮胡、男性化面部轮廓、男性体格。' +
+  '同时避免：现代服饰、暴露或性化的着装、比基尼、过度夸张的身材比例、动漫萌系画风。';
+
 /* ============ 属性 → 外貌特征 ============
    身份判定先于兵种：兵种是战斗属性，不能决定服饰主体。
    文武倾向由 智力 - 武力 的差值决定。 */
-function roleOf(wu, zhi) {
+function roleOf(wu, zhi, bingli, jice) {
+  // 方士/术士组：全表仅 管辂/南斗/于吉/北斗 四人满足（兵力 0 且计策点 300）。
+  // 他们武智被人为拉平到 105-120，会骗过下面的 智-武 差值判定，必须先拦。
+  if (Number(bingli) === 0 && Number(jice) === 300) return 'mystic';
   if (zhi - wu >= 25) return 'scholar';   // 谋士
   if (wu - zhi >= 25) return 'warrior';   // 猛将
   return 'officer';                       // 均衡型武官
 }
 function bodyTrait(role, wu) {
+  if (role === 'mystic')
+    return '身着道家鹤氅或宽大法袍，不着任何甲胄，手持卜筮用的蓍草、罗盘或拂尘';
   if (role === 'scholar')
     return '身形清癯修长，肩窄，不着甲，着宽袖交领深衣，手持羽扇或竹简';
   if (role === 'warrior') {
@@ -35,10 +98,14 @@ function bodyTrait(role, wu) {
   }
   return '身形匀称，武官体态，着轻便鳞甲外罩官袍';
 }
-function faceTrait(role, wu, zhi, de) {
+function faceTrait(role, wu, zhi, de, id) {
   // 只取最强的一条智力/武力特征 + 最多一条德行特征，避免堆叠矛盾
   let main;
-  if (role === 'scholar')
+  if (role === 'mystic')
+    main = MYSTIC_YOUNG.has(id)
+      ? '面容清俊年轻，几近中性，双目如有星光，不似凡人，长发未束，神情超然物外'
+      : '面容清奇脱俗，双目如有星光，不似凡人，须发花白，长须及胸，神情超然物外';
+  else if (role === 'scholar')
     main = zhi >= 110 ? '眉目疏朗，眼神澄澈深远，额高，神情从容不迫'
          : '目光内敛沉静，眼尾细长，似在权衡';
   else if (role === 'warrior')
@@ -54,8 +121,10 @@ function faceTrait(role, wu, zhi, de) {
   return main + moral;
 }
 function gearAccent(bingzhong, role) {
-  // 兵种只做配饰点缀，不改服装主体；文士不挂兵器
+  // 兵种只做配饰点缀，不改服装主体；文士与方士不挂兵器
   const n = Number(bingzhong);
+  if (role === 'mystic')
+    return '袍服有暗纹星斗图样，色调为玄青与素白，背景光线带一丝非自然的冷调';
   if (role === 'scholar')
     return n === 2 ? '衣料与配色带江南水乡气息，青碧色系'
          : n === 3 ? '衣料略厚重，配色偏山地土褐'
@@ -102,26 +171,47 @@ function buildPortraits(csvPath) {
     const n = seen.get(name) || 0; seen.set(name, n + 1);
     const label = n ? `${name}(变体${n + 1})` : name;
 
-    const role = roleOf(N(wu), N(zhi));
-    const subject = ICONIC[name]
-      ? `主体：${name}，三国时代人物。${ICONIC[name]}。${moodTrait(N(de), N(zhong))}。`
-      : [
-          `主体：${name}，三国时代${role === 'scholar' ? '文臣谋士' : role === 'warrior' ? '武将' : '武官'}`,
-          bodyTrait(role, N(wu)),
-          faceTrait(role, N(wu), N(zhi), N(de)),
-          gearAccent(bingzhong, role),
-          moodTrait(N(de), N(zhong))
-        ].join('。') + '。';
+    const oid = N(id);
+    const isF = FEMALE.has(oid);
+    let subject, negative = NEGATIVE, role, roleName;
+
+    if (isF) {
+      /* ---- 女性路径：绝不复用男性特征词（那里有「短须」「虬髯」） ---- */
+      role = femaleRole(N(wu), N(zhi));
+      roleName = { warrior_f:'女武将', talent_f:'才女', noble_f:'仕女' }[role];
+      subject = ICONIC_F[name]
+        ? `主体：${name}，三国时代女性人物。${ICONIC_F[name]}。${moodTrait(N(de), N(zhong))}。`
+        : [
+            `主体：${name}，三国时代${roleName}`,
+            femaleBody(role, oid),
+            femaleFace(role, N(de), oid),
+            gearAccent(bingzhong, role === 'warrior_f' ? 'warrior' : 'scholar'),
+            moodTrait(N(de), N(zhong))
+          ].join('。') + '。';
+      negative = NEGATIVE + FEMALE_NEGATIVE;
+    } else {
+      role = roleOf(N(wu), N(zhi), r[4], r[10]);
+      roleName = { mystic:'方士术士', scholar:'文臣谋士', warrior:'武将', officer:'武官' }[role];
+      subject = ICONIC[name]
+        ? `主体：${name}，三国时代人物。${ICONIC[name]}。${moodTrait(N(de), N(zhong))}。`
+        : [
+            `主体：${name}，三国时代${roleName}`,
+            bodyTrait(role, N(wu)),
+            faceTrait(role, N(wu), N(zhi), N(de), oid),
+            gearAccent(bingzhong, role),
+            moodTrait(N(de), N(zhong))
+          ].join('。') + '。';
+    }
 
     out.push({
       id: `portrait_${id}`,
       category: 'portrait',
       label,
-      meta: { 武力: N(wu), 智力: N(zhi), 德: N(de), 忠诚: N(zhong), 体力: N(tili),
+      meta: { 性别: isF ? '女' : '男', 武力: N(wu), 智力: N(zhi), 德: N(de), 忠诚: N(zhong), 体力: N(tili),
               兵种: ['', '平原军', '水军', '山地军'][N(bingzhong)] || '平原军' },
       source: `/source/avatar/${id}.png`,
       size: '1024x1536',
-      prompt: `${STYLE_ANCHOR}\n\n${subject}\n\n${NEGATIVE}`
+      prompt: `${STYLE_ANCHOR}\n\n${subject}\n\n${negative}`
     });
   }
   return out;
