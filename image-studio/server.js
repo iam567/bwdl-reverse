@@ -133,8 +133,10 @@ async function generate(it) {
     } else {
       const payload = { model, prompt: it.prompt, size, n:1 };
       if (quality && quality !== 'auto') payload.quality = quality;
-      if (cfg.background && cfg.background !== 'auto' && !it.noBackground)
-        payload.background = cfg.background;
+      /* 素材自带 background 时优先（城池图标需要 transparent 才能贴到地图上） */
+      const bg = it.background || cfg.background;
+      if (bg && bg !== 'auto') payload.background = bg;
+      if (bg === 'transparent') payload.output_format = 'png';
       r = await fetch(`${OPENAI_BASE}/images/generations`, {
         method:'POST', signal:ctl.signal,
         headers:{ authorization:`Bearer ${cfg.apiKey}`, 'content-type':'application/json' },
