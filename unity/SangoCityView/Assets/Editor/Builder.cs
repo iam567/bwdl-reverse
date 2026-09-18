@@ -23,8 +23,8 @@ public static class Builder
 
         new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
 
-        var go = new GameObject("CityView");
-        var cv = go.AddComponent<CityView>();
+        var go = new GameObject("Game");
+        var cv = go.AddComponent<Game>();
         cv.font = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/CJK.ttf");
         if (cv.font == null) Debug.LogError("字体没找到：Assets/Fonts/CJK.ttf");
 

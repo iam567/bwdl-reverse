@@ -1,7 +1,30 @@
-# 城内视图 · Unity 实机渲染
+# Unity 原型：主地图 + 城内视图
 
-把网页版 `/preview` 的城内那一屏用 uGUI 在 Unity 里原样搭一遍，
-验证这套素材和版面在引擎里成不成立。批处理跑，不用开编辑器。
+把网页版 `/preview` 用 uGUI 在 Unity 里搭一遍，验证这套素材和版面在引擎里成不成立。
+批处理构建，不用开编辑器。
+
+跑起来是主地图：拖动平移、滚轮缩放、点城池选中、再点一次进城。
+洛阳能进城内（其余 35 座的城内图还没生成），城内右上角「地图」返回。
+
+| 文件 | 作用 |
+|---|---|
+| `Game.cs` | 入口，建画布，管两屏切换 |
+| `MapView.cs` | 主地图：平移缩放、势力旗、选中环、点选 |
+| `CityView.cs` | 城内：数据栏、建筑名匾、蒙版高亮、指令浮窗 |
+| `UIKit.cs` | 九宫格 / 摆放 / 文字这些重复动作 |
+| `Editor/Builder.cs` | 建场景 + 出 macOS 包 |
+| `Editor/CityViewRender.cs` | 另一条路：不出包，直接渲一张 PNG |
+
+## 地图的坐标怎么处理
+
+地图容器的 `sizeDelta` 恒为 **1024×1024**，缩放只动 `localScale`。
+这样「1024 坐标系」和「容器局部坐标」就是同一套数，
+点击判定、旗子摆位、选中环都不用来回换算——
+`ScreenPointToLocalPointInRectangle` 出来的 `lp` 取 `(lp.x, -lp.y)` 就是 1024 坐标。
+
+旗子和选中环是容器的子物体，会跟着 `localScale` 一起缩。
+要保住「捏到最小也看得清」，每次缩放后按 `max(26/zoom, 地坪半径×0.62)` 重算它们的
+`sizeDelta`——单位是 1024 空间，乘上 zoom 之后屏幕尺寸就不低于 26px。
 
 ## 跑一次
 
@@ -21,7 +44,7 @@ cp "/Library/Fonts/Arial Unicode.ttf" Assets/Fonts/CJK.ttf
 
 输出 `Render/cityview.png`，750×1624（375×812 的 2 倍）。
 
-## 出一个能点的 macOS 程序
+## 出包并运行
 
 ```bash
 /Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/MacOS/Unity \
