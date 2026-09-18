@@ -117,7 +117,7 @@ public class MarchUnit
     /// 按高度缩的话宽度会顶到 4 倍，比整座城还长。
     public void Layout(float zoom)
     {
-        const float MIN_PX = 40f, UNITS = 46f;
+        const float MIN_PX = 20f, UNITS = 23f;      // 比第一版小一半
         float span = Mathf.Max(MIN_PX / zoom, UNITS);
         var sp = bodyImg.sprite;
         float ar = sp == null ? 1f : sp.rect.width / sp.rect.height;
