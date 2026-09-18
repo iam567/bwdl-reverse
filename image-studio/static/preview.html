@@ -55,7 +55,7 @@ html,body{margin:0;height:100%;background:#0d0c0a;overflow:hidden;font:14px/1.4 
 #cvpic{position:relative;display:none;width:100%;line-height:0}
 #cvpic.show{display:block}
 #cvpic img{width:100%;display:block;border-radius:10px}
-#cvhl{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;border-radius:10px}
+#cvhl,#cvlbl{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;border-radius:10px}
 /* 建筑指令面板 */
 #bsheet{position:fixed;left:10px;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 74px);z-index:37;
   background:linear-gradient(180deg,#242018f2,#15120ef2);border:1px solid #8a6f3c;border-radius:14px;
@@ -99,7 +99,7 @@ html,body{margin:0;height:100%;background:#0d0c0a;overflow:hidden;font:14px/1.4 
 <div id="cityview">
   <div class="cv-top"><div class="cv-name" id="cvname"></div><div class="cv-tier" id="cvtier"></div></div>
   <div class="cv-body">
-    <div id="cvpic"><img id="cvimg" alt=""><canvas id="cvhl"></canvas></div>
+    <div id="cvpic"><img id="cvimg" alt=""><canvas id="cvhl"></canvas><canvas id="cvlbl"></canvas></div>
     <div id="cvfall">
       <div class="cv-sec">相 邻 城 池</div><div class="cv-adj" id="cvadj"></div>
       <div class="cv-note">这座城的城内图还没生成<br>（目前只做了洛阳这座样板城）</div>
@@ -338,7 +338,8 @@ async function loadCityView(key){
   const cv=document.createElement('canvas'); cv.width=d.size[0]; cv.height=d.size[1];
   cv.getContext('2d',{willReadFrequently:true}).drawImage(im,0,0);
   cvMask=cv; cvData=d;
-  $('cvimg').src='/image/cityview/'+key+'.jpg';
+  await new Promise(ok=>{const g=$('cvimg');g.onload=ok;g.src='/image/cityview/'+key+'.jpg';});
+  hlKey=null; drawLabels();
 }
 function pickBuilding(e){
   if(!cvData||!cvMask)return null;
@@ -358,24 +359,112 @@ function pickBuilding(e){
       if(!best||a<best.a) best={a,k};}}
   return best ? {key:best.k,...cvData.buildings[best.k]} : null;
 }
-function hlBuilding(b){                          // 在选中的建筑上描一圈金边
-  const cv=$('cvhl'), r=$('cvimg').getBoundingClientRect();
-  cv.width=Math.round(r.width*2); cv.height=Math.round(r.height*2);
-  const x=cv.getContext('2d'); x.clearRect(0,0,cv.width,cv.height);
-  if(!b)return;
-  const f=cv.width/cvData.size[0];
-  x.save(); x.scale(f,f);
-  x.shadowColor='rgba(255,196,84,.95)'; x.shadowBlur=26;
-  x.strokeStyle='rgba(255,236,170,.95)'; x.lineWidth=7/f*2;
-  x.strokeRect(b.box[0]+3,b.box[1]+3,b.box[2]-b.box[0]-6,b.box[3]-b.box[1]-6);
-  x.restore();
+/* 高亮直接用蒙版的实际形状，不画方框。
+   剪影 = 蒙版里颜色等于该建筑的那些像素，取出来做成一张不透明白图，
+   之后压暗、描边、提亮都拿它当模板。 */
+let hlSil=null, hlRaf=0;
+function buildSil(b){
+  const W=cvData.size[0], H=cvData.size[1];
+  const src=cvMask.getContext('2d').getImageData(0,0,W,H).data;
+  const c=document.createElement('canvas'); c.width=W; c.height=H;
+  const cx=c.getContext('2d'), out=cx.createImageData(W,H), o=out.data;
+  const [r,g,bl]=b.mask;
+  for(let i=0;i<src.length;i+=4)
+    if(src[i]===r&&src[i+1]===g&&src[i+2]===bl){o[i]=255;o[i+1]=245;o[i+2]=210;o[i+3]=255;}
+  cx.putImageData(out,0,0);
+  return c;
 }
+function silRing(w,h,k){                         // 放大一圈剪影再挖掉原剪影 = 沿轮廓的描边
+  const c=document.createElement('canvas'); c.width=w; c.height=h;
+  const x=c.getContext('2d');
+  x.drawImage(hlSil,-k,-k,w+k*2,h+k*2);
+  x.globalCompositeOperation='destination-out';
+  x.drawImage(hlSil,0,0,w,h);
+  return c;
+}
+function drawHl(now){
+  hlRaf=0;
+  const cv=$('cvhl'), w=cv.width, h=cv.height;
+  const x=cv.getContext('2d'); x.clearRect(0,0,w,h);
+  if(!hlSil)return;
+  const pulse=.5+.5*Math.sin(now/520);
+  x.save();                                      // 压暗四周，挖出这座建筑
+  x.fillStyle='rgba(8,6,4,.48)'; x.fillRect(0,0,w,h);
+  x.globalCompositeOperation='destination-out';
+  x.drawImage(hlSil,0,0,w,h);
+  x.restore();
+  x.save();                                      // 沿轮廓的金边，随呼吸明灭
+  x.shadowColor='rgba(255,190,70,.95)'; x.shadowBlur=9+7*pulse;
+  x.globalAlpha=.82+.18*pulse;
+  x.drawImage(silRing(w,h,Math.max(2,w*0.007)),0,0);
+  x.restore();
+  x.save();                                      // 建筑本身轻微提亮
+  x.globalCompositeOperation='overlay'; x.globalAlpha=.12+.07*pulse;
+  x.drawImage(hlSil,0,0,w,h);
+  x.restore();
+  hlRaf=requestAnimationFrame(drawHl);
+}
+function hlBuilding(b){
+  const cv=$('cvhl'), r=$('cvimg').getBoundingClientRect();
+  const dpr=Math.min(devicePixelRatio||1,2);
+  cv.width=Math.max(1,Math.round(r.width*dpr)); cv.height=Math.max(1,Math.round(r.height*dpr));
+  if(hlRaf){cancelAnimationFrame(hlRaf);hlRaf=0;}
+  hlSil = b ? buildSil(b) : null;
+  drawHl(performance.now());
+}
+/* ---- 建筑名匾 ---- */
+const plaque=new Image(); let plaqueOK=false;
+plaque.onload=()=>{plaqueOK=true;drawLabels();};
+plaque.src='/image/cityview/plaque.png';
+function drawLabels(){
+  const cv=$('cvlbl'), img=$('cvimg');
+  if(!cvData||!img.naturalWidth)return;
+  const r=img.getBoundingClientRect(); if(!r.width)return;
+  const dpr=Math.min(devicePixelRatio||1,2);
+  cv.width=Math.round(r.width*dpr); cv.height=Math.round(r.height*dpr);
+  const x=cv.getContext('2d'); x.clearRect(0,0,cv.width,cv.height);
+  const f=cv.width/cvData.size[0];                 // 图像坐标 → 画布像素
+  const fs=Math.max(11,46*f), fs2=fs*0.62;
+  for(const k in cvData.buildings){
+    const b=cvData.buildings[k], bx=b.box;
+    x.font='700 '+fs+'px -apple-system,"PingFang SC",system-ui,sans-serif';
+    const w1=x.measureText(b.name).width;
+    x.font='600 '+fs2+'px -apple-system,"PingFang SC",system-ui,sans-serif';
+    const w2=x.measureText('·'+b.func).width;
+    const pad=fs*0.55, pw=w1+w2+pad*2, ph=fs*1.95;
+    const cxp=(bx[0]+bx[2])/2*f, byp=bx[3]*f;
+    const px=Math.round(cxp-pw/2), py=Math.round(byp-ph*0.62);
+    x.save();
+    x.globalAlpha = (hlKey && hlKey!==k) ? .38 : 1;   // 选中某座时其余压暗
+    if(plaqueOK){                                     // 三段拉伸，免得四角铜件被拉变形
+      const sw=plaque.width, sh=plaque.height, cap=Math.round(sw*0.18);
+      const dcap=Math.round(ph*cap/sh);
+      x.drawImage(plaque,0,0,cap,sh, px,py,dcap,ph);
+      x.drawImage(plaque,cap,0,sw-cap*2,sh, px+dcap,py,pw-dcap*2,ph);
+      x.drawImage(plaque,sw-cap,0,cap,sh, px+pw-dcap,py,dcap,ph);
+    }else{
+      x.fillStyle='rgba(28,20,12,.9)'; x.strokeStyle='#c8a45c'; x.lineWidth=Math.max(1,f*3);
+      x.beginPath();
+      if(x.roundRect)x.roundRect(px,py,pw,ph,ph*0.18); else x.rect(px,py,pw,ph);
+      x.fill(); x.stroke();
+    }
+    x.shadowColor='rgba(0,0,0,.85)'; x.shadowBlur=fs*0.35; x.shadowOffsetY=Math.max(1,f*2);
+    x.textBaseline='middle';
+    x.font='700 '+fs+'px -apple-system,"PingFang SC",system-ui,sans-serif';
+    x.fillStyle='#f8efd8'; x.fillText(b.name, px+pad, py+ph/2);
+    x.font='600 '+fs2+'px -apple-system,"PingFang SC",system-ui,sans-serif';
+    x.fillStyle='#d3b478'; x.fillText('·'+b.func, px+pad+w1, py+ph/2+fs*0.08);
+    x.restore();
+  }
+}
+let hlKey=null;
 function showSheet(b){
-  if(!b){$('bsheet').classList.remove('show');hlBuilding(null);return;}
+  hlKey = b ? b.key : null;
+  if(!b){$('bsheet').classList.remove('show');hlBuilding(null);drawLabels();return;}
   $('bsname').textContent=b.name; $('bsfunc').textContent='· '+b.func;
   const box=$('bscmds'); box.innerHTML='';
   for(const t of (BS_CMDS[b.func]||[])){const el=document.createElement('div');el.textContent=t;box.appendChild(el);}
-  $('bsheet').classList.add('show'); hlBuilding(b);
+  $('bsheet').classList.add('show'); hlBuilding(b); drawLabels();
 }
 $('cvpic').addEventListener('click',e=>{ showSheet(pickBuilding(e)); });
 

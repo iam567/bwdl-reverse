@@ -181,3 +181,33 @@ function buildMaskItem() {
 }
 module.exports.buildMaskItem = buildMaskItem;
 module.exports.MASK_COLORS = MASK_COLORS;
+
+/* ---- 建筑名匾底纹 ---- */
+const PLAQUE_PROMPT =
+  '高品质中式游戏UI素材，厚涂数字绘画，笔触精致收敛，强对比、高饱和的彩色画面。' +
+  '题材是中国汉末三国时代挂在建筑门楣上的木质匾额，用作游戏里建筑名称的底板。' +
+  '横长方形，宽高比大约 4:1，正面平视，没有透视变形，端正对称。' +
+  '深栗褐色的整块木板，木纹清晰温润，四边包一圈起线的边框，' +
+  '四角钉着鎏金的铜制角叶，左右两端各有一枚圆形铜钉。' +
+  '边框内的板心是略深的暗褐色平面，干净平整，中央大片留空，' +
+  '不刻任何纹样、图案、云纹或雕花——那块空白是留给后期排字的。' +
+  '光从左上方来，木板有轻微的厚度与投影，铜件有金属高光。' +
+  '匾额完整置于画面中央，四周留出余白，不被边缘裁切。' +
+  '背景完全透明，只有这块匾额本身，不画墙面、不画挂钩、不画绳索。' +
+  '画面中不得出现任何文字、字母、汉字、签名、水印或UI元素。';
+
+const PLAQUE_NEG =
+  '绝对禁止：黑白、灰度、单色、素描、去饱和、照片写实、3D渲染感、塑料感。' +
+  '避免：板心有雕花或纹样、明清风格的繁复彩画、日式或欧式风格、' +
+  '斜侧透视、竖排匾额、多块匾额、不透明的背景色块、被边缘裁切。';
+
+function buildPlaqueItem() {
+  return [{
+    id: 'ui_plaque', category: 'citybld', label: '城内UI·建筑名匾底纹',
+    meta: { 用途:'城内视图里建筑名标签的底板' },
+    source: null, size: '1536x1024', background: 'transparent',
+    prompt: PLAQUE_PROMPT + '\n\n' + PLAQUE_NEG,
+    status: 'idle', attempts: 0,
+  }];
+}
+module.exports.buildPlaqueItem = buildPlaqueItem;
