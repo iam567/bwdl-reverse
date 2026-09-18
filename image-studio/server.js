@@ -47,7 +47,8 @@ function loadConfig() {
   c.quality    = c.quality    || 'high';
   c.background = c.background || 'opaque';
   c.apiKey     = c.apiKey     || '';
-  c.paused     = c.paused     !== undefined ? c.paused : true;   // 默认暂停，避免误触发计费
+  c.paused     = c.paused     !== undefined ? c.paused : true;
+  c.concurrency = Math.min(Math.max(parseInt(c.concurrency,10) || 4, 1), 8);   // 默认暂停，避免误触发计费
   if (!c.secret) c.secret = crypto.randomBytes(32).toString('hex');
   if (!fs.existsSync(CONFIG_PATH)) writeJSON(CONFIG_PATH, c, 0o600);
   return c;
@@ -80,6 +81,13 @@ if (!items) {                                  // 首次从 assets.json 迁移
   writeJSON(ITEMS_PATH, items);
 }
 const byId = new Map(items.map(i => [i.id, i]));
+/* 反向依赖：card_N -> [avatar_N, ...]。卡牌重画后派生图必须跟着重画，
+   否则卡牌换了脸、头像还是旧的那张，两张图会变成两个人。 */
+const dependents = new Map();
+for (const i of items) if (i.refItem) {
+  if (!dependents.has(i.refItem)) dependents.set(i.refItem, []);
+  dependents.get(i.refItem).push(i.id);
+}
 const persistItems = () => { try { writeJSON(ITEMS_PATH, items); } catch {} };
 
 let events = readJSON(EVENTS_PATH, []);
@@ -90,13 +98,12 @@ function logEvent(msg){
 }
 
 /* ---------- 生成 worker ---------- */
-let running = false;
 let workerMsg = loadConfig().paused ? '已暂停' : '空闲';
 async function generate(it) {
   const cfg = loadConfig();
   if (!cfg.apiKey) throw new Error('未设置 API Key');
-  it.status='running'; it.startedAt=Date.now(); it.error=null; it.attempts++;
-  workerMsg = `正在生成：${it.label}`; persistItems();
+  it.error=null; it.attempts++;   // status/startedAt 已由 claimNext 占坑
+  workerMsg = `并发生成中（${activeWorkers} 个）· 最新：${it.label}`; persistItems();
 
   const size    = it.size    || cfg.size;
   const quality = it.quality || cfg.quality;
@@ -135,13 +142,22 @@ async function generate(it) {
     }
   } finally { clearTimeout(timer); }
 
-  const txt = await r.text();
-  if (!r.ok) { let m=txt.slice(0,400); try{ m=JSON.parse(txt).error?.message||m; }catch{}
-               throw new Error(`OpenAI ${r.status}: ${m}`); }
-  const d = JSON.parse(txt), o = d.data?.[0];
+  if (!r.ok) {
+    const txt = await r.text();
+    let m = txt.slice(0,400);
+    try { m = JSON.parse(txt).error?.message || m; } catch {}
+    throw new Error(`OpenAI ${r.status}: ${m}`);
+  }
+  /* 成功路径直接走 json()，不再额外持有一份完整文本；
+     取出 Buffer 后立刻断开对 base64 大字符串的引用，让 V8 尽早回收。
+     8 并发时每份 base64 约 3.4MB，不释放会把堆顶到上限。 */
+  let d = await r.json();
+  const o = d.data?.[0];
   if (!o) throw new Error('返回结果为空');
-  const buf = o.b64_json ? Buffer.from(o.b64_json,'base64')
-            : Buffer.from(await (await fetch(o.url)).arrayBuffer());
+  let buf;
+  if (o.b64_json) { buf = Buffer.from(o.b64_json,'base64'); o.b64_json = null; }
+  else            { buf = Buffer.from(await (await fetch(o.url)).arrayBuffer()); }
+  d = null;
 
   const dir = path.join(OUTPUT, it.category);
   await fsp.mkdir(dir, { recursive:true });
@@ -150,36 +166,84 @@ async function generate(it) {
   it.file = `${it.category}/${file}`;
   it.bytes = buf.length;
   it.status='done'; it.finishedAt=Date.now();
+
+  /* 参考图变了，已生成的派生图立刻作废并重新入队 */
+  for (const depId of dependents.get(it.id) || []) {
+    const dep = byId.get(depId);
+    if (dep && dep.status === 'done') {
+      dep.status = 'queued'; dep.file = null; dep.error = null;
+      logEvent(`${it.label} 卡牌已更新，其头像重新入队`);
+    }
+  }
   persistItems();
 }
 
-async function pump() {
-  if (running) return;
-  running = true;
-  try {
-    for (;;) {
-      const cfg = loadConfig();
-      if (cfg.paused) { workerMsg = '已暂停'; break; }
-      const ready = x => !x.refItem || byId.get(x.refItem)?.file;
-      let it = items.find(x => x.status === 'queued' && ready(x));
-      if (!it) {
-        const blocked = items.filter(x => x.status === 'queued');
-        workerMsg = blocked.length
-          ? `等待参考图：还有 ${blocked.length} 项派生图未就绪`
-          : '队列已清空';
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+let activeWorkers = 0;
+let rateLimitUntil = 0;          // 429 退避截止时间
+
+function claimNext() {
+  const ready = x => !x.refItem || byId.get(x.refItem)?.file;
+  const it = items.find(x => x.status === 'queued' && ready(x));
+  if (it) { it.status = 'running'; it.startedAt = Date.now(); }   // 同步占坑，避免两个 worker 抢同一项
+  return it;
+}
+
+async function worker(tag) {
+  for (;;) {
+    const cfg = loadConfig();
+    if (cfg.paused) break;
+
+    if (Date.now() < rateLimitUntil) { await sleep(2000); continue; }
+
+    const it = claimNext();
+    if (!it) {
+      /* 没有可取的：可能是派生图在等在途的参考图，等一下再看 */
+      const stillQueued = items.some(x => x.status === 'queued');
+      const inflight    = items.some(x => x.status === 'running');
+      if (stillQueued && inflight) { await sleep(3000); continue; }
+      break;
+    }
+    persistItems();
+    try {
+      await generate(it);
+      logEvent(`✅ ${it.label}（${it.category}）完成`);
+    } catch (e) {
+      const msg = String(e.message || e).slice(0, 500);
+      if (/\b429\b|rate limit|too many requests/i.test(msg)) {
+        /* 限流：本项退回队列，全体退避 */
+        it.status = 'queued'; it.startedAt = null;
+        rateLimitUntil = Date.now() + 30000;
+        logEvent('⚠️ 触发速率限制，全体退避 30 秒');
+        persistItems();
+        continue;
+      }
+      it.status = 'failed'; it.error = msg; it.finishedAt = Date.now();
+      persistItems();
+      logEvent(`❌ ${it.label}：${msg}`);
+      if (/401|invalid_api_key|api key|insufficient|quota|billing/i.test(msg)) {
+        const c = loadConfig(); c.paused = true; saveConfig(c);
+        logEvent('⚠️ API Key 或额度异常，队列已自动暂停');
         break;
       }
-      try { await generate(it); logEvent(`✅ ${it.label} 生成完成`); }
-      catch (e) {
-        it.status='failed'; it.error=String(e.message||e).slice(0,500); it.finishedAt=Date.now();
-        persistItems(); logEvent(`❌ ${it.label}：${it.error}`);
-        if (/401|invalid_api_key|api key/i.test(it.error)) {
-          const c=loadConfig(); c.paused=true; saveConfig(c);
-          logEvent('⚠️ API Key 无效，队列已自动暂停'); break;
-        }
-      }
     }
-  } finally { running=false; workerMsg = loadConfig().paused ? '已暂停' : '空闲'; }
+  }
+}
+
+function pump() {
+  const cfg = loadConfig();
+  if (cfg.paused) return;
+  const want = cfg.concurrency;
+  while (activeWorkers < want && items.some(x => x.status === 'queued')) {
+    activeWorkers++;
+    const n = activeWorkers;
+    worker(n).catch(()=>{}).finally(() => {
+      activeWorkers--;
+      workerMsg = activeWorkers > 0
+        ? `并发生成中（${activeWorkers} 个）`
+        : (loadConfig().paused ? '已暂停' : '队列已清空');
+    });
+  }
 }
 
 /* ---------- 静态 ---------- */
@@ -229,7 +293,8 @@ const server = http.createServer(async (req,res) => {
     if (p === '/api/status') {
       const counts={};
       for(const it of items) counts[it.status]=(counts[it.status]||0)+1;
-      return j(res,200,{ total:items.length, counts, running, paused:cfg.paused,
+      return j(res,200,{ total:items.length, counts, running: activeWorkers>0,
+        concurrency: cfg.concurrency, active: activeWorkers, paused:cfg.paused,
         worker:workerMsg, model:cfg.model, hasKey:!!cfg.apiKey,
         events: events.slice(0,12) });
     }
@@ -298,7 +363,8 @@ const server = http.createServer(async (req,res) => {
     if (p === '/api/config' && req.method==='GET') {
       const k=cfg.apiKey||'';
       return j(res,200,{ hasKey:!!k, keyMask:k?`${k.slice(0,7)}…${k.slice(-4)}`:'',
-        model:cfg.model, size:cfg.size, quality:cfg.quality, background:cfg.background });
+        model:cfg.model, size:cfg.size, quality:cfg.quality,
+        background:cfg.background, concurrency:cfg.concurrency });
     }
     if (p === '/api/config' && req.method==='POST') {
       const b=JSON.parse((await body(req)).toString()||'{}');
@@ -306,6 +372,9 @@ const server = http.createServer(async (req,res) => {
       if(b.clearKey) cfg.apiKey='';
       for(const f of ['model','size','quality','background'])
         if(typeof b[f]==='string'&&b[f]) cfg[f]=b[f];
+      if(b.concurrency!==undefined){
+        cfg.concurrency = Math.min(Math.max(parseInt(b.concurrency,10)||4,1),8);
+      }
       if(b.newPassword&&b.newPassword.length>=8) setPassword(cfg,b.newPassword);
       saveConfig(cfg); return j(res,200,{ok:true});
     }

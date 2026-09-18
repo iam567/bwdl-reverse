@@ -36,12 +36,12 @@ function femaleBody(role, id) {
   const elder  = ELDER_F.has(id), matron = MATRON_F.has(id);
   if (elder)  return '年长妇人，body 端坐雍容，银发梳作端整高髻插金饰，着深色织锦广袖礼服，不着甲'
                      .replace('body ', '');
-  if (matron) return '中年贵妇，仪态端严，发髻梳整插玉饰，着深色曲裾深衣，不着甲';
+  if (matron) return '着深色曲裾深衣，不着甲，发髻插玉饰';
   if (role === 'warrior_f')
-    return '身形挺拔矫健而不魁梧，着合身的女式轻甲（收腰、护肩、护臂），衣甲之下露出行动便利的战裙';
+    return '着合身的女式轻甲（护肩、护臂），衣甲之下是行动便利的战裙';
   if (role === 'talent_f')
-    return '身形纤秀，不着甲，着广袖交领深衣，衣料柔软有垂坠感';
-  return '身形纤柔，不着甲，着曲裾深衣或襦裙，衣饰精致';
+    return '不着甲，着广袖交领深衣，衣料柔软有垂坠感';
+  return '不着甲，着曲裾深衣或襦裙，衣饰精致';
 }
 function femaleFace(role, de, id) {
   if (ELDER_F.has(id))  return '面容慈和而有威仪，眼角有细纹，神情沉稳';
@@ -55,7 +55,10 @@ function femaleFace(role, de, id) {
 }
 const FEMALE_NEGATIVE =
   '严禁：胡须、络腮胡、男性化面部轮廓、男性体格。' +
-  '同时避免：现代服饰、暴露或性化的着装、比基尼、过度夸张的身材比例、动漫萌系画风。';
+  '严禁：夸张放大的胸部、强调胸腰臀曲线的镜头角度、低胸或敞开的领口、' +
+  '露出的大腿或腰腹、紧身贴体的轮廓、任何性暗示的姿态或表情。' +
+  '着装必须完整保守，领口闭合至锁骨以上，符合汉末服制。' +
+  '同时避免：现代服饰、比基尼、动漫萌系画风。';
 
 /* ============ 属性 → 外貌特征 ============
    身份判定先于兵种：兵种是战斗属性，不能决定服饰主体。
@@ -70,15 +73,15 @@ function roleOf(wu, zhi, bingli, jice) {
 }
 function bodyTrait(role, wu) {
   if (role === 'mystic')
-    return '身着道家鹤氅或宽大法袍，不着任何甲胄，手持卜筮用的蓍草、罗盘或拂尘';
+    return '着道家鹤氅或宽大法袍，不着任何甲胄，手持卜筮用的蓍草、罗盘或拂尘';
   if (role === 'scholar')
-    return '身形清癯修长，肩窄，不着甲，着宽袖交领深衣，手持羽扇或竹简';
+    return '不着甲，着宽袖交领深衣，手持羽扇或竹简';
   if (role === 'warrior') {
-    if (wu >= 110) return '体格魁梧异常，肩背如铁塔，颈项粗壮，重甲在身，握持长柄重兵';
-    if (wu >= 95)  return '身形健硕，肌肉线条分明，双手骨节粗大，着明光重甲';
-    return '体格结实，军人体态，着扎甲';
+    if (wu >= 110) return '重甲在身，握持长柄重兵';
+    if (wu >= 95)  return '着明光重甲，护肩厚重';
+    return '着扎甲';
   }
-  return '身形匀称，武官体态，着轻便鳞甲外罩官袍';
+  return '着轻便鳞甲外罩官袍';
 }
 function faceTrait(role, wu, zhi, de, id) {
   // 只取最强的一条智力/武力特征 + 最多一条德行特征，避免堆叠矛盾
