@@ -2,3 +2,4 @@
 *.jar
 __pycache__/
 *.pyc
+.claude/
