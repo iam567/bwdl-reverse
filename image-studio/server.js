@@ -289,6 +289,7 @@ const server = http.createServer(async (req,res) => {
     if (p === '/')         return serveFile(res,STATIC,'/index.html');
     if (p === '/settings') return serveFile(res,STATIC,'/settings.html');
     if (p === '/edit' || p === '/edit/') return serveFile(res,STATIC,'/edit.html');
+    if (p === '/preview' || p === '/preview/') return serveFile(res,STATIC,'/preview.html');
 
     /* ---- 城池坐标编辑器 ---- */
     if (p === '/api/edit/cities' && req.method==='GET') {
