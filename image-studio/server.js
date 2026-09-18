@@ -307,6 +307,7 @@ const server = http.createServer(async (req,res) => {
                          owners: readJSON(path.join(DATA,'city-owner.json'),{}),
                          flags: readJSON(path.join(DATA,'flag-anchors.json'),{}),
                          boxes: readJSON(path.join(DATA,'map-boxes.json'),{}),
+                         factions: readJSON(path.join(DATA,'faction-colors.json'),{}),
                          mapVersion: mt('map_L2_with_cities.jpg'), overviewVersion: mt('overview_1024.jpg'),
                          flagVersion: mtf() });
     }

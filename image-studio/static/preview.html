@@ -64,6 +64,7 @@ html,body{margin:0;height:100%;background:#0d0c0a;overflow:hidden;font:14px/1.4 
 #ovwrap{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
 #ov{position:relative;touch-action:manipulation;cursor:pointer;box-shadow:0 8px 30px #000b;border-radius:6px;overflow:hidden}
 #ov img{display:block;width:100%;height:100%;pointer-events:none}
+#ovfx{position:absolute;inset:0;pointer-events:none}
 #rect{position:absolute;border:2px solid #fff;box-shadow:0 0 0 2000px #0006,0 0 12px #000;pointer-events:none;border-radius:2px}
 #ovhint{text-align:center;color:#9a9187;font-size:12px;padding-top:8px}
 #toast{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 96px);left:50%;transform:translateX(-50%);
@@ -89,7 +90,7 @@ html,body{margin:0;height:100%;background:#0d0c0a;overflow:hidden;font:14px/1.4 
 <div id="flash"></div>
 <div id="panel">
   <header><b>天下形势</b><div id="close">×</div></header>
-  <div id="ovwrap"><div id="ov"><img id="ovimg" alt=""><div id="rect"></div></div></div>
+  <div id="ovwrap"><div id="ov"><img id="ovimg" alt=""><canvas id="ovfx"></canvas><div id="rect"></div></div></div>
   <div id="ovhint">点任一城池，视角跳转过去</div>
 </div>
 <div id="toast"></div>
@@ -114,8 +115,9 @@ const MIN_FLAG_PX=26;              // 捏到最小时旗子也不低于这个高
 let owners={}, flagMeta={}, flagImg={};
 const OWNER_NAME={han:'汉室·献帝',caocao:'曹操',yuanshao:'袁绍',sunjian:'孙坚',lvbu:'吕布',
   liuyan:'刘焉',liubiao:'刘表',player:'我军',spare:'——',none:'无主'};
-const OWNER_COLOR={han:'#F2C430',caocao:'#2B5FD9',yuanshao:'#8E3FC9',sunjian:'#E0342A',
-  lvbu:'#2A2A30',liuyan:'#14B85A',liubiao:'#12BCD4',player:'#A8D82C',spare:'#E8368F',none:'#8A8578'};
+/* 势力色由接口下发（extract/data/faction-colors.json，从 flags.js 导出）。
+   旗子、小地图圆点、界面色块共用这一份，改色只改一处。 */
+let OWNER_COLOR={};
 const ownerOf=c=>owners[c.id]||owners[String(c.id)]||'none';
 function loadFlags(ver){
   for(const k in flagMeta){ const im=new Image();
@@ -342,8 +344,43 @@ stage.addEventListener('wheel',e=>{e.preventDefault();const f=e.deltaY<0?1.12:1/
 /* ---------- 总览面板 ---------- */
 const panel=$('panel'),ov=$('ov'),ovimg=$('ovimg'),rect=$('rect');
 let ovW=0,ovH=0;
+/* 总览标记（势力色圆点 + 城名）运行时画。烤进底图的话城池易主后颜色就不对了。 */
+const OV_R={1:13,2:11,3:9,4:8,5:7,6:6};        // 半径，1024 坐标下的值
+/* 手机上面板只有 350 左右，按比例算出来的点太小认不出颜色，放大并给个下限 */
+const ovR=(c,f)=>Math.max(4.5, OV_R[c.tier||4]*f*1.25);
+function drawOv(){
+  const cv=$('ovfx'); if(!ovW||!cities.length)return;
+  const dp=Math.min(devicePixelRatio||1,2.5);
+  cv.width=Math.round(ovW*dp); cv.height=Math.round(ovH*dp);
+  cv.style.width=ovW+'px'; cv.style.height=ovH+'px';
+  const x=cv.getContext('2d'); x.setTransform(dp,0,0,dp,0,0);
+  x.clearRect(0,0,ovW,ovH);
+  const f=ovW/1024, fs=Math.max(9,15*f);
+  x.font='600 '+fs+'px -apple-system,"PingFang SC",system-ui,sans-serif';
+  x.textAlign='center'; x.textBaseline='top';
+  const sorted=cities.slice().sort((a,b)=>a.y-b.y);
+  for(const c of sorted){
+    const cx=c.x*f, cy=c.y*f, R=ovR(c,f);
+    x.fillStyle='rgba(20,16,10,.43)';
+    x.beginPath(); x.arc(cx,cy,R+3*f,0,TAU); x.fill();
+    x.fillStyle=OWNER_COLOR[ownerOf(c)]||'#8A8578';
+    x.beginPath(); x.arc(cx,cy,R,0,TAU); x.fill();
+    x.strokeStyle='#faf8f2'; x.lineWidth=Math.max(1,2.2*f); x.stroke();
+    if((c.tier||4)<=2){ x.beginPath(); x.arc(cx,cy,R-Math.max(1.5,4*f),0,TAU);
+      x.lineWidth=Math.max(.8,1.6*f); x.stroke(); }
+  }
+  for(const c of sorted){
+    const cx=c.x*f, cy=c.y*f, R=ovR(c,f);
+    const w=x.measureText(c.name).width, ty=cy+R+3*f, pad=fs*.34;
+    x.fillStyle='rgba(22,17,10,.82)';
+    x.beginPath();
+    if(x.roundRect) x.roundRect(cx-w/2-pad, ty, w+pad*2, fs*1.34, 3);
+    else            x.rect(cx-w/2-pad, ty, w+pad*2, fs*1.34);
+    x.fill();
+    x.fillStyle='#f6eede'; x.fillText(c.name, cx, ty+fs*.16);
+  }}
 function layoutOv(){const wrap=$('ovwrap');const aw=wrap.clientWidth,ah=wrap.clientHeight;if(!aw||!ah)return;
-  const side=Math.min(aw,ah); ovW=ovH=side; ov.style.width=side+'px';ov.style.height=side+'px'; updRect();}
+  const side=Math.min(aw,ah); ovW=ovH=side; ov.style.width=side+'px';ov.style.height=side+'px'; drawOv(); updRect();}
 function updRect(){if(!MW||!ovW)return;const f=ovW/1024;
   const x0=(-tx)/s/K, y0=(-ty)/s/K, w=vw/s/K, h=vh/s/K;
   rect.style.left=(x0*f)+'px';rect.style.top=(y0*f)+'px';rect.style.width=(w*f)+'px';rect.style.height=(h*f)+'px';}
@@ -369,6 +406,7 @@ async function loadImg(url,onprog){const r=await fetch(url);const total=+r.heade
   byId=new Map(cities.map(c=>[c.id,c]));
   adjacency=d.adjacency||{};
   owners=d.owners||{}; flagMeta=d.flags||{}; loadFlags(d.flagVersion||0);
+  for(const k in (d.factions||{})) OWNER_COLOR[k]=d.factions[k].hex;
   ovimg.src='/image/map/overview_1024.jpg?v='+(d.overviewVersion||0);
   const url=await loadImg('/image/map/map_L2_with_cities.jpg?v='+(d.mapVersion||0),
     p=>{$('pct').textContent=Math.round(p*100)+'%';$('bari').style.width=(p*100)+'%';});

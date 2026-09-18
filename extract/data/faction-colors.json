@@ -1,0 +1,52 @@
+{
+ "han": {
+  "use": "献帝（汉室）",
+  "colorName": "鎏金明黄",
+  "hex": "#F2C430"
+ },
+ "caocao": {
+  "use": "曹操",
+  "colorName": "靛蓝",
+  "hex": "#2B5FD9"
+ },
+ "yuanshao": {
+  "use": "袁绍",
+  "colorName": "紫",
+  "hex": "#8E3FC9"
+ },
+ "sunjian": {
+  "use": "孙坚",
+  "colorName": "朱红",
+  "hex": "#E0342A"
+ },
+ "lvbu": {
+  "use": "吕布",
+  "colorName": "玄黑镶银",
+  "hex": "#2A2A30"
+ },
+ "liuyan": {
+  "use": "刘焉",
+  "colorName": "翠绿",
+  "hex": "#14B85A"
+ },
+ "liubiao": {
+  "use": "刘表",
+  "colorName": "青碧",
+  "hex": "#12BCD4"
+ },
+ "player": {
+  "use": "自建武将势力",
+  "colorName": "黄绿",
+  "hex": "#A8D82C"
+ },
+ "spare": {
+  "use": "预留（扩展用）",
+  "colorName": "洋红",
+  "hex": "#E8368F"
+ },
+ "none": {
+  "use": "无主之城",
+  "colorName": "褪色灰褐",
+  "hex": "#8A8578"
+ }
+}
