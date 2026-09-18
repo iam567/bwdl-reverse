@@ -39,9 +39,26 @@ html,body{margin:0;height:100%;background:#0d0c0a;overflow:hidden;font:14px/1.4 
   padding:calc(env(safe-area-inset-top,0px) + 16px) 16px calc(env(safe-area-inset-bottom,0px) + 16px)}
 #cityview.show{display:flex;animation:cvin .32s cubic-bezier(.2,.8,.2,1)}
 @keyframes cvin{from{opacity:0;transform:scale(1.06)}to{opacity:1;transform:scale(1)}}
-.cv-top{text-align:center;padding:10px 0 18px;border-bottom:1px solid #2b241a}
-.cv-name{font-size:34px;font-weight:700;letter-spacing:.22em;color:#f6e9cd;text-shadow:0 0 22px #c8a45c55}
-.cv-tier{margin-top:6px;font-size:13px;color:#9a8a68;letter-spacing:.2em}
+.cv-top{padding:2px 0 10px}
+.cv-hd{display:flex;align-items:center;gap:10px;padding:0 4px 8px}
+.cv-name{font-size:30px;font-weight:700;letter-spacing:.16em;color:#f6e9cd;text-shadow:0 0 20px #c8a45c55;line-height:1.1}
+.cv-meta{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:#9a8a68;letter-spacing:.14em}
+.cv-own{display:flex;align-items:center;gap:5px;color:#cfc4ab;font-weight:600;letter-spacing:.06em}
+.cv-own i{width:10px;height:10px;border-radius:3px;border:1px solid #0006;display:block}
+.cv-tok{margin-left:auto;text-align:center;min-width:52px;padding:4px 0;
+  border:1px solid #6b552d;border-radius:9px;background:#c8a45c14}
+.cv-tok b{display:block;font-size:24px;font-weight:700;color:#f0c34a;line-height:1.1;
+  text-shadow:0 0 12px #f0c34a55;font-style:normal}
+.cv-tok i{display:block;font-size:10px;color:#9a8a68;letter-spacing:.16em;font-style:normal}
+/* 数据栏：底纹是生成的帛书绢面 */
+.cv-stats{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:1px}
+.cv-stats{border:13px solid transparent;
+  border-image:url(/image/cityview/panel.png) 58 fill / 13px / 0 stretch;
+  box-shadow:none;padding:6px 4px}
+.cv-stats div{text-align:center;padding:5px 2px}
+.cv-stats div span{display:block;font-size:10px;color:#8a7350;letter-spacing:.16em;margin-bottom:1px}
+.cv-stats div b{display:block;font-size:16px;font-weight:700;color:#3a2a14;letter-spacing:.02em}
+.cv-stats div b em{font-size:10.5px;font-style:normal;color:#7a6030;margin-left:1px}
 .cv-body{flex:1;overflow:auto;padding-top:20px}
 .cv-sec{font-size:12px;color:#7d7058;letter-spacing:.24em;margin-bottom:10px}
 .cv-adj{display:flex;flex-wrap:wrap;gap:9px}
@@ -97,7 +114,14 @@ html,body{margin:0;height:100%;background:#0d0c0a;overflow:hidden;font:14px/1.4 
 <div id="sel"><div class="row"><div class="nm" id="selname">—</div><div class="tag" id="seltier"></div><div class="own" id="selown"></div></div>
   <div class="hint">再点一次 <b>进入城中</b> · 点空白处取消</div></div>
 <div id="cityview">
-  <div class="cv-top"><div class="cv-name" id="cvname"></div><div class="cv-tier" id="cvtier"></div></div>
+  <div class="cv-top">
+    <div class="cv-hd">
+      <div class="cv-name" id="cvname"></div>
+      <div class="cv-meta"><span id="cvtier"></span><span class="cv-own" id="cvown"></span></div>
+      <div class="cv-tok" id="cvtok"><b>—</b><i>令牌</i></div>
+    </div>
+    <div class="cv-stats" id="cvstats"></div>
+  </div>
   <div class="cv-body">
     <div id="cvpic"><img id="cvimg" alt=""><canvas id="cvhl"></canvas><canvas id="cvlbl"></canvas></div>
     <div id="cvfall">
@@ -134,7 +158,7 @@ const fx=$('fx'), fxc=fx.getContext('2d');
 let DPR=1, raf=0, sel=null, selT0=0;
 /* 势力旗 */
 const MIN_FLAG_PX=26;              // 捏到最小时旗子也不低于这个高度，否则看不出势力范围
-let owners={}, flagMeta={}, flagImg={};
+let owners={}, flagMeta={}, flagImg={}, cstats={};
 const OWNER_NAME={han:'汉室·献帝',caocao:'曹操',yuanshao:'袁绍',sunjian:'孙坚',lvbu:'吕布',
   liuyan:'刘焉',liubiao:'刘表',player:'我军',spare:'——',none:'无主'};
 /* 势力色由接口下发（extract/data/faction-colors.json，从 flags.js 导出）。
@@ -424,7 +448,7 @@ function drawLabels(){
   cv.width=Math.round(r.width*dpr); cv.height=Math.round(r.height*dpr);
   const x=cv.getContext('2d'); x.clearRect(0,0,cv.width,cv.height);
   const f=cv.width/cvData.size[0];                 // 图像坐标 → 画布像素
-  const fs=Math.max(11,46*f), fs2=fs*0.62;
+  const fs=Math.max(9,32*f), fs2=fs*0.62;          // 匾比第一版小 30%
   for(const k in cvData.buildings){
     const b=cvData.buildings[k], bx=b.box;
     x.font='700 '+fs+'px -apple-system,"PingFang SC",system-ui,sans-serif';
@@ -468,10 +492,24 @@ function showSheet(b){
 }
 $('cvpic').addEventListener('click',e=>{ showSheet(pickBuilding(e)); });
 
-function openCity(c){
+/* 万以上折成「x.x万」，四位数以内照原样 */
+const wan=v=>v>=10000 ? (v/10000).toFixed(1)+'<em>万</em>' : String(v);
+function fillStats(c){
+  const st=cstats[c.id]||cstats[String(c.id)]||null, ok=ownerOf(c);
   $('cvname').textContent=c.name;
-  const ok=ownerOf(c);
-  $('cvtier').innerHTML=(TIER_NAME[c.tier||4]||'')+'　<span style="color:'+(OWNER_COLOR[ok]||'#888')+'">'+(OWNER_NAME[ok]||'无主')+'</span>';
+  $('cvtier').textContent=(TIER_NAME[c.tier||4]||'').replace(/\s/g,'');
+  $('cvown').innerHTML='<i style="background:'+(OWNER_COLOR[ok]||'#888')+'"></i>'+(OWNER_NAME[ok]||'无主');
+  const box=$('cvstats');
+  if(!st){ $('cvtok').querySelector('b').textContent='—'; box.innerHTML=''; return; }
+  $('cvtok').querySelector('b').textContent=st['令牌']||'—';
+  const rows=[['君　主',st.ruler],['太　守',st.governor],['武　将',st['武将']],
+    ['人　口',wan(st['人口'])],['兵　力',wan(st['兵力'])],['治　安',st['治安']],
+    ['农　业',st['农业']],['商　业',st['商业']],['治　水',st['治水']],
+    ['黄　金',st['黄金']],['粮　草',st['粮草']],['规　模',st.tierName]];
+  box.innerHTML=rows.map(([k,v])=>'<div><span>'+k+'</span><b>'+v+'</b></div>').join('');
+}
+function openCity(c){
+  fillStats(c);
   const box=$('cvadj'); box.innerHTML='';
   const a=adjacency[c.id]||adjacency[String(c.id)]||{adj:[]};
   (a.adj||[]).forEach(id=>{const n=byId.get(id); if(!n)return;
@@ -576,7 +614,7 @@ async function loadImg(url,onprog){const r=await fetch(url);const total=+r.heade
   cities=d.cities.map(c=>({id:c.id,name:c.name,x:+c.x,y:+c.y,tier:c.tier||4}));
   byId=new Map(cities.map(c=>[c.id,c]));
   adjacency=d.adjacency||{};
-  owners=d.owners||{}; flagMeta=d.flags||{}; loadFlags(d.flagVersion||0);
+  owners=d.owners||{}; flagMeta=d.flags||{}; loadFlags(d.flagVersion||0); cstats=d.stats||{};
   for(const k in (d.factions||{})) OWNER_COLOR[k]=d.factions[k].hex;
   ovimg.src='/image/map/overview_1024.jpg?v='+(d.overviewVersion||0);
   const url=await loadImg('/image/map/map_L2_with_cities.jpg?v='+(d.mapVersion||0),
