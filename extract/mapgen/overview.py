@@ -6,6 +6,7 @@ d, out = sys.argv[1], sys.argv[2]
 UP = 2                                    # 超采样倍数，边缘更干净
 
 pts  = json.load(open(d+'/map-coords.json'))
+snap = {c['id']: c for c in json.load(open(d+'/city-screen.json'))}
 fit  = json.load(open(d+'/map-fit.json'))
 src  = open(d+'/sgapp/cities.js', encoding='utf-8').read()
 tiers= {int(m.group(1)): int(m.group(3)) for m in re.finditer(r"(\d+):\['([^']+)',(\d),", src)}
@@ -35,7 +36,8 @@ for cand in ('/System/Library/Fonts/STHeiti Medium.ttc',
 
 TIER_R = {1:13, 2:11, 3:9, 4:8, 5:7, 6:6}     # 标记半径（UP=1 时）
 for p in sorted(pts, key=lambda q: q['y']):
-    cx = (p['px']+4-fit['x0'])*sx; cy = (p['py']+4-fit['y0'])*sy
+    sc = snap.get(p['id'])
+    cx = sc['x']*UP; cy = sc['y']*UP
     tier = tiers.get(p['id'], 4)
     R = TIER_R[tier]*UP
     who = ruler.get(p['id'])
