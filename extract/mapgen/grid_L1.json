@@ -1,0 +1,135 @@
+{
+ "N": 4,
+ "CELL": 256,
+ "M": 32,
+ "tiles": [
+  {
+   "r": 0,
+   "c": 0,
+   "src_x0": -32,
+   "src_y0": -32,
+   "src_size": 320,
+   "ref": "tiles/ref_r0c0.png"
+  },
+  {
+   "r": 0,
+   "c": 1,
+   "src_x0": 224,
+   "src_y0": -32,
+   "src_size": 320,
+   "ref": "tiles/ref_r0c1.png"
+  },
+  {
+   "r": 0,
+   "c": 2,
+   "src_x0": 480,
+   "src_y0": -32,
+   "src_size": 320,
+   "ref": "tiles/ref_r0c2.png"
+  },
+  {
+   "r": 0,
+   "c": 3,
+   "src_x0": 736,
+   "src_y0": -32,
+   "src_size": 320,
+   "ref": "tiles/ref_r0c3.png"
+  },
+  {
+   "r": 1,
+   "c": 0,
+   "src_x0": -32,
+   "src_y0": 224,
+   "src_size": 320,
+   "ref": "tiles/ref_r1c0.png"
+  },
+  {
+   "r": 1,
+   "c": 1,
+   "src_x0": 224,
+   "src_y0": 224,
+   "src_size": 320,
+   "ref": "tiles/ref_r1c1.png"
+  },
+  {
+   "r": 1,
+   "c": 2,
+   "src_x0": 480,
+   "src_y0": 224,
+   "src_size": 320,
+   "ref": "tiles/ref_r1c2.png"
+  },
+  {
+   "r": 1,
+   "c": 3,
+   "src_x0": 736,
+   "src_y0": 224,
+   "src_size": 320,
+   "ref": "tiles/ref_r1c3.png"
+  },
+  {
+   "r": 2,
+   "c": 0,
+   "src_x0": -32,
+   "src_y0": 480,
+   "src_size": 320,
+   "ref": "tiles/ref_r2c0.png"
+  },
+  {
+   "r": 2,
+   "c": 1,
+   "src_x0": 224,
+   "src_y0": 480,
+   "src_size": 320,
+   "ref": "tiles/ref_r2c1.png"
+  },
+  {
+   "r": 2,
+   "c": 2,
+   "src_x0": 480,
+   "src_y0": 480,
+   "src_size": 320,
+   "ref": "tiles/ref_r2c2.png"
+  },
+  {
+   "r": 2,
+   "c": 3,
+   "src_x0": 736,
+   "src_y0": 480,
+   "src_size": 320,
+   "ref": "tiles/ref_r2c3.png"
+  },
+  {
+   "r": 3,
+   "c": 0,
+   "src_x0": -32,
+   "src_y0": 736,
+   "src_size": 320,
+   "ref": "tiles/ref_r3c0.png"
+  },
+  {
+   "r": 3,
+   "c": 1,
+   "src_x0": 224,
+   "src_y0": 736,
+   "src_size": 320,
+   "ref": "tiles/ref_r3c1.png"
+  },
+  {
+   "r": 3,
+   "c": 2,
+   "src_x0": 480,
+   "src_y0": 736,
+   "src_size": 320,
+   "ref": "tiles/ref_r3c2.png"
+  },
+  {
+   "r": 3,
+   "c": 3,
+   "src_x0": 736,
+   "src_y0": 736,
+   "src_size": 320,
+   "ref": "tiles/ref_r3c3.png"
+  }
+ ]
+}
