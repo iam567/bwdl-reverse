@@ -28,10 +28,13 @@
 | `city/` | 36 座城的城池图标，透明底，贴到大地图上 |
 | `flag/` | 10 面势力旗 + 形状母版；`web/` 是网页用的小图与锚点表 |
 | `citybld/` | 城内 8 种建筑、洛阳全景与蒙版、UI 底板（匾额/面板/按钮/背景） |
-| `cityview/` | 洛阳城内视图的成品：全景图、洗干净的蒙版、UI 九宫格素材 |
+| `cityview/` | 36 座城的城内视图成品：全景 jpg、洗干净的蒙版 png、建筑位置 json |
 | `map/` | 地形层与合成好的大地图、总览底图、地坪 |
 | `terrain/` | 地形分块，拼接大地图的原料 |
 | `ui/` | 城名铜牌、地坪等早期 UI 素材 |
+| `battletile/` | 战场地块，5 套地域 × 10 个槽位；`px/` 是真正进游戏的 64×64 |
+| `battleunit/` | 战场部队，蓝红 × 3 兵种 × 5 方位 |
+| `troop/` | 大地图行军小人，5 个方位 |
 | `portrait/` `styletest/` | 定画风阶段的实验图，留档 |
 
 ## 脚本要的 `work/` 怎么搭
@@ -51,3 +54,38 @@ work/
 
 `work/` 本身没进仓库——里面都是这些文件的副本和中间产物，
 照上表软链或拷过去即可。
+
+## 战场地块
+
+原版 21 张 16×16 的贴图，现在换成高清像素画。**地形码和每座城的布局一条没动**，
+换的只是每个码画成什么。码 → 槽位的对应见 `extract/mapgen/compose_battlefield.py`
+开头那张表；消耗完全一样的码共用一张图（7/9 都是山岩，8/10/11 都是密林）。
+
+分 5 套地域主题，36 座城归哪套写在 `extract/data/city-theme.json`：
+
+| 主题 | 城数 | 大致地貌 |
+|---|---|---|
+| 中原 `zhongyuan` | 14 | 绿地、土道、青灰瓦 |
+| 江南 `jiangnan` | 11 | 河网、竹林、白墙黛瓦 |
+| 南中 `nanzhong` | 5 | 红土、芭蕉密林、干栏竹木 |
+| 塞北 `saibei` | 3 | 冻土残雪、松林、浮冰 |
+| 西域 `xiyu` | 3 | 沙地、胡杨、夯土平顶 |
+
+城池那一张不自由发挥：拿原版 `lib31` 第 17 块放大后当参考图走 `images/edits`
+重画，提示词里只多一句本地区的材质。自由生成会画出跨好几格的大城，
+和「一块贴图正好一个格子」的数据对不上。
+
+### 改一套主题的流程
+
+```
+改 image-studio/battletiles.js 里的描述
+  → extract/mapgen/sync-prompts.sh <主题>        推给服务端（items 是常驻内存的，
+                                        直接改 items.json 会被 persistItems 覆盖）
+  → 平台上跑
+  → build_theme.py <主题>              地形过接缝处理、建筑只降采样，整套统一色板
+  → compose_battlefield.py <城ID> auto work/tiles/px out.png
+  → sync_tiles.py                      进仓库
+```
+
+新跑的未必比旧的好。`work/tiles/pick.json` 可以钉住某个槽位用哪张原图，
+`build_theme.py` 和 `sync_tiles.py` 都认它。
