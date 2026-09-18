@@ -1,0 +1,27 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>登录 · 生图工作台</title><link rel="stylesheet" href="/static/style.css">
+<body><div class="login">
+  <h1>生图工作台</h1><p>sg.areu.pro</p>
+  <div class="card">
+    <input id="pw" type="password" placeholder="访问口令" autofocus autocomplete="current-password">
+    <div style="height:12px"></div>
+    <button id="go" style="width:100%">进 入</button>
+    <div id="m" class="msg"></div>
+  </div>
+</div>
+<script>
+const pw=document.getElementById('pw'),go=document.getElementById('go'),m=document.getElementById('m');
+async function login(){
+  go.disabled=true; m.className='msg';
+  try{
+    const r=await fetch('/api/login',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({password:pw.value})});
+    if(r.ok){location.href='/';return;}
+    const d=await r.json().catch(()=>({}));
+    m.className='msg err'; m.textContent=d.error||'登录失败';
+  }catch(e){m.className='msg err';m.textContent='网络错误';}
+  go.disabled=false;
+}
+go.onclick=login; pw.onkeydown=e=>{if(e.key==='Enter')login()};
+</script></body></html>

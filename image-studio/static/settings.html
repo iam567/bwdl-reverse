@@ -1,0 +1,116 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>设置 · 生图工作台</title><link rel="stylesheet" href="/static/style.css">
+<body>
+<header><h1>生图工作台</h1>
+  <nav><a href="/">素材</a><a href="/settings" class="on">设置</a><a href="/api/logout">退出</a></nav>
+</header>
+<div class="wrap">
+
+<div class="card">
+  <h2>OpenAI API Key</h2>
+  <label>API Key <span id="cur" style="color:var(--accent)"></span></label>
+  <input id="key" type="password" placeholder="sk-..." autocomplete="off">
+  <div class="hint">
+    保存在服务器 <code>data/config.json</code>（权限 0600），<b>永远不会回传到浏览器</b>，页面上只显示掩码。
+    这台机器上的 root 能读到它 —— 这是任何自托管方案的固有前提。
+  </div>
+  <div style="height:14px"></div>
+  <div class="row" style="flex:0">
+    <button id="saveKey" style="flex:0 0 auto">保存 Key</button>
+    <button id="clearKey" class="ghost" style="flex:0 0 auto">清除</button>
+    <button id="test" class="ghost" style="flex:0 0 auto">测试连接并拉取模型</button>
+  </div>
+  <div id="m1" class="msg"></div>
+</div>
+
+<div class="card">
+  <h2>生成参数</h2>
+  <div class="row">
+    <div><label>模型</label>
+      <select id="model"></select>
+      <div class="hint">点上面「测试连接并拉取模型」可从你的账号实时拉取可用列表。</div>
+    </div>
+    <div><label>尺寸</label><select id="size">
+      <option value="1024x1536">1024×1536（竖版 · 武将立绘）</option>
+      <option value="1536x1024">1536×1024（横版 · 战斗场景）</option>
+      <option value="1024x1024">1024×1024（方形）</option>
+      <option value="auto">auto（由模型决定）</option>
+    </select></div>
+  </div>
+  <div class="row">
+    <div><label>质量</label><select id="quality">
+      <option value="high">high</option><option value="medium">medium</option>
+      <option value="low">low</option><option value="auto">auto</option>
+    </select></div>
+    <div><label>背景</label><select id="background">
+      <option value="opaque">opaque（不透明）</option>
+      <option value="transparent">transparent（透明，适合精灵图）</option>
+      <option value="auto">auto</option>
+    </select></div>
+  </div>
+  <div style="height:14px"></div>
+  <button id="saveCfg">保存参数</button>
+  <div id="m2" class="msg"></div>
+</div>
+
+<div class="card">
+  <h2>修改访问口令</h2>
+  <label>新口令（至少 8 位）</label>
+  <input id="np" type="password" autocomplete="new-password">
+  <div style="height:14px"></div>
+  <button id="savePw">更新口令</button>
+  <div id="m3" class="msg"></div>
+</div>
+
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const show=(el,ok,t)=>{el.className='msg '+(ok?'ok':'err');el.textContent=t};
+let cfg={};
+
+async function load(){
+  cfg=await (await fetch('/api/config')).json();
+  $('cur').textContent = cfg.hasKey ? '（已设置 '+cfg.keyMask+'）' : '（未设置）';
+  for(const f of ['size','quality','background']) if(cfg[f]) $(f).value=cfg[f];
+  const sel=$('model');
+  if(!sel.options.length){
+    for(const m of ['gpt-image-2.5-flare','gpt-image-2.5-sunburst','gpt-image-2'])
+      sel.add(new Option(m,m));
+  }
+  sel.value=cfg.model||'gpt-image-2.5-flare';
+}
+async function post(b){
+  const r=await fetch('/api/config',{method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify(b)});
+  return r.ok?null:(await r.json().catch(()=>({}))).error||'保存失败';
+}
+$('saveKey').onclick=async()=>{
+  if(!$('key').value.trim())return show($('m1'),false,'请先填入 Key');
+  const e=await post({apiKey:$('key').value.trim()});
+  $('key').value=''; await load();
+  show($('m1'),!e,e||'已保存');
+};
+$('clearKey').onclick=async()=>{ const e=await post({clearKey:true}); await load(); show($('m1'),!e,e||'已清除'); };
+$('test').onclick=async()=>{
+  show($('m1'),true,'连接中…');
+  const r=await fetch('/api/models'); const d=await r.json();
+  if(!r.ok) return show($('m1'),false,d.error||'失败');
+  const sel=$('model'), keep=sel.value; sel.innerHTML='';
+  const list=d.image.length?d.image:['gpt-image-2.5-flare','gpt-image-2.5-sunburst','gpt-image-2'];
+  for(const m of list) sel.add(new Option(m,m));
+  sel.value=list.includes(keep)?keep:list[0];
+  show($('m1'),true,`连接成功，账号可用图像模型 ${d.image.length} 个：${d.image.join('、')||'（未检出，已填入默认候选）'}`);
+};
+$('saveCfg').onclick=async()=>{
+  const e=await post({model:$('model').value,size:$('size').value,
+    quality:$('quality').value,background:$('background').value});
+  show($('m2'),!e,e||'已保存');
+};
+$('savePw').onclick=async()=>{
+  if($('np').value.length<8)return show($('m3'),false,'至少 8 位');
+  const e=await post({newPassword:$('np').value});
+  $('np').value=''; show($('m3'),!e,e||'口令已更新（当前会话仍有效）');
+};
+load();
+</script></body></html>

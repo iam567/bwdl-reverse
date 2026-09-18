@@ -1,0 +1,180 @@
+'use strict';
+/* 从武将数据表生成素材目录 + 每张图的 prompt。
+   核心设计：STYLE_ANCHOR 全局固定不变，只有「主体描述」随武将属性变化。
+   这是保证 239 张头像风格一致的唯一手段 —— 风格词一旦随机漂移，整套图就散了。 */
+const fs = require('node:fs');
+const path = require('node:path');
+
+/* ============ 全局风格锚点（所有图共用，逐字不变）============ */
+const STYLE_ANCHOR =
+  '中国三国时代题材的角色立绘。写实厚涂油画风格，笔触厚重可见，' +
+  '统一采用土褐、青灰、暗金的低饱和配色，背景为单一深色（近黑的墨绿或深褐），' +
+  '戏剧性的single-source侧逆光从画面左上打下，人物边缘有冷调轮廓光。' +
+  '严格半身构图，人物占画面高度约百分之七十，视线朝向画面左前方。' +
+  '画面中不得出现任何文字、字母、汉字、签名、水印、边框或UI元素。';
+
+const NEGATIVE =
+  '避免：动漫风、赛璐璐平涂、3D渲染感、塑料质感、过曝高饱和、现代服装、' +
+  '多个人物、全身像、文字水印、对称正面证件照构图。';
+
+/* ============ 属性 → 外貌特征 ============
+   身份判定先于兵种：兵种是战斗属性，不能决定服饰主体。
+   文武倾向由 智力 - 武力 的差值决定。 */
+function roleOf(wu, zhi) {
+  if (zhi - wu >= 25) return 'scholar';   // 谋士
+  if (wu - zhi >= 25) return 'warrior';   // 猛将
+  return 'officer';                       // 均衡型武官
+}
+function bodyTrait(role, wu) {
+  if (role === 'scholar')
+    return '身形清癯修长，肩窄，不着甲，着宽袖交领深衣，手持羽扇或竹简';
+  if (role === 'warrior') {
+    if (wu >= 110) return '体格魁梧异常，肩背如铁塔，颈项粗壮，重甲在身，握持长柄重兵';
+    if (wu >= 95)  return '身形健硕，肌肉线条分明，双手骨节粗大，着明光重甲';
+    return '体格结实，军人体态，着扎甲';
+  }
+  return '身形匀称，武官体态，着轻便鳞甲外罩官袍';
+}
+function faceTrait(role, wu, zhi, de) {
+  // 只取最强的一条智力/武力特征 + 最多一条德行特征，避免堆叠矛盾
+  let main;
+  if (role === 'scholar')
+    main = zhi >= 110 ? '眉目疏朗，眼神澄澈深远，额高，神情从容不迫'
+         : '目光内敛沉静，眼尾细长，似在权衡';
+  else if (role === 'warrior')
+    main = wu >= 110 ? '浓眉虬髯，面部轮廓刚硬如刀削，颊侧有旧伤疤，目光灼人'
+         : '面部棱角分明，短须，眼神沉稳锐利';
+  else
+    main = '五官端正，神情沉静，短须修整';
+
+  let moral = '';
+  if (de >= 90)      moral = '，整体气度仁厚雍容';
+  else if (de <= 25) moral = '，眼神阴鸷，嘴角微沉，带压迫感';
+  else if (de <= 50) moral = '，神情倨傲冷淡';
+  return main + moral;
+}
+function gearAccent(bingzhong, role) {
+  // 兵种只做配饰点缀，不改服装主体；文士不挂兵器
+  const n = Number(bingzhong);
+  if (role === 'scholar')
+    return n === 2 ? '衣料与配色带江南水乡气息，青碧色系'
+         : n === 3 ? '衣料略厚重，配色偏山地土褐'
+         :           '衣料为中原素色麻葛，配色土黄';
+  switch (n) {
+    case 2:  return '配饰点缀带南方水军痕迹：蓑领、湿润的布料质感、腰间短刀';
+    case 3:  return '配饰点缀带山地部队痕迹：毛皮护肩、厚重护腕';
+    default: return '配饰点缀带中原平原军痕迹：披膊、环首刀';
+  }
+}
+function moodTrait(de, zhong) {
+  if (de >= 90 && zhong >= 95) return '氛围庄重，带有可托付的沉稳感';
+  if (de <= 25) return '氛围压抑危险，光线更硬，阴影更重';
+  if (zhong <= 60) return '氛围疏离，眼神游移，似有二心';
+  return '氛围肃穆';
+}
+
+/* 名将特例：既定形象太强的，属性推不出来，必须显式指定 */
+const ICONIC = {
+  '诸葛亮': '头戴纶巾，手执白羽扇，面如冠玉，三绺长须，不着甲胄，氅衣宽大',
+  '关羽':   '面如重枣，丹凤眼卧蚕眉，五绺长髯及胸，绿锦战袍外罩鳞甲',
+  '张飞':   '豹头环眼，燕颔虎须，声势外放，黑面浓髯，重甲',
+  '赵云':   '面容俊朗年轻，白袍银甲，手持长枪，英气逼人',
+  '曹操':   '身量不高但气场极强，细目长髯，眼神多疑锐利，玄色锦袍',
+  '刘备':   '双耳垂肩，面白无须或短须，神情仁厚，着朴素战袍',
+  '司马懿': '鹰视狼顾之相，颈项可回转，眼神深沉阴鸷，玄色深衣',
+  '周瑜':   '姿容俊美，气度儒雅而带锋芒，江东轻甲',
+  '吕布':   '极高大健硕，头戴三叉束发紫金冠，面容英俊而桀骜，手持方天画戟'
+};
+
+/* ============ 读 CSV ============ */
+function readCSV(p) {
+  return fs.readFileSync(p, 'utf8').split(/\r?\n/).filter(Boolean).map(l => l.split(','));
+}
+
+function buildPortraits(csvPath) {
+  const rows = readCSV(csvPath);
+  const seen = new Map();
+  const out = [];
+  for (const r of rows) {
+    const [id, name, , bingzhong, , tili, zhi, wu, de, zhong] = r;
+    const N = s => parseInt(s, 10) || 0;
+    // 同名武将（原表有重复）加后缀区分
+    const n = seen.get(name) || 0; seen.set(name, n + 1);
+    const label = n ? `${name}(变体${n + 1})` : name;
+
+    const role = roleOf(N(wu), N(zhi));
+    const subject = ICONIC[name]
+      ? `主体：${name}，三国时代人物。${ICONIC[name]}。${moodTrait(N(de), N(zhong))}。`
+      : [
+          `主体：${name}，三国时代${role === 'scholar' ? '文臣谋士' : role === 'warrior' ? '武将' : '武官'}`,
+          bodyTrait(role, N(wu)),
+          faceTrait(role, N(wu), N(zhi), N(de)),
+          gearAccent(bingzhong, role),
+          moodTrait(N(de), N(zhong))
+        ].join('。') + '。';
+
+    out.push({
+      id: `portrait_${id}`,
+      category: 'portrait',
+      label,
+      meta: { 武力: N(wu), 智力: N(zhi), 德: N(de), 忠诚: N(zhong), 体力: N(tili),
+              兵种: ['', '平原军', '水军', '山地军'][N(bingzhong)] || '平原军' },
+      source: `/source/avatar/${id}.png`,
+      size: '1024x1536',
+      prompt: `${STYLE_ANCHOR}\n\n${subject}\n\n${NEGATIVE}`
+    });
+  }
+  return out;
+}
+
+/* ============ CG / 场景 / 单位 ============ */
+const CG = [
+  ['lib1',   '世界地图底图',  '中国汉末十三州的古地图，羊皮纸质感，墨线勾勒山川河流与城池，暗金与土褐配色，边角磨损，俯视平面视角'],
+  ['lib13',  '标题主视觉',    '三国题材游戏标题背景，远景为烽烟中的城郭与旌旗，前景大片留白供标题压字，史诗感，低饱和'],
+  ['lib59',  '君主登基场景',  '汉代宫殿大殿内部，玉阶之上空置的主位，两侧列戟，烛火幽微，尘埃在光柱中浮动，无人物'],
+  ['lib106', '战败/灭亡',     '战后废墟，断折的旌旗半埋于焦土，远处城郭冒烟，天空铅灰，荒凉肃杀，无人物'],
+  ['lib302', '内政建设',      '汉代城池内的市井与农田俯瞰，水渠纵横，谷仓与集市，秋收时节的暖褐色调，安定繁盛']
+];
+const SCENE = [
+  ['lib120','平原会战','开阔平原上两军对垒的远景，尘土飞扬，骑兵阵列，低角度'],
+  ['lib121','山地伏击','狭窄山道，两侧陡壁，滚石与埋伏的旗影'],
+  ['lib122','水战','长江江面上的楼船与艨艟，浪涌，帆影，水汽'],
+  ['lib123','攻城','高大夯土城墙下的云梯与冲车，箭雨'],
+  ['lib124','火攻','夜色中的连营大火，火光映红江面与天空'],
+  ['lib125','树林遭遇','茂密树林中的行军队列，光线破碎，视野受阻'],
+  ['lib126','守城','城楼上的守军视角，俯瞰城下攻城部队'],
+  ['lib127','骑兵冲锋','重骑兵正面冲锋的动势，长矛前指，尘浪'],
+  ['lib128','弓兵齐射','弓箭手阵列仰角齐射，箭矢离弦的瞬间'],
+  ['lib129','单挑','两名武将马上交锋的对峙瞬间，周围士兵退开成圆'],
+  ['lib130','夜袭','月下潜行的部队，火把星点，营帐轮廓'],
+  ['lib131','雨战','大雨中的泥泞战场，能见度低，旗帜湿重下垂'],
+  ['lib132','雪战','雪原上的行军，白茫茫，脚印与车辙，寒冷'],
+  ['lib136','凯旋','得胜部队入城，百姓夹道，旌旗招展，暖色调'],
+  ['lib206','粮道','运粮车队穿行于山道，牛车与民夫，尘土'],
+  ['lib207','议事','汉代军帐内的沙盘与将领围立的剪影，烛光，无清晰面孔']
+];
+
+function buildSimple(list, category, sizeDefault, styleExtra) {
+  return list.map(([file, label, desc]) => ({
+    id: `${category}_${file}`,
+    category, label,
+    source: `/source/lib/${file}.png`,
+    size: sizeDefault,
+    prompt: `${STYLE_ANCHOR}\n\n${styleExtra}\n\n画面内容：${desc}。\n\n${NEGATIVE}`
+  }));
+}
+
+/* ============ 主流程 ============ */
+const csv = process.argv[2] || path.join(__dirname, 'officers.csv');
+const catalog = [
+  ...buildPortraits(csv),
+  ...buildSimple(CG, 'cg', '1024x1536',
+    '这是一张游戏用的全屏场景插画，不是人物立绘。构图要为界面留出可压字的负空间。'),
+  ...buildSimple(SCENE, 'scene', '1536x1024',
+    '这是一张横向的战斗场景插画。以远景/中景为主，人物不需要清晰面孔，重点是气氛与地形。')
+];
+fs.writeFileSync(path.join(__dirname, 'assets.json'), JSON.stringify(catalog, null, 2));
+const byCat = {};
+for (const a of catalog) byCat[a.category] = (byCat[a.category] || 0) + 1;
+console.log('生成素材条目:', catalog.length);
+for (const [k, v] of Object.entries(byCat)) console.log(`  ${k}: ${v}`);
