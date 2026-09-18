@@ -140,3 +140,25 @@ prompt 里有一条关键约束:
 
 贴图锚点也不再用固定比例（62%），而是逐城计算 alpha 掩膜下半部最宽的一行
 （等距底座菱形的中线）作为地面接触点。
+
+## 产出清单（在 VPS `output/map/`，可经 `https://sg.areu.pro/image/map/…` 访问）
+
+| 文件 | 内容 | 尺寸 |
+|---|---|---|
+| `terrain_L1_3277.jpg` | 第一层等距地形（不含城池） | 3277² |
+| `terrain_L2_6528.jpg` | 第二层等距地形（不含城池） | 6528² |
+| `map_L2_with_cities.jpg` | 第二层 + 36 城池(0.8×) + 铜牌城名 | 6528² |
+| `city-screen.json` | 36 城最终坐标（1024 坐标系，×6.4 得第二层像素） | — |
+
+游戏里应当用 `terrain_L2_6528.jpg` 做底，城池与标签由引擎按 `city-screen.json` 动态贴——
+这样势力归属、被攻占状态、部队都能实时叠加。`map_L2_with_cities.jpg` 只是预览。
+
+## 一条命令复现
+
+```bash
+python3 cut_tiles.py <源图> <输出目录> <N> <CELL> <M>     # 切块（带重叠）
+#   ... 用生图系统以每块为参考生成 ...
+python3 stitch.py <grid.json> <块目录> <前缀> <out.jpg>   # 羽化拼接
+python3 snap_junction.py <工作目录>                      # 城池吸附到路口
+python3 compose_cities.py <拼接图> <k> <scale> <out> [铜牌png]   # 贴城池+标签
+```
