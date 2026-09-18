@@ -44,8 +44,13 @@ const BUILDINGS = [
    '朱漆大门与铜环，门前一对石阙和两根高旗杆，堂后是深广的庭院与厢房，' +
    '院墙厚重，气象威严'],
   ['gongcao', '功曹府', '人事', true,
-   '主选举考课的属吏官署，规制明显低于太守府。单檐悬山顶的三开间厅堂，' +
-   '前有小院与影壁，廊下摞着成捆的竹简木牍，门侧立一面张贴考绩的木榜栏'],
+   /* 原先写「院中立着一块石碑」——和郡学的「刻经高石碑」撞了标志物，
+      8 建筑的满配城画面一挤，模型就把这两座并成一座（成都连跑两次都少它）。
+      改成竹简与木榜栏，郡学那边独占石碑与泮池。 */
+   '主选举考课的属吏官署，规制明显低于太守府，绝不能有石碑或水池。' +
+   '单檐悬山顶的三开间厅堂，前有小院与影壁；' +
+   '院子里最醒目的是两样东西：廊下码得整整齐齐的成捆竹简木牍，' +
+   '以及门侧一排张贴考绩名籍的木榜栏，几名着深衣的吏员正在榜前查看'],
   ['xiaochang', '校场', '军事', true,
    '演武点兵之所，主体是开阔空地而不是房屋。夯土矮墙围出方形场地，' +
    '中央一座高出地面的木石点将台，台后立一杆巨大的牙旗，' +
@@ -146,7 +151,7 @@ const NAME_CN = {taishou:'太守府',gongcao:'功曹府',xiaochang:'校场',yigu
   changping:'常平仓',wuku:'武库',junxue:'郡学',yaolu:'药庐'};
 const MASK_COLORS = [
   ['taishou','#FF0000','最高大的重檐官署，高台基，门前一对石柱与高旗杆'],
-  ['gongcao','#00FF00','中等规模的单檐院落官署，院中立着一块石碑'],
+  ['gongcao','#00FF00','中等规模的单檐院落官署，廊下码着成捆竹简、门侧有一排木榜栏，没有石碑也没有水池'],
   ['xiaochang','#0000FF','围墙圈出的开阔沙土空地，中间有点将台与大旗，场上有列队士兵、鼓架与兵器架'],
   ['yiguan','#FFFF00','两层木楼，院里拴着马、停着车'],
   ['changping','#FF00FF','几座并排的圆形尖顶粮囷'],
@@ -323,3 +328,87 @@ function buildMenuItems() {
   ];
 }
 module.exports.buildMenuItems = buildMenuItems;
+
+/* ================= 35 座城的批量条目 ================= */
+const { CITIES: CDEF, HAN_ERA, FACIL, LAYOUT, CITY_LAYOUT } = require('./cities-detail.js');
+const BLD_BY_KEY = Object.fromEntries(BUILDINGS.map(b => [b[0], b]));
+const UNIVERSAL = ['taishou','gongcao','xiaochang','yiguan'];
+
+/* 竖版全景。地域/季节/风土三段是 35 座城彼此拉开的关键，
+   时代形制那段是堵模型默认画明清宫殿的。 */
+function cityScenePrompt(name, season, land, folk, keys, layout) {
+  const blds = keys.map(k => BLD_BY_KEY[k]);
+  return PAINT + ISO +
+    '这是一张策略游戏的「城内视图」，**竖构图**（高远大于宽），' +
+    '画的是汉末郡城城墙以内的景象。\n' +
+    '【城建格局】' + layout + '。街道的走向与疏密必须照这一条来，' +
+    '这是这座城和别的城最不一样的地方。\n' +
+    '以下建筑各自独立成院、彼此不相连、不重叠，' +
+    '顺着上面那种格局分布在街巷之间，每一座都完整可见且大小足以辨认：\n' +
+    '（共 ' + blds.length + ' 座，必须全部出现，一座都不能少，也不能把其中两座合并成一座）\n' +
+    blds.map((b,i) => (i+1) + '. ' + b[1] + '——' + b[4]).join('\n') + '\n' +
+    '画面上方是环城的夯土城墙与城楼，城外可见远景。\n' +
+    '【城池】' + name + '。\n' +
+    '【季节天候】' + season + '。这一条要画得明确——' +
+    '季节必须从植被、天光、地面和人物衣着上一眼看出来。\n' +
+    '【地理风貌】' + land + '。\n' +
+    '【风土人情】' + folk + '。城里要有活人在做这些事，不是空城。\n' +
+    HAN_ERA + '\n' +
+    absentClause(keys) +
+    '上列建筑的形制必须彼此区别明显，一眼能分辨是哪一座，不要画成一片相似的屋顶。' +
+    NO_TEXT;
+}
+
+/* 四类集市设施是逐城配置的（见 GAME_LOGIC 的 x[] 位掩码），本城没有就不能画。
+   光在正面清单里不提它不够——模型会顺手把粮囷、兵器架这类眼熟的东西补进去，
+   所以把缺席建筑的标志物逐条点名禁掉。 */
+const ABSENT_SIGN = {
+  changping: '成排的圆形攒尖顶粮囷、堆成山的粮袋与量粮的斗斛',
+  wuku:      '插满长戟长矛的兵器架、厚墙无窗的库房与箭楼',
+  junxue:    '半月形的泮池与石桥、刻经的高石碑、成排的讲堂席位',
+  yaolu:     '屋檐下成排晾晒的药材、石臼药碾与熬药的陶罐',
+};
+function absentClause(keys) {
+  const miss = Object.keys(ABSENT_SIGN).filter(k => !keys.includes(k));
+  if (!miss.length) return '';
+  return '【本城没有的设施】本城没有' + miss.map(k => NAME_CN[k]).join('、') + '，' +
+         '画面里绝对不能出现这些建筑，也不能出现它们的标志物：' +
+         miss.map(k => ABSENT_SIGN[k]).join('；') + '。' +
+         '这些地方改画成普通的民居院落、空地、树木或菜畦。\n';
+}
+
+function cityMaskPrompt(keys) {
+  const rows = MASK_COLORS.filter(m => keys.includes(m[0]));
+  return '根据输入的汉末郡城城内图生成同尺寸精确建筑语义蒙版。' +
+    '保留每栋可点击建筑的实际外轮廓和原位置，纯黑背景，仅建筑轮廓内部填指定纯色。' +
+    rows.map(([k,c,d]) => NAME_CN[k] + '（' + d + '）=' + c).join('；') + '。' +
+    '不用文字、阴影、渐变、描边或抗锯齿。' +
+    '建筑轮廓只包含其本身与院墙院内地面，不包含院外的街道、树木、行人与车马。' +
+    '不能把天空、地面、街道、城墙、城外远景或其他民房分到建筑类别。' +
+    '仅输出单张与输入严格逐像素对齐的分类图，不增加边栏、参考小图或拼贴，不重新构图。' +
+    '此任务的指定色表原样执行，不从其他城市猜测颜色。';
+}
+
+function buildAllCities() {
+  const items = [];
+  for (const id of Object.keys(CDEF).map(Number).sort((a,b)=>a-b)) {
+    const [key, name, season, land, folk] = CDEF[id];
+    const keys = UNIVERSAL.concat(FACIL[id] || []);
+    items.push({
+      id: 'scene_' + key, category: 'cityscene', label: '城内全景·' + name,
+      meta: { 城池ID:id, 城名:name, 季节:season.split('，')[0], 建筑数:keys.length },
+      source: null, size: '1024x1536',
+      prompt: cityScenePrompt(name, season, land, folk, keys, LAYOUT[CITY_LAYOUT[id]]) + '\n\n' + BLD_NEG,
+      status: 'idle', attempts: 0,
+    });
+    items.push({
+      id: 'mask_' + key, category: 'cityscene', label: '城内蒙版·' + name,
+      meta: { 城池ID:id, 城名:name, 用途:'点击热区' },
+      source: null, refItem: 'scene_' + key, size: '1024x1536',
+      prompt: cityMaskPrompt(keys),
+      status: 'idle', attempts: 0,
+    });
+  }
+  return items;
+}
+module.exports.buildAllCities = buildAllCities;

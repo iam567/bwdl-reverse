@@ -92,8 +92,12 @@ html,body{margin:0;height:100%;background:#0d0c0a;overflow:hidden;font:14px/1.4 
 .bp-hd b{font-size:16px;color:#f7ecd4;letter-spacing:.06em;text-shadow:0 1px 3px #000a}
 .bp-hd span{font-size:10.5px;color:#b9a47a}
 .bp-cmds{display:grid;grid-template-columns:1fr 1fr;gap:5px}
-.bp-cmds div{text-align:center;padding:8px 1px;font-size:12.5px;color:#2a1c08;
-  font-weight:700;letter-spacing:0;text-shadow:0 1px 0 #ffffff4d;cursor:pointer;white-space:nowrap;
+/* 铜面是中等偏亮的暖金，深色字压不住（试过 #2a1c08，小字号下糊成一片）。
+   改成浅米色 + 一圈深褐描边，跟建筑名匾同一个路子，在什么底上都跳得出来。 */
+.bp-cmds div{text-align:center;padding:8px 1px;font-size:13px;color:#fdf3da;
+  font-weight:700;letter-spacing:.02em;cursor:pointer;white-space:nowrap;
+  text-shadow:-1px -1px 0 #2e1c04, 1px -1px 0 #2e1c04, -1px 1px 0 #2e1c04, 1px 1px 0 #2e1c04,
+              0 2px 3px #000000b3;
   /* 按钮两端的铜钉在横向 90px 以内，切片必须切到它们外侧，否则会被拉成椭圆 */
   border:6px 9px solid transparent;
   border-image:url(/image/cityview/btn.png) 30 90 fill / 6px 9px / 0 stretch}
@@ -144,7 +148,7 @@ html,body{margin:0;height:100%;background:#0d0c0a;overflow:hidden;font:14px/1.4 
     </div>
     <div id="cvfall">
       <div class="cv-sec">相 邻 城 池</div><div class="cv-adj" id="cvadj"></div>
-      <div class="cv-note">这座城的城内图还没生成<br>（目前只做了洛阳这座样板城）</div>
+      <div class="cv-note">这座城的城内图还没生成</div>
     </div>
   </div>
 </div>
@@ -365,7 +369,7 @@ function enterCity(c){
     f.style.transition='opacity .12s'; f.style.opacity='.9';
     setTimeout(()=>{openCity(c); f.style.transition='opacity .4s'; f.style.opacity='0';},140);});}
 /* ---------- 城内视图 ---------- */
-const CITY_VIEW={13:'luoyang'};                 // 目前只做了洛阳这座样板城
+const CITY_VIEW={1:'xiping',2:'yunnan',3:'wuwei',4:'chengdu',5:'tianshui',6:'zitong',7:'jianning',8:'jiangzhou',9:'hanzhong',10:'changan',11:'lingling',12:'shangyong',13:'luoyang',14:'xiangyang',15:'jiangling',16:'guiyang',17:'jinyang',18:'changsha',19:'chenliu',20:'yecheng',21:'jiangxia',22:'beiping',23:'shouchun',24:'yuzhang',25:'puyang',26:'huainan',27:'lujiang',28:'pingyuan',29:'xiangping',30:'xuzhou',31:'jianye',32:'beihai',33:'shanyue',34:'guangling',35:'kuaiji',36:'yizhou'};   // 36 座城全部就位
 const BS_CMDS={内政:['开垦','劝商','治水','巡查'],人事:['搜索','登用','奖赏','任命'],
   军事:['移动','战争','征兵','输送'],外交:['同盟','离间','招揽','情报'],
   金粮:['买入粮草','卖出粮草'],武器:['购买武器','购买马匹'],
