@@ -194,8 +194,8 @@ public class CityView
         var cmds = CMDS.TryGetValue(b.func, out var cc) ? cc : new string[0];
         /* Sliced 的铜框是画在 RectTransform 范围内的（11px），
            子物体按 Place 摆是从外沿算起——内边距必须大于框宽，否则按钮压在框上。 */
-        const float IN = 17f, BH = 30f, GAP = 6f;
-        float popW = 176, popH = IN*2 + Mathf.Ceil(cmds.Length/2f)*(BH+GAP) - GAP;
+        const float IN = 26f, BH = 32f, GAP = 8f;
+        float popW = 204, popH = IN*2 + Mathf.Ceil(cmds.Length/2f)*(BH+GAP) - GAP;
         for (int i = 0; i < cmds.Length; i++) {
             var bt = Panel(popCmds, "b"+i, btnSprite);
             float bw = cmds.Length==1 ? (popW-IN*2) : (popW-IN*2-GAP)/2f;
