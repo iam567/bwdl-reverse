@@ -1,51 +1,50 @@
-# 霸王的大陆 Mobile —— 逆向分析与复刻资料
+# 三国志霸王的大陆 · 复刻
 
-对 J2ME 游戏《三国志霸王的大陆 Mobile》V3.2.2 的逆向分析,
-目标是用 Unity 复刻一款同类玩法的回合制 SLG。
+把 J2ME 老游戏《三国志霸王的大陆 V3.2.2》复刻成竖屏 iOS 游戏。
+原版逻辑从字节码反编译还原，美术全部用 AI 重绘。
+
+> 私有仓库。包含反编译的原版代码与解包的原版素材，仅供个人研究，请勿公开。
 
 ## 目录
 
-```
-docs/
-  GAME_LOGIC.md    核心逻辑还原（战斗 / 人事 / 内政公式）★ 主文档
-  DATA_FORMAT.md   资源格式（.jg / .map / RMS / 网络协议）
-decompiled/        CFR 反编译出的 Java 源码（21,673 行）
-extract/
-  data/            解出的 CSV 数据表 + 36 张战斗地图
-  images/          还原的 PNG 素材
-tools/
-  unjg.py          .jg → PNG/CSV 转换脚本
-```
-
-## 原始素材来源
-
-| | |
+| 路径 | 内容 |
 |---|---|
-| 包名 | `BWDL` |
-| 主类 | `sango.Sango` |
-| 发行 | JustGame.Studio |
-| 平台 | CLDC-1.0 / MIDP-2.0,176×220 |
-| 原始构建 | 2008-10(Eclipse + EclipseME,VSS) |
-| 重打包 | 2010-04(注入 `com.alcatelonetouchx.CanvasPlus` 屏幕/按键适配层) |
+| `docs/` | 反编译还原的游戏逻辑、画面结构、地图与城内视图的做法 |
+| `decompiled/` | CFR 反编译出的 4 个 class |
+| `extract/` | 解包出的数据表、原版素材、地图管线脚本 |
+| `image-studio/` | 生图平台源码（部署在 sg.areu.pro） |
+| `assets/` | 生图平台产出的全部素材，见 `docs/ASSETS.md` |
+| `unity/SangoCityView/` | Unity 原型：主地图 + 城内视图，能跑能点 |
+| `samples/` | 一路上的验证截图 |
 
-## 分析进度
+## 从这里接着做
 
-- ✅ 资源格式全部破解,素材可提取
-- ✅ 三张数据表完整解出,字段语义已映射
-- ✅ 战斗伤害 / 兵种克制 / 单挑 / 登用 / 劝降 / 搜索事件 公式已还原
-- ⚠ `q[]` 语义与 `D()`/`E()` 调用链待确认
-- ❌ 战略层 AI 未开始
-- ❌ 计策公式、兵器效果、指令牌数量 未挖
+```bash
+git clone https://github.com/iam567/bwdl-reverse.git
+cd bwdl-reverse/unity/SangoCityView
+cp "/Library/Fonts/Arial Unicode.ttf" Assets/Fonts/CJK.ttf      # 字体没进仓库
+/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/MacOS/Unity \
+  -batchmode -projectPath "$PWD" -executeMethod Builder.BuildMac -logFile "$PWD/build.log" -quit
+open Build/SangoCityView.app
+```
 
-详见 `docs/GAME_LOGIC.md` §6。
+## 文档
 
-## 关于版权
+| 文件 | 内容 |
+|---|---|
+| `docs/GAME_LOGIC.md` | 战斗/人事/内政的公式，字段语义，哪些已验证哪些还没 |
+| `docs/UI_SCREENS.md` | 28 个画面的绘制入口，城内管理的完整构图与 24 条指令分派 |
+| `docs/CITY_GRAPH.md` | 36 城 52 条边的连通关系 |
+| `docs/MAP_ASSETS.md` | 大地图怎么生成、拼接、贴城池、插旗 |
+| `docs/CITY_VIEW.md` | 城内视图：整图生成 + 语义蒙版 + 点击判定 |
+| `docs/ASSETS.md` | 素材目录，PNG/JPEG 的取舍 |
+| `docs/DATA_FORMAT.md` | `.jg` 格式（改了头 16 字节的 PNG）与数据表 |
 
-本仓库包含从原版 JAR 提取的**反编译源码与美术资源**,版权归原作者所有,
-仅作个人学习与兼容性研究用途,**不得再分发**。
+## 进度
 
-《霸王的大陆》源出 Namco 1992 年 FC 作品「三國志Ⅱ 覇王の大陸」;
-"三国志"在游戏类目为光荣特库摩注册商标。
+**已完成**：原版数据全解、核心公式还原、36 城连通图、
+一套 460 张的人物立绘与头像、两级大地图与人工校准的城池坐标、
+52 条行军路径、10 面势力旗、洛阳一座城的城内视图（含点击蒙版）、
+Unity 可运行原型。
 
-**后续 Unity 复刻项目应另建独立仓库**,只使用原创代码与原创美术,
-本仓库的数据表仅作数值手感的参照基准,不直接照搬。
+**下一步**：其余 35 座城的城内图与蒙版、行军动画、战棋战场。
