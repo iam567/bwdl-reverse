@@ -9,6 +9,10 @@
 
    最后整套过一遍 unify_palette，十张共用一个色板，摆在一起才像一套美术。
 
+   默认每个槽位取最新的一张原图。有时新跑的反而不如上一版
+   （塞北地面第三版变成了均匀的灰砂砾，不如第二版的冻土），
+   这时在原图目录放一个 pick.json 钉住：{"saibei": {"ground": "bt_saibei_ground_xxx.png"}}
+
    用法: build_theme.py <主题> [原图目录=work/tiles] [成品目录=work/tiles/px]
 """
 import sys, os, glob, subprocess
@@ -26,7 +30,18 @@ SEAMLESS = ['ground', 'water', 'forest', 'rock', 'grass', 'ambush']
 OBJECTS  = ['wuku', 'cang', 'yao', 'castle']
 N, COLORS = 64, 12
 
+PICKS = {}
+_pick = os.path.join(SRC, 'pick.json')
+if os.path.exists(_pick):
+    import json
+    PICKS = json.load(open(_pick)).get(THEME, {})
+
 def newest(slot):
+    if slot in PICKS:
+        f = os.path.join(SRC, PICKS[slot])
+        if not os.path.exists(f): raise SystemExit('pick.json 指的原图不存在: ' + f)
+        print('  [钉住] %s ← %s' % (slot, PICKS[slot]))
+        return f
     fs = glob.glob(os.path.join(SRC, 'bt_%s_%s_*.png' % (THEME, slot)))
     return sorted(fs, key=os.path.getmtime)[-1] if fs else None
 
