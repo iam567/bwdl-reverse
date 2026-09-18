@@ -126,6 +126,13 @@ async function generate(it) {
       fd.append('n', '1');
       if (quality && quality !== 'auto') fd.append('quality', quality);
       fd.append('image[]', new Blob([buf], { type:'image/png' }), 'ref.png');
+      /* 派生图也可能需要透明底（势力旗要贴到地图上），
+         头像不需要所以之前没传，这里补上 */
+      const bgE = it.background || cfg.background;
+      if (bgE && bgE !== 'auto') {
+        fd.append('background', bgE);
+        if (bgE === 'transparent') fd.append('output_format', 'png');
+      }
       r = await fetch(`${OPENAI_BASE}/images/edits`, {
         method:'POST', signal:ctl.signal,
         headers:{ authorization:`Bearer ${cfg.apiKey}` },

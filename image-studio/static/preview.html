@@ -7,7 +7,8 @@ html,body{margin:0;height:100%;background:#0d0c0a;overflow:hidden;font:14px/1.4 
 #stage{position:fixed;inset:0;touch-action:none;cursor:grab;overflow:hidden}
 #stage.drag{cursor:grabbing}
 #map{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform;user-select:none;-webkit-user-drag:none;pointer-events:none}
-#loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0d0c0a;color:#9a9187;z-index:20;flex-direction:column;gap:10px}
+#fx{position:fixed;inset:0;z-index:5;pointer-events:none}
+#loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0d0c0a;color:#9a9187;z-index:50;flex-direction:column;gap:10px}
 #loading .bar{width:200px;height:4px;background:#2f2b26;border-radius:2px;overflow:hidden}
 #loading .bar i{display:block;height:100%;width:0;background:#c8a45c;transition:width .2s}
 /* 右上角大地图按钮 */
@@ -19,6 +20,36 @@ html,body{margin:0;height:100%;background:#0d0c0a;overflow:hidden;font:14px/1.4 
 /* 当前城名（左上） */
 #where{position:fixed;top:calc(env(safe-area-inset-top,0px) + 18px);left:14px;padding:6px 14px;border-radius:8px;
   background:#1c1a17d9;border:1px solid #3d3226;color:#f2e8d4;font-size:15px;font-weight:600;z-index:10;pointer-events:none}
+/* 选中城池信息条 */
+#sel{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);z-index:12;
+  background:linear-gradient(180deg,#221f1af2,#14120ff2);border:1px solid #8a6f3c;border-radius:14px;
+  padding:12px 16px;box-shadow:0 10px 30px #000a,inset 0 1px 0 #ffffff14;
+  transform:translateY(160%);transition:transform .34s cubic-bezier(.2,.9,.25,1);pointer-events:none}
+#sel.show{transform:translateY(0)}
+#sel .row{display:flex;align-items:center;gap:10px}
+#sel .nm{font-size:22px;font-weight:700;color:#f6e9cd;letter-spacing:.08em;
+  text-shadow:0 0 14px #c8a45c66}
+#sel .tag{font-size:12px;color:#d7b878;border:1px solid #6b552d;border-radius:5px;padding:2px 7px;background:#c8a45c1a}
+#sel .hint{margin-top:5px;font-size:12.5px;color:#a89876;display:flex;align-items:center;gap:6px}
+#sel .hint b{color:#e8c06a;font-weight:600}
+/* 城内占位界面 */
+#cityview{position:fixed;inset:0;z-index:36;background:#0b0a08;display:none;flex-direction:column;
+  padding:calc(env(safe-area-inset-top,0px) + 16px) 16px calc(env(safe-area-inset-bottom,0px) + 16px)}
+#cityview.show{display:flex;animation:cvin .32s cubic-bezier(.2,.8,.2,1)}
+@keyframes cvin{from{opacity:0;transform:scale(1.06)}to{opacity:1;transform:scale(1)}}
+.cv-top{text-align:center;padding:10px 0 18px;border-bottom:1px solid #2b241a}
+.cv-name{font-size:34px;font-weight:700;letter-spacing:.22em;color:#f6e9cd;text-shadow:0 0 22px #c8a45c55}
+.cv-tier{margin-top:6px;font-size:13px;color:#9a8a68;letter-spacing:.2em}
+.cv-body{flex:1;overflow:auto;padding-top:20px}
+.cv-sec{font-size:12px;color:#7d7058;letter-spacing:.24em;margin-bottom:10px}
+.cv-adj{display:flex;flex-wrap:wrap;gap:9px}
+.cv-adj div{padding:9px 15px;border:1px solid #4a3d29;border-radius:9px;background:#181613;color:#dcd0b6;font-size:15px;cursor:pointer}
+.cv-adj div:active{background:#2a2419;border-color:#c8a45c}
+.cv-note{margin-top:34px;padding:18px;border:1px dashed #3a3226;border-radius:10px;color:#6f6552;text-align:center;font-size:13px;line-height:1.9}
+.cv-back{margin-top:12px;height:50px;border:1px solid #8a6f3c;border-radius:12px;background:#1c1a17;color:#e8c06a;
+  display:flex;align-items:center;justify-content:center;font-size:16px;letter-spacing:.1em;cursor:pointer}
+.cv-back:active{background:#2a2419}
+#flash{position:fixed;inset:0;background:#fff7e6;opacity:0;pointer-events:none;z-index:38}
 /* 总览面板 */
 #panel{position:fixed;inset:0;z-index:30;background:#0d0c0ad9;backdrop-filter:blur(10px);
   transform:translateX(100%);transition:transform .32s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;
@@ -33,15 +64,27 @@ html,body{margin:0;height:100%;background:#0d0c0a;overflow:hidden;font:14px/1.4 
 #ov img{display:block;width:100%;height:100%;pointer-events:none}
 #rect{position:absolute;border:2px solid #fff;box-shadow:0 0 0 2000px #0006,0 0 12px #000;pointer-events:none;border-radius:2px}
 #ovhint{text-align:center;color:#9a9187;font-size:12px;padding-top:8px}
-#toast{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 24px);left:50%;transform:translateX(-50%);
+#toast{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 96px);left:50%;transform:translateX(-50%);
   background:#1c1a17ee;border:1px solid #c8a45c;color:#f2e8d4;padding:9px 18px;border-radius:8px;font-size:14px;z-index:40;
   opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
 #toast.show{opacity:1}
 </style></head><body>
 <div id="loading"><div>载入大地图 <span id="pct">0%</span></div><div class="bar"><i id="bari"></i></div></div>
 <div id="stage"><img id="map" alt=""></div>
+<canvas id="fx"></canvas>
 <div id="where">—</div>
 <div id="btn" title="大地图"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg></div>
+<div id="sel"><div class="row"><div class="nm" id="selname">—</div><div class="tag" id="seltier"></div></div>
+  <div class="hint">再点一次 <b>进入城中</b> · 点空白处取消</div></div>
+<div id="cityview">
+  <div class="cv-top"><div class="cv-name" id="cvname"></div><div class="cv-tier" id="cvtier"></div></div>
+  <div class="cv-body">
+    <div class="cv-sec">相 邻 城 池</div><div class="cv-adj" id="cvadj"></div>
+    <div class="cv-note">城内管理界面建设中<br>（内政 · 募兵 · 出征 · 武将）</div>
+  </div>
+  <div class="cv-back" id="cvback">← 返回大地图</div>
+</div>
+<div id="flash"></div>
 <div id="panel">
   <header><b>天下形势</b><div id="close">×</div></header>
   <div id="ovwrap"><div id="ov"><img id="ovimg" alt=""><div id="rect"></div></div></div>
@@ -50,56 +93,215 @@ html,body{margin:0;height:100%;background:#0d0c0a;overflow:hidden;font:14px/1.4 
 <div id="toast"></div>
 <script>
 const $=id=>document.getElementById(id);
-const K=6.4;                                   // 1024 坐标 → 大图像素
+const TAU=Math.PI*2;
+/* 地坪半宽（1024 坐标系）= TIER_PX × scale(0.8) × 1.35 / 3.2 / 2 ，与 compose_cities.py 贴图一致 */
+const TIER_RX={1:40.50,2:35.44,3:30.38,4:26.66,5:23.29,6:20.25};
+const PLATE_AR=1.5;                            // 地坪宽/高（等距压扁）
+const TIER_NAME={1:'帝　都',2:'雄　城',3:'重　镇',4:'郡　城',5:'县　城',6:'寨　堡'};
+let K=6.375;                                   // 1024 坐标 → 大图像素（载入后按真实尺寸校正）
 const stage=$('stage'),map=$('map');
 let MW=0,MH=0, s=1, tx=0, ty=0;                // 缩放、平移（CSS px）
-let cities=[], minS=0.05, maxS=2.2;
-let vw=0,vh=0;
+let cities=[], byId=new Map(), adjacency={}, minS=0.05, maxS=2.2;
+let vw=innerWidth,vh=innerHeight;
 
-function apply(){map.style.transform=`translate(${tx}px,${ty}px) scale(${s})`;updWhere();}
-function clamp(){
-  const w=MW*s,h=MH*s;
+/* ---------- 特效层 ---------- */
+const fx=$('fx'), fxc=fx.getContext('2d');
+let DPR=1, raf=0, sel=null, selT0=0;
+function sizeFx(){DPR=Math.min(devicePixelRatio||1,2.5);
+  fx.width=Math.round(vw*DPR);fx.height=Math.round(vh*DPR);fx.style.width=vw+'px';fx.style.height=vh+'px';}
+function kick(){if(!raf)raf=requestAnimationFrame(fxLoop);}
+function fxLoop(now){raf=0;
+  fxc.setTransform(1,0,0,1,0,0); fxc.clearRect(0,0,fx.width,fx.height); fxc.setTransform(DPR,0,0,DPR,0,0);
+  if(sel){drawSel(fxc,sel,now); raf=requestAnimationFrame(fxLoop);}}
+
+/* 地坪半径（1024 坐标）。屏幕上不足 30px 时按下限放大，
+   绘制和点击判定共用同一套数值，所以「看得见的光环」就是「点得中的范围」 */
+const MIN_R_PX=30;
+function ringOf(c,M){const base=TIER_RX[c.tier||4];
+  const k=Math.max(1,MIN_R_PX/(base*M));
+  return {rx:base*k, ry:base*k/PLATE_AR};}
+
+function drawSel(ctx,c,now){
+  const M=s*K;                                  // 1024 坐标 → 屏幕 px
+  const cx=c.x*M+tx, cy=c.y*M+ty;
+  const R=ringOf(c,M), rx0=R.rx*M, ry0=R.ry*M;
+  const pad=rx0*2+80;
+  if(cx<-pad||cy<-pad||cx>vw+pad||cy>vh+pad)return;   // 城池划出屏幕就不画，免得只剩一片黑
+
+  const p=Math.min(1,(now-selT0)/320), e=1-Math.pow(1-p,3);
+  const g=1.45-.45*e, a=e, br=.5+.5*Math.sin(now/620);
+  const rx=rx0*g, ry=ry0*g;
+
+  /* 1) 聚光：压暗四周，只把选中的城留在亮处 */
+  ctx.save();
+  ctx.fillStyle='rgba(6,5,4,'+(.46*a)+')';
+  ctx.fillRect(0,0,vw,vh);
+  ctx.globalCompositeOperation='destination-out';
+  const hy=cy-rx0*.34, hr=Math.max(rx0*1.55,64);
+  const hole=ctx.createRadialGradient(cx,hy,hr*.44,cx,hy,hr);
+  hole.addColorStop(0,'rgba(0,0,0,1)');
+  hole.addColorStop(.58,'rgba(0,0,0,.93)');
+  hole.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=hole; ctx.beginPath(); ctx.arc(cx,hy,hr,0,TAU); ctx.fill();
+  ctx.restore();
+
+  ctx.save(); ctx.translate(cx,cy);
+  /* 2) 地面辉光 */
+  ctx.save(); ctx.scale(1,1/PLATE_AR);
+  const gr=ctx.createRadialGradient(0,0,rx*.08,0,0,rx*1.2);
+  gr.addColorStop(0,'rgba(255,206,112,'+((.15+.07*br)*a)+')');
+  gr.addColorStop(.72,'rgba(255,184,78,'+(.09*a)+')');
+  gr.addColorStop(1,'rgba(255,184,78,0)');
+  ctx.fillStyle=gr; ctx.beginPath(); ctx.arc(0,0,rx*1.2,0,TAU); ctx.fill();
+  ctx.restore();
+  /* 3) 主环：下半亮、上半淡，看起来像绕在城池背后的地面上 */
+  const gd=ctx.createLinearGradient(0,-ry,0,ry);
+  gd.addColorStop(0,   'rgba(255,238,186,'+(.20*a)+')');
+  gd.addColorStop(.45, 'rgba(255,238,186,'+(.34*a)+')');
+  gd.addColorStop(.74, 'rgba(255,243,202,'+(.95*a)+')');
+  gd.addColorStop(1,   'rgba(255,250,224,'+(1.0*a)+')');
+  ctx.strokeStyle=gd; ctx.lineWidth=3.2;
+  ctx.shadowColor='rgba(255,184,62,.95)'; ctx.shadowBlur=20*a;
+  ctx.beginPath(); ctx.ellipse(0,0,rx,ry,0,0,TAU); ctx.stroke();
+  ctx.shadowBlur=0;
+  /* 4) 外层顺时针虚线环 */
+  const gd2=ctx.createLinearGradient(0,-ry*1.2,0,ry*1.2);
+  gd2.addColorStop(0,  'rgba(240,200,112,'+(.22*a)+')');
+  gd2.addColorStop(.5, 'rgba(240,200,112,'+(.40*a)+')');
+  gd2.addColorStop(1,  'rgba(255,224,150,'+(.92*a)+')');
+  ctx.strokeStyle=gd2; ctx.lineWidth=2;
+  ctx.setLineDash([17,12]); ctx.lineDashOffset=-(now/22)%29;
+  ctx.beginPath(); ctx.ellipse(0,0,rx*1.2,ry*1.2,0,0,TAU); ctx.stroke();
+  ctx.setLineDash([]);
+  /* 5) 四方刻度 */
+  ctx.strokeStyle='rgba(255,244,206,'+(.9*a)+')'; ctx.lineWidth=2.6; ctx.lineCap='round';
+  const off=rx*(.03+.03*br), L=Math.max(7,rx*.085);
+  for(const[ux,uy]of[[1,0],[-1,0],[0,1],[0,-1]]){
+    if(uy<0)ctx.globalAlpha=.35;                 // 朝上那根被城挡住，淡一点
+    const bx=ux*(rx*1.2+off), by=uy*(ry*1.2+off);
+    ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(bx+ux*L,by+uy*L); ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+  /* 6) 脉冲波 */
+  if(p>=1){const ph=((now-selT0)%1700)/1700, k=1+ph*.9;
+    ctx.strokeStyle='rgba(255,220,144,'+(.5*(1-ph)*a)+')'; ctx.lineWidth=2.4;
+    ctx.beginPath(); ctx.ellipse(0,0,rx*k,ry*k,0,0,TAU); ctx.stroke();}
+  ctx.restore();
+
+  /* 7) 四角准星 */
+  const fly=(1-e)*26;
+  const l=cx-rx0*1.2-fly, r2=cx+rx0*1.2+fly, t=cy-rx0*1.18-fly, b=cy+ry0*1.5+fly;
+  const CL=Math.max(11,rx0*.16);
+  ctx.save(); ctx.globalAlpha=a; ctx.strokeStyle='#ffd98a'; ctx.lineWidth=2.6; ctx.lineCap='round';
+  ctx.shadowColor='rgba(255,184,62,.8)'; ctx.shadowBlur=8;
+  for(const[px,py,sx2,sy2]of[[l,t,1,1],[r2,t,-1,1],[l,b,1,-1],[r2,b,-1,-1]]){
+    ctx.beginPath(); ctx.moveTo(px,py+sy2*CL); ctx.lineTo(px,py); ctx.lineTo(px+sx2*CL,py); ctx.stroke();}
+  ctx.restore();
+
+  /* 8) 城头浮标 */
+  const topY=cy-rx0*.98-18-Math.sin(now/480)*4;
+  ctx.save(); ctx.translate(cx,topY); ctx.globalAlpha=a;
+  ctx.fillStyle='#ffe08a'; ctx.shadowColor='rgba(255,170,50,.95)'; ctx.shadowBlur=12;
+  ctx.beginPath(); ctx.moveTo(-10,-13); ctx.lineTo(10,-13); ctx.lineTo(0,4); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+/* ---------- 视图 ---------- */
+function apply(){map.style.transform='translate('+tx+'px,'+ty+'px) scale('+s+')';updWhere();kick();}
+function clamp(){const w=MW*s,h=MH*s;
   tx = w<=vw ? (vw-w)/2 : Math.min(0,Math.max(vw-w,tx));
-  ty = h<=vh ? (vh-h)/2 : Math.min(0,Math.max(vh-h,ty));
-}
-function centerOn(mx,my,animate){               // mx,my 大图像素
+  ty = h<=vh ? (vh-h)/2 : Math.min(0,Math.max(vh-h,ty));}
+function centerOn(mx,my,animate){
   if(animate){map.style.transition='transform .55s cubic-bezier(.2,.8,.2,1)';setTimeout(()=>map.style.transition='',600);}
-  tx=vw/2-mx*s; ty=vh/2-my*s; clamp(); apply();
-}
-function updWhere(){                             // 离屏幕中心最近的城
-  const cx=(vw/2-tx)/s/K, cy=(vh/2-ty)/s/K; let best=null;
+  tx=vw/2-mx*s; ty=vh/2-my*s; clamp(); apply();}
+function tweenView(mx,my,ns,dur,done){         // mx,my 为大图像素
+  const s0=s,tx0=tx,ty0=ty,t0=performance.now();
+  map.style.transition='';
+  (function step(now){const p=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-p,3);
+    s=s0+(ns-s0)*e;
+    tx=tx0+((vw/2-mx*ns)-tx0)*e; ty=ty0+((vh/2-my*ns)-ty0)*e;
+    clamp();apply();
+    if(p<1)requestAnimationFrame(step); else if(done)done();})(t0);}
+function updWhere(){const cx=(vw/2-tx)/s/K, cy=(vh/2-ty)/s/K; let best=null;
   for(const c of cities){const d=Math.hypot(c.x-cx,c.y-cy); if(!best||d<best.d)best={c,d};}
-  if(best)$('where').textContent=best.d<70?best.c.name:'（'+best.c.name+' 附近）';
-}
-function resize(){vw=innerWidth;vh=innerHeight;
+  if(best)$('where').textContent=best.d<70?best.c.name:'（'+best.c.name+' 附近）';}
+function resize(){vw=innerWidth;vh=innerHeight;sizeFx();
   if(MW){minS=Math.max(vw/MW,vh/MH); if(s<minS)s=minS; clamp(); apply();}
-  layoutOv();
-}
+  layoutOv();}
 
-/* ---- 拖动 / 双指缩放 / 滚轮 ---- */
-const pts=new Map(); let last=null, pinch=null;
+/* ---------- 点选 ---------- */
+function pickCity(sx,sy){
+  const M=s*K, mx=(sx-tx)/M, my=(sy-ty)/M;      // → 1024 坐标
+  let best=null;
+  for(const c of cities){const R=ringOf(c,M);
+    const d=Math.hypot((c.x-mx)/R.rx,(c.y-my)/R.ry);
+    if(d<=1.12&&(!best||d<best.d))best={c,d};}
+  return best&&best.c;}
+
+function selectCity(c){
+  sel=c; selT0=performance.now();
+  $('selname').textContent=c.name;
+  $('seltier').textContent=(TIER_NAME[c.tier||4]||'').replace(/\s/g,'');
+  $('sel').classList.add('show'); kick();}
+function deselect(){if(!sel)return;sel=null;$('sel').classList.remove('show');kick();}
+function onTap(sx,sy){
+  const c=pickCity(sx,sy);
+  if(!c){deselect();return;}
+  if(sel&&sel.id===c.id){enterCity(c);return;}
+  selectCity(c);}
+
+/* ---------- 进入城中 ---------- */
+function enterCity(c){
+  $('sel').classList.remove('show');
+  const ns=Math.min(maxS,Math.max(s*1.7,1.2));
+  tweenView(c.x*K,c.y*K,ns,420,()=>{
+    const f=$('flash');
+    f.style.transition='opacity .12s'; f.style.opacity='.9';
+    setTimeout(()=>{openCity(c); f.style.transition='opacity .4s'; f.style.opacity='0';},140);});}
+function openCity(c){
+  $('cvname').textContent=c.name;
+  $('cvtier').textContent=TIER_NAME[c.tier||4]||'';
+  const box=$('cvadj'); box.innerHTML='';
+  const a=adjacency[c.id]||adjacency[String(c.id)]||{adj:[]};
+  (a.adj||[]).forEach(id=>{const n=byId.get(id); if(!n)return;
+    const el=document.createElement('div'); el.textContent=n.name;
+    el.onclick=()=>{closeCity();setTimeout(()=>{selectCity(n);centerOn(n.x*K,n.y*K,true);toast('→ '+n.name);},60);};
+    box.appendChild(el);});
+  if(!box.children.length)box.innerHTML='<div style="border-style:dashed;color:#6f6552">（无陆路相邻）</div>';
+  $('cityview').classList.add('show');}
+function closeCity(){$('cityview').classList.remove('show');if(sel)$('sel').classList.add('show');}
+$('cvback').onclick=closeCity;
+
+/* ---------- 拖动 / 双指缩放 / 滚轮 ---------- */
+const pts=new Map(); let last=null, pinch=null, tap=null;
 stage.addEventListener('pointerdown',e=>{stage.setPointerCapture(e.pointerId);pts.set(e.pointerId,[e.clientX,e.clientY]);
-  if(pts.size===1){last=[e.clientX,e.clientY];stage.classList.add('drag');map.style.transition='';}
-  if(pts.size===2){const [a,b]=[...pts.values()];pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1]),s,cx:(a[0]+b[0])/2,cy:(a[1]+b[1])/2};}
+  if(pts.size===1){last=[e.clientX,e.clientY];stage.classList.add('drag');map.style.transition='';
+    tap={x:e.clientX,y:e.clientY,t:performance.now(),ok:true};}
+  if(pts.size===2){if(tap)tap.ok=false;const [a,b]=[...pts.values()];
+    pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1]),s,cx:(a[0]+b[0])/2,cy:(a[1]+b[1])/2};}
 });
 stage.addEventListener('pointermove',e=>{if(!pts.has(e.pointerId))return;pts.set(e.pointerId,[e.clientX,e.clientY]);
+  if(tap&&(Math.abs(e.clientX-tap.x)>10||Math.abs(e.clientY-tap.y)>10))tap.ok=false;
   if(pts.size===2&&pinch){const [a,b]=[...pts.values()];const d=Math.hypot(a[0]-b[0],a[1]-b[1]);
     const ns=Math.max(minS,Math.min(maxS,pinch.s*d/pinch.d)); const cx=(a[0]+b[0])/2,cy=(a[1]+b[1])/2;
-    tx=cx-(pinch.cx-tx)*(ns/s)-(pinch.cx-cx)*0; ty=cy-(pinch.cy-ty)*(ns/s); s=ns; pinch.cx=cx;pinch.cy=cy; clamp();apply();return;}
+    tx=cx-(pinch.cx-tx)*(ns/s); ty=cy-(pinch.cy-ty)*(ns/s); s=ns; pinch.cx=cx;pinch.cy=cy; clamp();apply();return;}
   if(pts.size===1&&last){tx+=e.clientX-last[0];ty+=e.clientY-last[1];last=[e.clientX,e.clientY];clamp();apply();}
 });
-const up=e=>{pts.delete(e.pointerId);if(pts.size<2)pinch=null;if(pts.size===0){last=null;stage.classList.remove('drag');}
+const up=e=>{const wasTap=tap&&tap.ok&&pts.size===1&&performance.now()-tap.t<520;
+  pts.delete(e.pointerId);if(pts.size<2)pinch=null;
+  if(pts.size===0){last=null;stage.classList.remove('drag');
+    if(wasTap)onTap(tap.x,tap.y); tap=null;}
   else if(pts.size===1){last=[...pts.values()][0];}};
 stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',up);
 stage.addEventListener('wheel',e=>{e.preventDefault();const f=e.deltaY<0?1.12:1/1.12;const ns=Math.max(minS,Math.min(maxS,s*f));
   tx=e.clientX-(e.clientX-tx)*(ns/s);ty=e.clientY-(e.clientY-ty)*(ns/s);s=ns;clamp();apply();},{passive:false});
 
-/* ---- 总览面板 ---- */
+/* ---------- 总览面板 ---------- */
 const panel=$('panel'),ov=$('ov'),ovimg=$('ovimg'),rect=$('rect');
 let ovW=0,ovH=0;
 function layoutOv(){const wrap=$('ovwrap');const aw=wrap.clientWidth,ah=wrap.clientHeight;if(!aw||!ah)return;
   const side=Math.min(aw,ah); ovW=ovH=side; ov.style.width=side+'px';ov.style.height=side+'px'; updRect();}
-function updRect(){if(!MW||!ovW)return;const f=ovW/1024;         // 总览像素 / 1024 坐标
+function updRect(){if(!MW||!ovW)return;const f=ovW/1024;
   const x0=(-tx)/s/K, y0=(-ty)/s/K, w=vw/s/K, h=vh/s/K;
   rect.style.left=(x0*f)+'px';rect.style.top=(y0*f)+'px';rect.style.width=(w*f)+'px';rect.style.height=(h*f)+'px';}
 function openPanel(){layoutOv();updRect();panel.classList.add('open');}
@@ -108,24 +310,30 @@ $('btn').onclick=openPanel; $('close').onclick=closePanel;
 ov.addEventListener('click',e=>{const r=ov.getBoundingClientRect();const f=1024/ovW;
   const x=(e.clientX-r.left)*f, y=(e.clientY-r.top)*f; let best=null;
   for(const c of cities){const d=Math.hypot(c.x-x,c.y-y);if(!best||d<best.d)best={c,d};}
-  if(best&&best.d<28){closePanel();setTimeout(()=>{centerOn(best.c.x*K,best.c.y*K,true);toast('→ '+best.c.name);},120);}
+  if(best&&best.d<28){closePanel();setTimeout(()=>{centerOn(best.c.x*K,best.c.y*K,true);selectCity(best.c);},120);}
 });
-function toast(t){const el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),1400);}
+function toast(t){const el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(toast._t);
+  toast._t=setTimeout(()=>el.classList.remove('show'),1400);}
 
-/* ---- 载入 ---- */
+/* ---------- 载入 ---------- */
 async function loadImg(url,onprog){const r=await fetch(url);const total=+r.headers.get('content-length')||0;
   const reader=r.body.getReader();const chunks=[];let got=0;
   for(;;){const {done,value}=await reader.read();if(done)break;chunks.push(value);got+=value.length;if(total)onprog(got/total);}
   return URL.createObjectURL(new Blob(chunks,{type:'image/jpeg'}));}
 (async()=>{
-  const d=await (await fetch('/api/edit/cities')).json(); cities=d.cities.map(c=>({id:c.id,name:c.name,x:+c.x,y:+c.y}));
+  const d=await (await fetch('/api/edit/cities')).json();
+  cities=d.cities.map(c=>({id:c.id,name:c.name,x:+c.x,y:+c.y,tier:c.tier||4}));
+  byId=new Map(cities.map(c=>[c.id,c]));
+  adjacency=d.adjacency||{};
   ovimg.src='/image/map/overview_1024.jpg?v='+(d.overviewVersion||0);
-  const url=await loadImg('/image/map/map_L2_with_cities.jpg?v='+(d.mapVersion||0),p=>{$('pct').textContent=Math.round(p*100)+'%';$('bari').style.width=(p*100)+'%';});
+  const url=await loadImg('/image/map/map_L2_with_cities.jpg?v='+(d.mapVersion||0),
+    p=>{$('pct').textContent=Math.round(p*100)+'%';$('bari').style.width=(p*100)+'%';});
   await new Promise(res=>{map.onload=res;map.src=url;});
   MW=map.naturalWidth;MH=map.naturalHeight;
-  vw=innerWidth;vh=innerHeight;
-  s=Math.max(innerWidth*devicePixelRatio/1170, Math.max(vw/MW,vh/MH)); // 1 CSS px ≈ 1 物理像素对应 1 大图像素（按 1170 宽基准）
-  s=Math.min(s, 1); minS=Math.max(vw/MW,vh/MH);
+  K=MW/1024;                                   // 按真实尺寸校正，光环才能正好套住城池
+  vw=innerWidth;vh=innerHeight;sizeFx();
+  s=Math.max(innerWidth*devicePixelRatio/1170, Math.max(vw/MW,vh/MH));
+  s=Math.min(s,1); minS=Math.max(vw/MW,vh/MH);
   const start=cities.find(c=>c.name==='陈留')||cities[0];
   centerOn(start.x*K,start.y*K,false);
   $('loading').style.display='none';
