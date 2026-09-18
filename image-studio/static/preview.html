@@ -35,12 +35,13 @@ html,body{margin:0;height:100%;background:#0d0c0a;overflow:hidden;font:14px/1.4 
 #sel .hint{margin-top:5px;font-size:12.5px;color:#a89876;display:flex;align-items:center;gap:6px}
 #sel .hint b{color:#e8c06a;font-weight:600}
 /* 城内占位界面 */
-#cityview{position:fixed;inset:0;z-index:36;background:#0b0a08;display:none;flex-direction:column;
-  padding:calc(env(safe-area-inset-top,0px) + 16px) 16px calc(env(safe-area-inset-bottom,0px) + 16px)}
+#cityview{position:fixed;inset:0;z-index:36;display:none;flex-direction:column;
+  background:#15110b url(/image/cityview/bg.jpg) center/cover no-repeat;
+  padding:calc(env(safe-area-inset-top,0px) + 10px) 12px calc(env(safe-area-inset-bottom,0px) + 8px)}
 #cityview.show{display:flex;animation:cvin .32s cubic-bezier(.2,.8,.2,1)}
 @keyframes cvin{from{opacity:0;transform:scale(1.06)}to{opacity:1;transform:scale(1)}}
-.cv-top{padding:2px 0 10px}
-.cv-hd{display:flex;align-items:center;gap:10px;padding:0 4px 8px}
+.cv-top{padding:0 0 4px}
+.cv-hd{display:flex;align-items:center;gap:9px;padding:0 2px 6px}
 .cv-name{font-size:30px;font-weight:700;letter-spacing:.16em;color:#f6e9cd;text-shadow:0 0 20px #c8a45c55;line-height:1.1}
 .cv-meta{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:#9a8a68;letter-spacing:.14em}
 .cv-own{display:flex;align-items:center;gap:5px;color:#cfc4ab;font-weight:600;letter-spacing:.06em}
@@ -51,32 +52,34 @@ html,body{margin:0;height:100%;background:#0d0c0a;overflow:hidden;font:14px/1.4 
   text-shadow:0 0 12px #f0c34a55;font-style:normal}
 .cv-tok i{display:block;font-size:10px;color:#9a8a68;letter-spacing:.16em;font-style:normal}
 /* 数据栏：底纹是生成的帛书绢面 */
-.cv-stats{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:1px}
-.cv-stats{border:13px solid transparent;
-  border-image:url(/image/cityview/panel.png) 58 fill / 13px / 0 stretch;
-  box-shadow:none;padding:6px 4px}
-.cv-stats div{text-align:center;padding:5px 2px}
-.cv-stats div span{display:block;font-size:10px;color:#8a7350;letter-spacing:.16em;margin-bottom:1px}
-.cv-stats div b{display:block;font-size:16px;font-weight:700;color:#3a2a14;letter-spacing:.02em}
-.cv-stats div b em{font-size:10.5px;font-style:normal;color:#7a6030;margin-left:1px}
-.cv-body{flex:1;overflow:auto;padding-top:20px}
+.cv-stats{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:0 2px}
+.cv-stats{border:11px solid transparent;
+  border-image:url(/image/cityview/panel.png) 58 fill / 11px / 0 stretch;
+  padding:5px 6px}
+.cv-stats div{display:flex;align-items:baseline;justify-content:center;gap:5px;padding:3px 1px}
+.cv-stats div span{font-size:11px;font-weight:600;color:#6b5230;letter-spacing:.04em;flex:none}
+.cv-stats div b{font-size:15.5px;font-weight:700;color:#2e2110;letter-spacing:.01em}
+.cv-stats div b em{font-size:10px;font-style:normal;color:#6b5230;margin-left:1px}
+.cv-body{flex:1;overflow:auto;padding-top:8px}
 .cv-sec{font-size:12px;color:#7d7058;letter-spacing:.24em;margin-bottom:10px}
 .cv-adj{display:flex;flex-wrap:wrap;gap:9px}
 .cv-adj div{padding:9px 15px;border:1px solid #4a3d29;border-radius:9px;background:#181613;color:#dcd0b6;font-size:15px;cursor:pointer}
 .cv-adj div:active{background:#2a2419;border-color:#c8a45c}
 .cv-note{margin-top:34px;padding:18px;border:1px dashed #3a3226;border-radius:10px;color:#6f6552;text-align:center;font-size:13px;line-height:1.9}
-.cv-back{margin-top:12px;height:50px;border:1px solid #8a6f3c;border-radius:12px;background:#1c1a17;color:#e8c06a;
-  display:flex;align-items:center;justify-content:center;font-size:16px;letter-spacing:.1em;cursor:pointer}
-.cv-back:active{background:#2a2419}
+.cv-back{width:46px;height:46px;flex:none;border-radius:11px;border:1px solid #6b552d;
+  background:#c8a45c14;color:#e8c06a;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.cv-back svg{width:24px;height:24px}
+.cv-back:active{background:#c8a45c33}
 #flash{position:fixed;inset:0;background:#fff7e6;opacity:0;pointer-events:none;z-index:38}
 #cvpic{position:relative;display:none;width:100%;line-height:0}
 #cvpic.show{display:block}
 #cvpic img{width:100%;display:block;border-radius:10px}
 #cvhl,#cvlbl{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;border-radius:10px}
 /* 建筑指令面板 */
-#bsheet{position:fixed;left:10px;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 74px);z-index:37;
+#bsheet{position:fixed;left:10px;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);z-index:37;
   background:linear-gradient(180deg,#242018f2,#15120ef2);border:1px solid #8a6f3c;border-radius:14px;
-  padding:12px 14px;box-shadow:0 12px 34px #000b;transform:translateY(150%);
+  padding:12px 14px;box-shadow:0 12px 34px #000b;
+  transform:translateY(calc(100% + 30px));            /* 收起时整条移出屏幕，别在底边露出一道暗边 */
   transition:transform .3s cubic-bezier(.2,.9,.25,1)}
 #bsheet.show{transform:translateY(0)}
 .bs-hd{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
@@ -119,6 +122,8 @@ html,body{margin:0;height:100%;background:#0d0c0a;overflow:hidden;font:14px/1.4 
       <div class="cv-name" id="cvname"></div>
       <div class="cv-meta"><span id="cvtier"></span><span class="cv-own" id="cvown"></span></div>
       <div class="cv-tok" id="cvtok"><b>—</b><i>令牌</i></div>
+      <div class="cv-back" id="cvback" title="返回大地图"><svg viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg></div>
     </div>
     <div class="cv-stats" id="cvstats"></div>
   </div>
@@ -129,7 +134,6 @@ html,body{margin:0;height:100%;background:#0d0c0a;overflow:hidden;font:14px/1.4 
       <div class="cv-note">这座城的城内图还没生成<br>（目前只做了洛阳这座样板城）</div>
     </div>
   </div>
-  <div class="cv-back" id="cvback">← 返回大地图</div>
 </div>
 <div id="bsheet"><div class="bs-hd"><b id="bsname"></b><span id="bsfunc"></span></div>
   <div class="bs-cmds" id="bscmds"></div></div>
@@ -502,10 +506,10 @@ function fillStats(c){
   const box=$('cvstats');
   if(!st){ $('cvtok').querySelector('b').textContent='—'; box.innerHTML=''; return; }
   $('cvtok').querySelector('b').textContent=st['令牌']||'—';
-  const rows=[['君　主',st.ruler],['太　守',st.governor],['武　将',st['武将']],
-    ['人　口',wan(st['人口'])],['兵　力',wan(st['兵力'])],['治　安',st['治安']],
-    ['农　业',st['农业']],['商　业',st['商业']],['治　水',st['治水']],
-    ['黄　金',st['黄金']],['粮　草',st['粮草']],['规　模',st.tierName]];
+  const rows=[['君主',st.ruler],['太守',st.governor],['武将',st['武将']],
+    ['人口',wan(st['人口'])],['兵力',wan(st['兵力'])],['治安',st['治安']],
+    ['农业',st['农业']],['商业',st['商业']],['治水',st['治水']],
+    ['黄金',st['黄金']],['粮草',st['粮草']],['规模',st.tierName]];
   box.innerHTML=rows.map(([k,v])=>'<div><span>'+k+'</span><b>'+v+'</b></div>').join('');
 }
 function openCity(c){
