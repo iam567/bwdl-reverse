@@ -17,7 +17,8 @@
      10, 11       → forest  密林   (5/6/3)   ← 灌木并进密林
      12           → grass   草坡   (5/6/3)
 
-   用法: compose_battlefield.py <城池ID> <主题> <地块目录> <输出png> [格边长=64]
+   用法: compose_battlefield.py <城池ID> <主题|auto> <地块目录> <输出png> [格边长=64]
+         主题写 auto 就按 extract/data/city-theme.json 查这座城归哪个地域。
 """
 import sys, os, glob
 from PIL import Image
@@ -26,6 +27,10 @@ CID, THEME, TILEDIR, OUT = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 CELL = int(sys.argv[5]) if len(sys.argv) > 5 else 64
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
+
+if THEME == 'auto':
+    import json
+    THEME = json.load(open(os.path.join(ROOT, 'extract/data/city-theme.json')))[str(int(CID))]
 
 # 7–12 六个码消耗完全一样，可以共用同一张图。
 # 灌木只留一种（码 10、11 共用），山岩一种（码 7、9 共用）。
