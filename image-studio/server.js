@@ -306,6 +306,7 @@ const server = http.createServer(async (req,res) => {
                          adjacency: readJSON(path.join(DATA,'adjacency.json'),{}),
                          owners: readJSON(path.join(DATA,'city-owner.json'),{}),
                          flags: readJSON(path.join(DATA,'flag-anchors.json'),{}),
+                         boxes: readJSON(path.join(DATA,'map-boxes.json'),{}),
                          mapVersion: mt('map_L2_with_cities.jpg'), overviewVersion: mt('overview_1024.jpg'),
                          flagVersion: mtf() });
     }

@@ -133,15 +133,19 @@ function fxLoop(now){raf=0;
   for(const c of cities) drawFlag(ctx,c,M, sel && c.id!==sel.id ? .5 : 1);
   if(sel){ drawRing(ctx,sel,now); raf=requestAnimationFrame(fxLoop); }}
 
+/* 旗杆着地点 = 城心上方 0.30 个地坪半径，旗插在城池上半部。
+   这个高度下旗子整体落在城池图标框内，而合成时城名铜牌本来就避开图标框，
+   所以 36 座城在默认缩放下零遮挡（extract/mapgen/export_boxes.py 可复验）。
+   捏到最小缩放时旗子有 26px 下限、会压住个别铜牌——那个缩放下铜牌只有
+   几像素读不出字，看的是势力版图，这个取舍是有意的。 */
+const FLAG_OY=-0.30;
+
 function drawFlag(ctx,c,M,alpha){
   const k=ownerOf(c), im=flagImg[k], mm=flagMeta[k];
   if(!im||!im.complete||!im.naturalWidth||!mm)return;
   const rx=TIER_RX[c.tier||4]*M;
   const h=Math.max(MIN_FLAG_PX, rx*.62), w=h*mm.w/mm.h;
-  /* 旗杆着地点放在城池图标的上边缘：画布盖在地图之上，旗立在城中间的话
-     杆子会明显压在建筑前面，挪到城后上方就成了「旗飘在城上空」 */
-  const bx=c.x*M+tx, by=c.y*M+ty-rx*.92;
-  const dx=bx-w*mm.ax, dy=by-h*mm.ay;
+  const dx=c.x*M+tx-w*mm.ax, dy=c.y*M+ty+FLAG_OY*rx-h*mm.ay;
   if(dx>vw||dy>vh||dx+w<0||dy+h<0)return;
   ctx.save(); ctx.globalAlpha=alpha;
   ctx.shadowColor='rgba(0,0,0,.45)'; ctx.shadowBlur=Math.max(3,h*.05); ctx.shadowOffsetY=Math.max(1,h*.02);
