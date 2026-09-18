@@ -119,8 +119,8 @@ async function loadImg(url,onprog){const r=await fetch(url);const total=+r.heade
   return URL.createObjectURL(new Blob(chunks,{type:'image/jpeg'}));}
 (async()=>{
   const d=await (await fetch('/api/edit/cities')).json(); cities=d.cities.map(c=>({id:c.id,name:c.name,x:+c.x,y:+c.y}));
-  ovimg.src='/image/map/overview_1024.jpg';
-  const url=await loadImg('/image/map/map_L2_with_cities.jpg',p=>{$('pct').textContent=Math.round(p*100)+'%';$('bari').style.width=(p*100)+'%';});
+  ovimg.src='/image/map/overview_1024.jpg?v='+(d.overviewVersion||0);
+  const url=await loadImg('/image/map/map_L2_with_cities.jpg?v='+(d.mapVersion||0),p=>{$('pct').textContent=Math.round(p*100)+'%';$('bari').style.width=(p*100)+'%';});
   await new Promise(res=>{map.onload=res;map.src=url;});
   MW=map.naturalWidth;MH=map.naturalHeight;
   vw=innerWidth;vh=innerHeight;

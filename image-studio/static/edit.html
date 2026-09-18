@@ -47,7 +47,7 @@ function fit(){if(!imgReady)return;view.s=Math.min(cv.width/img.width,cv.height/
   view.x=(cv.width-img.width*view.s)/2;view.y=(cv.height-img.height*view.s)/2;draw()}
 function loadBg(){imgReady=false;setMsg('载入底图 '+BGS[bgIdx][0]+'…');
   img=new Image();img.onload=()=>{imgReady=true;K=img.width/1024;fit();setMsg('就绪 · '+img.width+'px','ok')};
-  img.onerror=()=>setMsg('底图加载失败','err');img.src=BGS[bgIdx][1]}
+  img.onerror=()=>setMsg('底图加载失败','err');img.src=BGS[bgIdx][1]+'?v='+Date.now()}
 
 function draw(){
   ctx.fillStyle='#0d0c0a';ctx.fillRect(0,0,cv.width,cv.height);

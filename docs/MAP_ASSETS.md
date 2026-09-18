@@ -205,3 +205,9 @@ python3 compose_cities.py <拼接图> <k> <scale> <out> [铜牌png]   # 贴城�
 `compose_cities.py` 现在对每个标签依次尝试 **下 → 上 → 右 → 左**，
 与其它城的外接框和已放置的标签求重叠面积，取第一个零重叠的位置（都不为零则取最小）。
 城池贴图时记录 `city_boxes[id]`，标签在所有城贴完后统一放置。
+
+### 图片缓存坑
+
+`/image/` 路由带 `max-age=86400`，手机会把 26MB 大图缓存一天，重合成后刷新仍是旧图。
+`/api/edit/cities` 现在返回 `mapVersion` / `overviewVersion`（文件 mtime），
+预览页图片 URL 追加 `?v=<mtime>`；每次重合成上传后手机自动拿到新图。
