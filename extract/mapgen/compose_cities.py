@@ -1,12 +1,14 @@
 """把 36 座城贴到任意层的拼接图上。
-   用法: compose_cities.py <stitched.jpg> <k源px→画布px> <scale> <out.jpg>
-   城池尺寸基准（scale=1 时，画布按 1024/块 计）：帝都 240 → 寨堡 120，再乘 k/3.2 归一到当前层。"""
+   用法: compose_cities.py <work目录> <stitched.jpg> <k源px→画布px> <scale> <out.jpg> [铜牌png] [地坪png]
+   城池尺寸基准（scale=1 时，画布按 1024/块 计）：帝都 240 → 寨堡 120，再乘 k/3.2 归一到当前层。
+   城池坐标取 <work>/city-screen.json —— 也就是 /edit 编辑器保存的那一份。"""
 import json, sys, re
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
-d = '/private/tmp/claude-501/-Users-jingtaoliang-Library-Application-Support-Claude-scratch-workspaces-f957231f-5fbc-4d4a-963a-340bcb0af660-00815451-9bc4-4860-9586-919b36cb44d7-scratch-2026-09-18-ecf554/3967dfb5-862b-435e-accf-a939a7154915/scratchpad'
-stitched, k, scale, out = sys.argv[1], float(sys.argv[2]), float(sys.argv[3]), sys.argv[4]
-plate_path = sys.argv[5] if len(sys.argv) > 5 else None
-ground_path = sys.argv[6] if len(sys.argv) > 6 else None
+Image.MAX_IMAGE_PIXELS = None
+d = sys.argv[1]
+stitched, k, scale, out = sys.argv[2], float(sys.argv[3]), float(sys.argv[4]), sys.argv[5]
+plate_path = sys.argv[6] if len(sys.argv) > 6 else None
+ground_path = sys.argv[7] if len(sys.argv) > 7 else None
 ground = None
 if ground_path:
     ground = Image.open(ground_path).convert('RGBA')
@@ -17,9 +19,6 @@ if plate_path:
     solid = plate.split()[3].point(lambda a: 255 if a > 128 else 0)
     plate = plate.crop(solid.getbbox())
 scr = json.load(open(d+'/city-screen.json')); latest = json.load(open(d+'/city_latest.json'))
-ADJ = json.load(open(d+'/adjacency.json'))
-POS = {c['id']: (c['x']*k, c['y']*k) for c in scr}
-import math
 src = open(d+'/sgapp/cities.js', encoding='utf-8').read()
 tiers = {int(m.group(1)): int(m.group(3)) for m in re.finditer(r"(\d+):\['([^']+)',(\d),", src)}
 TIER_PX = {1:240, 2:210, 3:180, 4:158, 5:138, 6:120}

@@ -175,7 +175,22 @@ python3 compose_cities.py <拼接图> <k> <scale> <out> [铜牌png]   # 贴城�
 - 保存 → `POST /api/edit/cities`，写 `data/city-screen.json` 并自动备份上一版
 - 坐标始终存 1024 坐标系，各层按 k 换算
 
-保存后拉回本地跑 `compose_cities.py` 即可重新合成。
+### 在 /edit 里动过坐标之后，要跑这几步
+
+```bash
+scp root@VPS:/var/www/sg.areu.pro/data/city-screen.json work/          # 1 拉回编辑器存的坐标
+cp work/city-screen.json extract/data/city-screen.json                 # 2 同步进仓库（work/ 被 gitignore）
+python3 extract/mapgen/compose_cities.py work work/stitched_L2.jpg 6.375 0.8 \
+        work/L2_final.jpg work/ui/label_bronze_*.png work/ui/ground_plate_*.png   # 3 重贴城池与铜牌
+python3 extract/mapgen/export_boxes.py work extract/data/map-boxes.json           # 4 重算铜牌矩形
+scp work/L2_final.jpg root@VPS:/var/www/sg.areu.pro/output/map/map_L2_with_cities.jpg
+scp extract/data/map-boxes.json root@VPS:/var/www/sg.areu.pro/data/
+```
+
+**总览图不用重生成**——它现在只是纯地形，圆点和城名由前端按 `city-screen.json`
+运行时绘制，坐标一改自动跟着动。
+
+大图的缓存靠 `mapVersion`（文件 mtime）失效，上传完手机刷新即可，不用清缓存。
 
 ## 最终坐标（人工校准）
 
