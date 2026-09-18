@@ -1,144 +1,88 @@
-<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>素材 · 生图工作台</title><link rel="stylesheet" href="/static/style.css">
-<body>
-<header><h1>生图工作台</h1>
-  <nav><a href="/" class="on">素材</a><a href="/settings">设置</a><a href="/api/logout">退出</a></nav>
+<title>素材 · 生图工作台</title><link rel="stylesheet" href="/static/style.css?v=55e000b8"></head><body>
+<header>
+  <div><span class="eyebrow">BWDL · ART PIPELINE</span><h1>生图工作台</h1></div>
+  <nav>
+    <span id="conn" style="color:var(--soft);font-size:12px">连接中…</span>
+    <button id="toggle" style="min-width:104px">…</button>
+    <a href="/" class="on">素材</a><a href="/settings">设置</a><a href="/api/logout">退出</a>
+  </nav>
 </header>
 <div class="wrap">
 
   <div class="card">
-    <h2>素材库 <span id="count" style="color:var(--dim);font-weight:400"></span></h2>
-    <div class="tags" id="tags"></div>
-    <div class="row" style="margin-bottom:14px">
-      <input id="q" placeholder="按名字筛选，例如 关羽 / 谋士" style="flex:2">
-      <button id="selAll" class="ghost" style="flex:0 0 auto">全选当前</button>
-      <button id="selNone" class="ghost" style="flex:0 0 auto">清空选择</button>
-      <button id="gen" style="flex:0 0 auto">生成选中 (<span id="nsel">0</span>)</button>
+    <div class="ov">
+      <div>
+        <div style="font-size:11px;letter-spacing:.12em;color:var(--soft)">生成进度</div>
+        <p class="big"><span id="done">0</span><small> / <span id="total">0</span></small></p>
+      </div>
+      <div class="pct" id="pct">0%</div>
     </div>
-    <div id="m" class="msg"></div>
-    <div class="grid" id="grid"></div>
-  </div>
-
-  <div class="card" id="editor" style="display:none">
-    <h2>Prompt 编辑 · <span id="edName" style="color:var(--fg)"></span></h2>
-    <div id="edMeta" class="hint" style="margin:0 0 10px"></div>
-    <textarea id="edPrompt"></textarea>
-    <div class="row" style="margin-top:12px">
-      <div style="flex:0 0 auto"><button id="edGen">只生成这一张</button></div>
-      <div style="flex:0 0 auto"><button id="edSave" class="ghost">保存修改</button></div>
-      <div style="flex:1"></div>
-    </div>
-    <div id="edPreview" style="margin-top:14px"></div>
+    <progress id="bar" max="100" value="0"></progress>
+    <div id="stats"></div>
+    <p id="worker">读取状态…</p>
+    <p class="hint">队列串行执行（服务器只有 1 核）。关掉浏览器不影响后台继续跑。
+      失败的素材会保留错误信息，可以按状态筛出来单独重试。生成结果只写入 output 目录，不覆盖任何原始素材。</p>
   </div>
 
   <div class="card">
-    <h2>任务队列 <span id="qstat" style="color:var(--dim);font-weight:400"></span></h2>
-    <div style="overflow-x:auto"><table id="jobs">
-      <thead><tr><th>素材</th><th>状态</th><th>模型</th><th>耗时</th><th>结果 / 错误</th></tr></thead>
-      <tbody></tbody></table></div>
-    <div style="height:12px"></div>
-    <button id="clr" class="ghost">清空已完成记录</button>
+    <h2>素材库 <span id="results" style="color:var(--dim);font-weight:400"></span></h2>
+    <div class="filters">
+      <input id="q" type="search" placeholder="搜索武将名或 prompt 内容…">
+      <select id="category">
+        <option value="">全部分类</option>
+        <option value="portrait">武将立绘</option>
+        <option value="cg">全屏 CG</option>
+        <option value="scene">战斗场景</option>
+      </select>
+      <select id="status">
+        <option value="">全部状态</option>
+        <option value="idle">未生成</option>
+        <option value="queued">排队中</option>
+        <option value="running">生成中</option>
+        <option value="done">已完成</option>
+        <option value="failed">失败</option>
+      </select>
+    </div>
+    <div class="row" style="margin-bottom:16px">
+      <div style="flex:0 0 auto"><button id="gen">生成选中 (<span id="nsel">0</span>)</button></div>
+      <div style="flex:0 0 auto"><button id="selPage" class="ghost">选中本页</button></div>
+      <div style="flex:0 0 auto"><button id="selNone" class="ghost">清空选择</button></div>
+      <div style="flex:0 0 auto"><button id="genAll" class="ghost">把当前筛选结果全部入队</button></div>
+      <div style="flex:1"></div>
+      <div style="flex:0 0 auto"><button id="resetQ" class="danger">清空队列</button></div>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="pager">
+      <button id="prev" class="ghost">上一页</button>
+      <span id="page">1 / 1</span>
+      <button id="next" class="ghost">下一页</button>
+    </div>
   </div>
 
+  <div class="card">
+    <h2>运行记录</h2>
+    <ol id="events"></ol>
+  </div>
 </div>
-<script>
-const $=id=>document.getElementById(id);
-let ASSETS=[], cat='portrait', sel=new Set(), cur=null;
 
-const CATS={portrait:'武将立绘',cg:'全屏 CG',scene:'战斗场景'};
-
-async function load(){
-  ASSETS=await (await fetch('/api/assets')).json();
-  const tg=$('tags'); tg.innerHTML='';
-  const counts={}; for(const a of ASSETS) counts[a.category]=(counts[a.category]||0)+1;
-  for(const [k,label] of Object.entries(CATS)){
-    const d=document.createElement('div');
-    d.className='tag'+(k===cat?' on':''); d.textContent=`${label} (${counts[k]||0})`;
-    d.onclick=()=>{cat=k;render();document.querySelectorAll('.tag').forEach((x,i)=>
-      x.classList.toggle('on',Object.keys(CATS)[i]===k));};
-    tg.appendChild(d);
-  }
-  render();
-}
-function visible(){
-  const q=$('q').value.trim();
-  return ASSETS.filter(a=>a.category===cat && (!q||a.label.includes(q)||a.prompt.includes(q)));
-}
-function render(){
-  const list=visible(); $('count').textContent=`· 共 ${ASSETS.length} 条，当前 ${list.length} 条`;
-  const g=$('grid'); g.innerHTML='';
-  for(const a of list){
-    const d=document.createElement('div');
-    d.className='tile'+(sel.has(a.id)?' sel':'');
-    const img=a.latest||a.source;
-    d.innerHTML=`<div class="im" style="background-image:url('${img}')">${a.latest?'':'<span>原始</span>'}</div>
-      <div class="nm"><b>${a.label}</b><span class="st ${a.latest?'done':''}">${a.latest?'已生成':'未生成'}</span></div>`;
-    d.onclick=e=>{
-      if(e.shiftKey){ sel.has(a.id)?sel.delete(a.id):sel.add(a.id); render(); updN(); }
-      else open(a);
-    };
-    d.ondblclick=()=>{ sel.has(a.id)?sel.delete(a.id):sel.add(a.id); render(); updN(); };
-    g.appendChild(d);
-  }
-  updN();
-}
-const updN=()=>$('nsel').textContent=sel.size;
-function open(a){
-  cur=a; $('editor').style.display='block';
-  $('edName').textContent=a.label;
-  $('edMeta').textContent=a.meta?Object.entries(a.meta).map(([k,v])=>`${k} ${v}`).join(' · '):a.category;
-  $('edPrompt').value=a.prompt;
-  $('edPreview').innerHTML=`<div class="row">
-    <div><div class="hint">原始素材</div><img src="${a.source}" style="max-width:100%;image-rendering:pixelated;border:1px solid var(--line);border-radius:6px"></div>
-    ${a.latest?`<div><div class="hint">已生成</div><a href="${a.latest}" target="_blank"><img src="${a.latest}" style="max-width:100%;border:1px solid var(--line);border-radius:6px"></a></div>`:'<div></div>'}
-  </div>`;
-  $('editor').scrollIntoView({behavior:'smooth',block:'start'});
-}
-async function queue(items){
-  const r=await fetch('/api/generate',{method:'POST',headers:{'content-type':'application/json'},
-    body:JSON.stringify({items})});
-  const d=await r.json();
-  const m=$('m');
-  if(r.ok){m.className='msg ok';m.textContent=`已加入队列 ${d.queued} 个任务（1 核串行执行，请等待）`;}
-  else{m.className='msg err';m.textContent=d.error||'提交失败';}
-  poll();
-}
-$('gen').onclick=()=>{
-  if(!sel.size)return;
-  queue(ASSETS.filter(a=>sel.has(a.id)).map(a=>({assetId:a.id,category:a.category,
-    label:a.label,prompt:a.prompt,size:a.size})));
-};
-$('edGen').onclick=()=>cur&&queue([{assetId:cur.id,category:cur.category,label:cur.label,
-  prompt:$('edPrompt').value,size:cur.size}]);
-$('edSave').onclick=async()=>{
-  if(!cur)return; cur.prompt=$('edPrompt').value;
-  await fetch('/api/assets',{method:'POST',headers:{'content-type':'application/json'},
-    body:JSON.stringify(ASSETS.map(({latest,...a})=>a))});
-  const m=$('m'); m.className='msg ok'; m.textContent='Prompt 已保存到服务器';
-};
-$('selAll').onclick=()=>{visible().forEach(a=>sel.add(a.id));render()};
-$('selNone').onclick=()=>{sel.clear();render()};
-$('q').oninput=render;
-$('clr').onclick=async()=>{await fetch('/api/jobs/clear',{method:'POST'});poll()};
-
-async function poll(){
-  try{
-    const d=await (await fetch('/api/jobs?limit=60')).json();
-    const q=d.jobs.filter(j=>j.status==='queued').length;
-    $('qstat').textContent=d.running?`· 执行中，排队 ${q}`:(q?`· 排队 ${q}`:'· 空闲');
-    const tb=$('jobs').querySelector('tbody'); tb.innerHTML='';
-    for(const j of d.jobs){
-      const t=j.finishedAt&&j.startedAt?((j.finishedAt-j.startedAt)/1000).toFixed(1)+'s':'—';
-      const res=j.status==='done'
-        ? `<a href="${j.output}" target="_blank">查看图片</a> · ${(j.bytes/1024).toFixed(0)} KB`
-        : (j.error?`<span style="color:var(--err)">${j.error}</span>`:'—');
-      tb.insertAdjacentHTML('beforeend',
-        `<tr><td>${j.label||j.assetId}</td><td><span class="pill ${j.status}">${j.status}</span></td>
-         <td style="font-family:ui-monospace,monospace;font-size:11px">${j.model}</td><td>${t}</td><td>${res}</td></tr>`);
-    }
-    if(d.jobs.some(j=>j.status==='done')&&!d.running) load();
-  }catch(e){}
-}
-load(); poll(); setInterval(poll,4000);
-</script></body></html>
+<dialog id="dlg">
+  <div class="row" style="align-items:center">
+    <h2 id="dTitle" style="flex:1"></h2>
+    <div style="flex:0 0 auto"><button id="dClose" class="ghost">关闭</button></div>
+  </div>
+  <p class="hint" id="dMeta" style="margin-top:4px"></p>
+  <div class="compare" id="dCompare"></div>
+  <label>生图提示词</label>
+  <textarea id="dPrompt"></textarea>
+  <div class="row" style="margin-top:14px">
+    <div style="flex:0 0 auto"><button id="dSave" class="ghost">保存提示词</button></div>
+    <div style="flex:0 0 auto"><button id="dGen">生成这一张</button></div>
+    <div style="flex:1"></div>
+  </div>
+  <p class="hint">重新生成会再次计费。改完提示词记得先保存再生成。</p>
+</dialog>
+<div id="toast"></div>
+<script src="/static/app.js?v=9b1d2735" defer></script>
+</body></html>
