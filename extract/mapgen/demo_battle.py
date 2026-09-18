@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 """在合成好的战场上摆几支部队，带兵力条，看整体效果。
 
-   原版把兵力编在贴图里（lib51 的 11 列 = 兵力÷100，0–10 封顶）；
-   这里改成脚下一条血条，能连续显示，也不受 1000 兵封顶的限制。
+   原版把兵力编在贴图里（lib51 的 11 列 = 兵力÷100，0–10 封顶），
+   而且**根本显示不了武将名**——打过来一支部队，不知道对面是谁。
+   这里改成脚下一条兵力条（能连续显示，不受 1000 封顶），条下面再写武将名。
 
    用法: demo_battle.py <战场png> <单位目录> <输出png> [格边长=64]
 """
-import sys, os, random
-from PIL import Image, ImageDraw
+import sys, os
+from PIL import Image, ImageDraw, ImageFont
 
 BF, UDIR, OUT = sys.argv[1], sys.argv[2], sys.argv[3]
 CELL = int(sys.argv[4]) if len(sys.argv) > 4 else 64
@@ -15,17 +16,23 @@ CELL = int(sys.argv[4]) if len(sys.argv) > 4 else 64
 bf = Image.open(BF).convert('RGBA')
 W, H = bf.width // CELL, bf.height // CELL
 
-# (列, 行, 阵营, 兵种, 朝向, 兵力)
+# (列, 行, 阵营, 兵种, 朝向, 兵力, 武将名)
 TROOPS = [
-    (6, 5,'blue','ping','e', 900), (5, 6,'blue','ping','e', 750),
-    (6, 7,'blue','shan','ne',480), (4, 7,'blue','shui','se',620),
-    (12,5,'red','ping','s',  880), (13,6,'red','shan','s', 300),
-    (12,7,'red','shui','n',  540), (14,7,'red','ping','se',700),
+    (6, 5,'blue','ping','e', 900,'夏侯惇'), (5, 6,'blue','ping','e', 750,'曹仁'),
+    (6, 7,'blue','shan','ne',480,'乐进'),   (4, 7,'blue','shui','se',620,'李典'),
+    (12,5,'red','ping','s',  880,'颜良'),   (13,6,'red','shan','s', 300,'张郃'),
+    (12,7,'red','shui','n',  540,'高览'),   (14,7,'red','ping','se',700,'文丑'),
 ]
+FONT = None
+for cand in ('/System/Library/Fonts/STHeiti Medium.ttc',
+             '/System/Library/Fonts/Hiragino Sans GB.ttc'):
+    try:
+        FONT = ImageFont.truetype(cand, max(9, CELL//6)); break
+    except Exception: pass
 BAR = {'blue': (78,150,232), 'red': (222,78,64)}
 
 d = ImageDraw.Draw(bf)
-for cx, cy, side, arm, dirk, troops in TROOPS:
+for cx, cy, side, arm, dirk, troops, name in TROOPS:
     flip = False
     key = dirk
     if dirk in ('w','sw','nw'):                      # 西向靠镜像
@@ -54,6 +61,16 @@ for cx, cy, side, arm, dirk, troops in TROOPS:
     bx, by = cx*CELL + (CELL-bw)//2, cy*CELL + CELL - bh - 2
     d.rectangle([bx-1, by-1, bx+bw, by+bh], fill=(18,14,10,235))
     d.rectangle([bx, by, bx + int(bw*min(troops,1000)/1000) - 1, by+bh-1], fill=BAR[side])
+
+    # 武将名写在兵力条下面——原版那个小方块显示不了名字，
+    # 打过来一支部队不知道对面是谁，这是复刻时该补上的
+    if FONT:
+        tx, ty = cx*CELL + CELL//2, by + bh + 1
+        for ox in (-1, 0, 1):
+            for oy in (-1, 0, 1):
+                if ox or oy:
+                    d.text((tx+ox, ty+oy), name, font=FONT, fill=(12,9,5), anchor='ma')
+        d.text((tx, ty), name, font=FONT, fill=(248,242,225), anchor='ma')
 
 bf.convert('RGB').save(OUT)
 print('摆了 %d 支部队 → %s' % (len(TROOPS), OUT))
