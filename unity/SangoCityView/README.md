@@ -21,6 +21,26 @@ cp "/Library/Fonts/Arial Unicode.ttf" Assets/Fonts/CJK.ttf
 
 输出 `Render/cityview.png`，750×1624（375×812 的 2 倍）。
 
+## 出一个能点的 macOS 程序
+
+```bash
+/Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/MacOS/Unity \
+  -batchmode -projectPath "$PWD" -executeMethod Builder.BuildMac \
+  -logFile "$PWD/build.log" -quit
+open Build/SangoCityView.app
+```
+
+约 10 秒出包，500×1084 的竖屏窗口。点建筑看高亮与指令浮窗，点空白取消。
+运行时逻辑在 `Assets/Scripts/CityView.cs`，素材从 `StreamingAssets/Art` 读。
+
+点击判定：屏幕坐标 → `RectTransformUtility.ScreenPointToLocalPointInRectangle`
+→ 图像坐标 → `mask.GetPixel` 查色表。
+注意贴图的 y 轴朝上而图像坐标朝下，取像素时要 `mask.height-1-y`。
+读到黑色（院内空地，比如校场）就退回按包围盒兜底，取面积最小的那个。
+
+高亮贴图**按需生成并缓存**：整张 1024×1536 逐像素算 R=5 的邻域太慢，
+所以只在建筑包围盒外扩 7px 的范围里算，其余直接铺暗色。
+
 ## 几处引擎侧的做法
 
 **九宫格**用 `Sprite.Create(..., border)` + `Image.Type.Sliced`。
