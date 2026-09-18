@@ -15,6 +15,10 @@ public class MapView
     public RectTransform Root;
     public System.Action<MapData.City> OnEnter;     // 再点一次已选中的城 → 进城
 
+    RoadData roads; MarchUnit march;
+    MapData.City moveFrom;                          // 非空 = 正在等玩家点目的地
+    Text hint;
+
     RectTransform map;                              // 1024×1024 的容器
     MapData data;
     readonly Dictionary<int,RectTransform> flagRT = new();
@@ -81,6 +85,14 @@ public class MapView
         Place((RectTransform)bar.GetChild(bar.childCount-1), 14, 40, 300, 20);
         bar.gameObject.SetActive(false);
 
+        roads = JsonUtility.FromJson<RoadData>(
+            System.IO.File.ReadAllText(System.IO.Path.Combine(ArtDir, "road-paths.json")));
+        march = new MarchUnit(map);
+
+        hint = Label(Root, "", 13, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleCenter);
+        Place(hint.rectTransform, 0, 92, screenW, 26);
+        hint.gameObject.SetActive(false);
+
         CenterOn(FindByName("陈留"));
         Apply();
     }
@@ -118,9 +130,44 @@ public class MapView
         }
     }
 
+    void StartMarch(MapData.City from, MapData.City to, RoadData.Edge e)
+    {
+        var pts = e.Points();
+        if (e.a != from.id) pts.Reverse();          // 折线是按 a→b 存的，反向出征要倒过来
+        march.SetFlag(from.owner, data.flags.Find(f => f.key == from.owner));
+        march.OnArrive = () => { hint.text = "已抵达 " + to.name; Select(to); EndMove(); };
+        march.Begin(pts);
+        hint.text = from.name + " → " + to.name + " 行军中";
+        Select(null);
+        ring.gameObject.SetActive(false);
+    }
+
+    /// 给编辑器渲染用：直接开一段行军并推进到 t（0..1），不用真去点
+    public void DebugMarch(string fromName, string toName, float t)
+    {
+        var from = FindByName(fromName); var to = FindByName(toName);
+        var e = roads.Find(from.id, to.id);
+        if (e == null) { Debug.LogError(fromName + " 与 " + toName + " 不相邻"); return; }
+        StartMarch(from, to, e);
+        march.Layout(zoom);
+        march.Step(e.length / 46f * t);              // 一次跨到 t 处
+        var p = march.Pos;
+        map.anchoredPosition = new Vector2(vw/2 - p.x*zoom, -(vh/2 - p.y*zoom));
+        march.Layout(zoom);
+    }
+
     public void Update(float screenW, float screenH)
     {
         if (!Root.gameObject.activeInHierarchy) return;
+
+        if (march != null && march.Running)
+        {
+            march.Layout(zoom);
+            march.Step(Time.deltaTime);
+            var p = march.Pos;                       // 镜头跟着部队走
+            map.anchoredPosition = new Vector2(vw/2 - p.x*zoom, -(vh/2 - p.y*zoom));
+            return;                                  // 行军途中不接受拖动与点击
+        }
 
         float wheel = Input.mouseScrollDelta.y;
         if (Mathf.Abs(wheel) > .01f)
@@ -164,12 +211,34 @@ public class MapView
             float d = Mathf.Sqrt(Mathf.Pow((c.x-p.x)/rx,2) + Mathf.Pow((c.y-p.y)/ry,2));
             if (d <= 1.12f && (best == null || d < bd)) { best = c; bd = d; }
         }
+        if (moveFrom != null)
+        {
+            if (best == null) { EndMove(); Select(null); return; }
+            var edge = roads.Find(moveFrom.id, best.id);
+            if (edge == null || best.id == moveFrom.id) { hint.text = best.name + " 不与 " + moveFrom.name + " 相邻"; return; }
+            StartMarch(moveFrom, best, edge);
+            return;
+        }
         if (best == null) { Select(null); return; }
         if (sel != null && sel.id == best.id) { OnEnter?.Invoke(best); return; }
         Select(best);
     }
 
     public MapData.City Selected => sel;
+
+    /// 城内点了「移动」：回到地图，等玩家点一座相邻城
+    public void BeginMove(MapData.City from)
+    {
+        moveFrom = from;
+        Select(from);
+        bar.gameObject.SetActive(false);
+        var ns = roads.Neighbors(from.id);
+        var names = new List<string>();
+        foreach (var n in ns) { var c = data.cities.Find(q => q.id == n); if (c != null) names.Add(c.name); }
+        hint.text = "选择目的地：" + string.Join("、", names);
+        hint.gameObject.SetActive(true);
+    }
+    void EndMove() { moveFrom = null; hint.gameObject.SetActive(false); }
 
     public void Select(MapData.City c)
     {

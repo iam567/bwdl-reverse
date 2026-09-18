@@ -16,6 +16,8 @@ public class CityView
 
     public RectTransform Root;
     public System.Action OnBack;
+    public System.Action<string> OnCommand;         // 点了浮窗里的某条指令
+    readonly List<(RectTransform rt, string cmd)> cmdRects = new();
 
     Texture2D city, mask;
     CityMeta meta; MapData.Stat st;
@@ -152,7 +154,13 @@ public class CityView
         if (RectTransformUtility.RectangleContainsScreenPoint(backRT, Input.mousePosition, null))
         { OnBack?.Invoke(); return; }
         if (popBg.gameObject.activeSelf &&
-            RectTransformUtility.RectangleContainsScreenPoint(popRT, Input.mousePosition, null)) return;
+            RectTransformUtility.RectangleContainsScreenPoint(popRT, Input.mousePosition, null))
+        {
+            foreach (var (rt, cmd) in cmdRects)
+                if (RectTransformUtility.RectangleContainsScreenPoint(rt, Input.mousePosition, null))
+                { OnCommand?.Invoke(cmd); return; }
+            return;                                  // 点在浮窗空白处：什么都不做，别把浮窗关掉
+        }
         if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(picRT, Input.mousePosition, null, out var lp))
         { Select(null); return; }
         float ix = lp.x/f, iy = -lp.y/f;
@@ -191,6 +199,7 @@ public class CityView
         hlImg.texture = tex; hlImg.enabled = true;
 
         foreach (Transform t in popCmds) Object.Destroy(t.gameObject);
+        cmdRects.Clear();
         var cmds = CMDS.TryGetValue(b.func, out var cc) ? cc : new string[0];
         /* Sliced 的铜框是画在 RectTransform 范围内的（11px），
            子物体按 Place 摆是从外沿算起——内边距必须大于框宽，否则按钮压在框上。 */
@@ -203,7 +212,8 @@ public class CityView
             var t = Label(bt.transform, cmds[i], 14, new Color32(0xFD,0xF3,0xDA,255), TextAnchor.MiddleCenter, FontStyle.Bold);
             Place(t.rectTransform, 0, 0, bw, BH);
             var o = t.gameObject.AddComponent<Outline>();
-            o.effectColor = new Color32(0x2E,0x1C,0x04,255); o.effectDistance = new Vector2(1.2f,1.2f); }
+            o.effectColor = new Color32(0x2E,0x1C,0x04,255); o.effectDistance = new Vector2(1.2f,1.2f);
+            cmdRects.Add((bt.rectTransform, cmds[i])); }
         float imgW = picRT.sizeDelta.x, imgH = picRT.sizeDelta.y;
         float px = b.box[2]*f+9, py = (b.box[1]+b.box[3])/2f*f-popH/2;
         if (px+popW > imgW-4) px = b.box[0]*f-9-popW;

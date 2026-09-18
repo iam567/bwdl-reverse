@@ -142,4 +142,49 @@ public static class Builder
         Debug.Log("渲染完成 → Render/city_" + key + ".png");
         EditorApplication.Exit(0);
     }
+
+    /// 渲一帧行军画面：-from 陈留 -to 濮阳 -t 0.45
+    public static void RenderMarch()
+    {
+        string from = "陈留", to = "濮阳"; float t = .45f;
+        var argv = System.Environment.GetCommandLineArgs();
+        for (int i = 0; i < argv.Length - 1; i++) {
+            if (argv[i] == "-from") from = argv[i + 1];
+            if (argv[i] == "-to")   to   = argv[i + 1];
+            if (argv[i] == "-t")    float.TryParse(argv[i + 1], out t);
+        }
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        UIKit.UIFont = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/CJK.ttf");
+
+        var camGO = new GameObject("Cam", typeof(Camera));
+        var cam = camGO.GetComponent<Camera>();
+        cam.clearFlags = CameraClearFlags.SolidColor;
+        cam.backgroundColor = new Color(.082f, .067f, .043f);
+        cam.orthographic = true;
+        var rt = new RenderTexture(750, 1624, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
+        cam.targetTexture = rt;
+
+        var go = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+        var canvas = go.GetComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceCamera;
+        canvas.worldCamera = cam; canvas.planeDistance = 10;
+        var sc = go.GetComponent<CanvasScaler>();
+        sc.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        sc.referenceResolution = new Vector2(375, 812); sc.matchWidthOrHeight = 0;
+
+        var data = JsonUtility.FromJson<MapData>(File.ReadAllText(Path.Combine(UIKit.ArtDir, "map.json")));
+        var mv = new MapView((RectTransform)go.transform, data, 375, 812);
+        mv.DebugMarch(from, to, t);
+
+        Canvas.ForceUpdateCanvases();
+        cam.Render();
+        var shot = new Texture2D(rt.width, rt.height, TextureFormat.RGB24, false);
+        RenderTexture.active = rt;
+        shot.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+        shot.Apply(); RenderTexture.active = null;
+        Directory.CreateDirectory("Render");
+        File.WriteAllBytes("Render/march.png", shot.EncodeToPNG());
+        Debug.Log("行军渲染完成 → Render/march.png");
+        EditorApplication.Exit(0);
+    }
 }

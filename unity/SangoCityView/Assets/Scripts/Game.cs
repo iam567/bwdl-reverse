@@ -10,6 +10,7 @@ public class Game : MonoBehaviour
     const int REF_W = 375, REF_H = 812;
 
     MapView mapView; CityView cityView; MapData data;
+    MapData.City curCity;
     Text toast; float toastUntil;
 
     void Start()
@@ -29,8 +30,15 @@ public class Game : MonoBehaviour
         cityView.Root.gameObject.SetActive(false);
 
         mapView.OnEnter = c => {
+            curCity = c;
             mapView.Root.gameObject.SetActive(false);
             cityView.Show(data.stats.Find(s => s.id == c.id), c.key);
+        };
+        cityView.OnCommand = cmd => {
+            if (cmd != "移动" && cmd != "输送") { Toast(cmd + " 还没做"); return; }
+            cityView.Root.gameObject.SetActive(false);
+            mapView.Root.gameObject.SetActive(true);
+            mapView.BeginMove(curCity);
         };
         cityView.OnBack = () => {
             cityView.Root.gameObject.SetActive(false);
