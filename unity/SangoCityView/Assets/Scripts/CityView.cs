@@ -21,7 +21,7 @@ public class CityView
     CityMeta meta; MapData.Stat st;
     RectTransform picRT, popRT;
     RawImage hlImg, cityImg;
-    Image popBg; Text popName, popFunc; Transform popCmds;
+    Image popBg; Transform popCmds;
     Text hName, hTier, hOwner, hTok;
     RectTransform statGrid; Sprite panelSprite, plaqueSprite, btnSprite;
     readonly Dictionary<string,Texture2D> hlCache = new();
@@ -75,10 +75,8 @@ public class CityView
 
         popBg = Panel(picRT, "Pop", Slice(Load("menu.png"), 62, 11));
         popRT = popBg.rectTransform;
-        popName = Label(popBg.transform, "", 16, new Color32(0xF7,0xEC,0xD4,255), TextAnchor.MiddleLeft, FontStyle.Bold);
-        Place(popName.rectTransform, 10, 8, 80, 22);
-        popFunc = Label(popBg.transform, "", 10, new Color32(0xB9,0xA4,0x7A,255));
-        Place(popFunc.rectTransform, 58, 10, 70, 20);
+        /* 浮窗里不再写建筑名——旁边的名匾已经写着「功曹府·人事」，重复，
+           而且 16px 的标题在 150 宽的框里排不下，会溢出木框。 */
         popCmds = Node("Cmds", popBg.transform);
         Place((RectTransform)popCmds, 0, 0, 150, 220);
         btnSprite = Slice(Load("btn.png"), 30, 90, 6, 9);
@@ -176,6 +174,9 @@ public class CityView
         return best;
     }
 
+    /// 给编辑器渲染用：直接点中某座建筑，不用真去点
+    public void SelectByKey(string key) => Select(meta.buildings.Find(b => b.key == key));
+
     void Select(B b)
     {
         cur = b?.key;
@@ -189,14 +190,13 @@ public class CityView
         if (!hlCache.TryGetValue(b.key, out var tex)) { tex = BuildHighlight(b); hlCache[b.key]=tex; }
         hlImg.texture = tex; hlImg.enabled = true;
 
-        popName.text = b.name; popFunc.text = "· " + b.func;
         foreach (Transform t in popCmds) Object.Destroy(t.gameObject);
         var cmds = CMDS.TryGetValue(b.func, out var cc) ? cc : new string[0];
-        float popW = 150, popH = 9+22+5+Mathf.Ceil(cmds.Length/2f)*32+5+4;
+        float popW = 150, popH = 9 + Mathf.Ceil(cmds.Length/2f)*32 + 9;
         for (int i = 0; i < cmds.Length; i++) {
             var bt = Panel(popCmds, "b"+i, btnSprite);
             float bw = cmds.Length==1 ? (popW-18) : (popW-18-5)/2f;
-            Place(bt.rectTransform, 9+(i%2)*(bw+5), 36+(i/2)*32, bw, 28);
+            Place(bt.rectTransform, 9+(i%2)*(bw+5), 9+(i/2)*32, bw, 28);
             var t = Label(bt.transform, cmds[i], 13, new Color32(0xFD,0xF3,0xDA,255), TextAnchor.MiddleCenter, FontStyle.Bold);
             Place(t.rectTransform, 0, 0, bw, 28);
             var o = t.gameObject.AddComponent<Outline>();

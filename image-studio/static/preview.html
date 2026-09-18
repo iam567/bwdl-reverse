@@ -87,10 +87,6 @@ html,body{margin:0;height:100%;background:#0d0c0a;overflow:hidden;font:14px/1.4 
 #bpop.left::after {right:-17px;top:calc(50% - 7px);border-left-color:#7a6238}
 #bpop.below::after{top:-17px;left:calc(50% - 7px);border-bottom-color:#7a6238}
 #bpop.above::after{bottom:-17px;left:calc(50% - 7px);border-top-color:#7a6238}
-.bp-hd{display:flex;align-items:baseline;gap:5px;margin-bottom:8px;
-  padding-bottom:6px;border-bottom:1px solid #ffffff1f}
-.bp-hd b{font-size:16px;color:#f7ecd4;letter-spacing:.06em;text-shadow:0 1px 3px #000a}
-.bp-hd span{font-size:10.5px;color:#b9a47a}
 .bp-cmds{display:grid;grid-template-columns:1fr 1fr;gap:5px}
 /* 铜面是中等偏亮的暖金，深色字压不住（试过 #2a1c08，小字号下糊成一片）。
    改成浅米色 + 一圈深褐描边，跟建筑名匾同一个路子，在什么底上都跳得出来。 */
@@ -143,8 +139,7 @@ html,body{margin:0;height:100%;background:#0d0c0a;overflow:hidden;font:14px/1.4 
   </div>
   <div class="cv-body">
     <div id="cvpic"><img id="cvimg" alt=""><canvas id="cvhl"></canvas><canvas id="cvlbl"></canvas>
-      <div id="bpop"><div class="bp-hd"><b id="bsname"></b><span id="bsfunc"></span></div>
-        <div class="bp-cmds" id="bscmds"></div></div>
+      <div id="bpop"><div class="bp-cmds" id="bscmds"></div></div>
     </div>
     <div id="cvfall">
       <div class="cv-sec">相 邻 城 池</div><div class="cv-adj" id="cvadj"></div>
@@ -506,7 +501,8 @@ function showSheet(b){
   hlKey = b ? b.key : null;
   const pop=$('bpop');
   if(!b){pop.classList.remove('show');hlBuilding(null);drawLabels();return;}
-  $('bsname').textContent=b.name; $('bsfunc').textContent='· '+b.func;
+  /* 浮窗里不写建筑名——旁边的名匾已经写着「功曹府·人事」，重复，
+     而且标题在 150 宽的框里排不下会溢出木框 */
   const cmds=BS_CMDS[b.func]||[];
   const box=$('bscmds'); box.innerHTML='';
   for(const t of cmds){const el=document.createElement('div');

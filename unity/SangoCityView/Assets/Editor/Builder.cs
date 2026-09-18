@@ -99,9 +99,12 @@ public static class Builder
     /// 城名从 -cityKey 参数取，默认建业。
     public static void RenderCity()
     {
-        string key = "jianye";
+        string key = "jianye", bld = null;
         var argv = System.Environment.GetCommandLineArgs();
-        for (int i = 0; i < argv.Length - 1; i++) if (argv[i] == "-cityKey") key = argv[i + 1];
+        for (int i = 0; i < argv.Length - 1; i++) {
+            if (argv[i] == "-cityKey") key = argv[i + 1];
+            if (argv[i] == "-bld")     bld = argv[i + 1];
+        }
 
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         UIKit.UIFont = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/CJK.ttf");
@@ -126,6 +129,7 @@ public static class Builder
         var city = data.cities.Find(c => c.key == key);
         var cv = new CityView((RectTransform)go.transform, 375, 812);
         cv.Show(data.stats.Find(s => s.id == city.id), key);
+        if (bld != null) cv.SelectByKey(bld);
 
         Canvas.ForceUpdateCanvases();
         cam.Render();
