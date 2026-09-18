@@ -5,6 +5,12 @@ import json, sys, re
 from PIL import Image, ImageDraw, ImageFont
 d = '/private/tmp/claude-501/-Users-jingtaoliang-Library-Application-Support-Claude-scratch-workspaces-f957231f-5fbc-4d4a-963a-340bcb0af660-00815451-9bc4-4860-9586-919b36cb44d7-scratch-2026-09-18-ecf554/3967dfb5-862b-435e-accf-a939a7154915/scratchpad'
 stitched, k, scale, out = sys.argv[1], float(sys.argv[2]), float(sys.argv[3]), sys.argv[4]
+plate_path = sys.argv[5] if len(sys.argv) > 5 else None
+plate = None
+if plate_path:
+    plate = Image.open(plate_path).convert('RGBA')
+    solid = plate.split()[3].point(lambda a: 255 if a > 128 else 0)
+    plate = plate.crop(solid.getbbox())
 scr = json.load(open(d+'/city-screen.json')); latest = json.load(open(d+'/city_latest.json'))
 src = open(d+'/sgapp/cities.js', encoding='utf-8').read()
 tiers = {int(m.group(1)): int(m.group(3)) for m in re.finditer(r"(\d+):\['([^']+)',(\d),", src)}
@@ -22,7 +28,8 @@ labels = []
 for c in sorted(scr, key=lambda q: q['y']):
     f = latest.get(str(c['id']))
     if not f: continue
-    ic = Image.open(d+'/'+f).convert('RGBA'); ic = ic.crop(ic.getbbox())
+    ic = Image.open(d+'/'+f).convert('RGBA')
+    ic = ic.crop(ic.split()[3].point(lambda a: 255 if a > 128 else 0).getbbox())
     tw = int(TIER_PX[tiers.get(c['id'],4)] * scale * (k/3.2)); th = int(ic.height*tw/ic.width)
     ic = ic.resize((tw,th), Image.LANCZOS)
     bg.alpha_composite(ic, (int(c['x']*k - tw/2), int(c['y']*k - th*0.62)))
@@ -32,7 +39,15 @@ if fnt:
     pad = int(6*(k/3.2)); rad = int(5*(k/3.2))
     for name, lx, ly in labels:
         bb = g.textbbox((0,0), name, font=fnt); w, h = bb[2]-bb[0], bb[3]-bb[1]
-        g.rounded_rectangle([lx-w/2-pad, ly, lx+w/2+pad, ly+h+pad*1.6], radius=rad,
-                            fill=(28,20,12,215), outline=(214,176,110,235), width=max(1,int(1.5*(k/3.2))))
-        g.text((lx, ly+pad*0.7), name, font=fnt, fill=(248,236,214), anchor='ma')
+        if plate is not None:
+            # 底图按文字高度定高（留 1.9 倍余量），宽度不小于文字 + 两侧留白
+            ph = int(h*2.4); pw = max(int(plate.width*ph/plate.height), int(w + h*2.4))
+            pl = plate.resize((pw, ph), Image.LANCZOS)
+            bg.alpha_composite(pl, (int(lx-pw/2), int(ly)))
+            g = ImageDraw.Draw(bg, 'RGBA')
+            g.text((lx, ly + ph/2), name, font=fnt, fill=(248,236,214), anchor='mm')
+        else:
+            g.rounded_rectangle([lx-w/2-pad, ly, lx+w/2+pad, ly+h+pad*1.6], radius=rad,
+                                fill=(28,20,12,215), outline=(214,176,110,235), width=max(1,int(1.5*(k/3.2))))
+            g.text((lx, ly+pad*0.7), name, font=fnt, fill=(248,236,214), anchor='ma')
 bg.convert('RGB').save(out, quality=93); print('输出', bg.size, '| k', k, '| scale', scale)
