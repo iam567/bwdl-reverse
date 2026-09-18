@@ -23,7 +23,7 @@ import math
 src = open(d+'/sgapp/cities.js', encoding='utf-8').read()
 tiers = {int(m.group(1)): int(m.group(3)) for m in re.finditer(r"(\d+):\['([^']+)',(\d),", src)}
 TIER_PX = {1:240, 2:210, 3:180, 4:158, 5:138, 6:120}
-bg = Image.open(stitched).convert('RGBA')
+bg = Image.open(stitched).convert('RGBA'); W, H = bg.size
 # 在地形上找一块 ≥95% 是路面的 96×96 窗口，作为地坪纹理源
 _rgb = bg.convert('RGB'); _px = _rgb.load(); _W, _H = _rgb.size
 def _is_road(x, y):
@@ -46,6 +46,7 @@ for cand in ('/System/Library/Fonts/STHeiti Medium.ttc','/System/Library/Fonts/H
         if g.textbbox((0,0),'洛阳',font=t)[2] > fs: fnt = t; break
     except Exception: pass
 labels = []
+city_boxes = {}
 for c in sorted(scr, key=lambda q: q['y']):
     f = latest.get(str(c['id']))
     if not f: continue
@@ -67,21 +68,43 @@ for c in sorted(scr, key=lambda q: q['y']):
         ImageDraw.Draw(mask).ellipse([0, 0, pw_-1, ph_-1], fill=255)
         plate_g.putalpha(mask.filter(ImageFilter.GaussianBlur(pw_ * 0.06)))
     bg.alpha_composite(plate_g, (int(c['x']*k - pw_/2), int(c['y']*k - ph_/2)))
-    bg.alpha_composite(ic, (int(c['x']*k - tw/2), int(c['y']*k - base_row)))
+    px0, py0 = int(c['x']*k - tw/2), int(c['y']*k - base_row)
+    bg.alpha_composite(ic, (px0, py0))
+    city_boxes[c['id']] = (px0, py0, px0+tw, py0+th)
     plate_bottom = c['y']*k + ph_/2
-    labels.append((c['name'], c['x']*k, max(c['y']*k + (th - base_row), plate_bottom) + 4*(k/3.2)))   # 地坪下缘之下
+    labels.append((c['name'], c['id'], c['x']*k, max(c['y']*k + (th - base_row), plate_bottom) + 4*(k/3.2)))
 # 标签最后统一画，避免被后画的城池盖住
 if fnt:
     pad = int(6*(k/3.2)); rad = int(5*(k/3.2))
-    for name, lx, ly in labels:
+    placed_labels = []
+    def overlap(a, b):
+        return max(0, min(a[2],b[2]) - max(a[0],b[0])) * max(0, min(a[3],b[3]) - max(a[1],b[1]))
+    gap = int(6*(k/3.2))
+    for name, cid, lx, ly in labels:
         bb = g.textbbox((0,0), name, font=fnt); w, h = bb[2]-bb[0], bb[3]-bb[1]
         if plate is not None:
-            # 底图按文字高度定高（留 1.9 倍余量），宽度不小于文字 + 两侧留白
             ph = int(h*2.4); pw = max(int(plate.width*ph/plate.height), int(w + h*2.4))
+            cb = city_boxes[cid]; cyc = (cb[1]+cb[3])/2
+            cands = [
+                (lx - pw/2,        ly),                         # 下（默认）
+                (lx - pw/2,        cb[1] - ph - gap),           # 上
+                (cb[2] + gap,      cyc - ph/2),                 # 右
+                (cb[0] - gap - pw, cyc - ph/2),                 # 左
+            ]
+            others = [b for i, b in city_boxes.items() if i != cid] + placed_labels
+            best = None
+            for x, y in cands:
+                x = max(0, min(W - pw, x)); y = max(0, min(H - ph, y))
+                r = (x, y, x+pw, y+ph)
+                cost = sum(overlap(r, o) for o in others)
+                if best is None or cost < best[0]: best = (cost, r)
+                if cost == 0: break
+            _, (x, y, x1, y1) = best
+            placed_labels.append((x, y, x1, y1))
             pl = plate.resize((pw, ph), Image.LANCZOS)
-            bg.alpha_composite(pl, (int(lx-pw/2), int(ly)))
+            bg.alpha_composite(pl, (int(x), int(y)))
             g = ImageDraw.Draw(bg, 'RGBA')
-            g.text((lx, ly + ph/2), name, font=fnt, fill=(248,236,214), anchor='mm')
+            g.text(((x+x1)/2, (y+y1)/2), name, font=fnt, fill=(248,236,214), anchor='mm')
         else:
             g.rounded_rectangle([lx-w/2-pad, ly, lx+w/2+pad, ly+h+pad*1.6], radius=rad,
                                 fill=(28,20,12,215), outline=(214,176,110,235), width=max(1,int(1.5*(k/3.2))))
