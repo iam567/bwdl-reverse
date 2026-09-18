@@ -301,9 +301,13 @@ const server = http.createServer(async (req,res) => {
     /* ---- 城池坐标编辑器 ---- */
     if (p === '/api/edit/cities' && req.method==='GET') {
       const mt = f => { try { return Math.floor(fs.statSync(path.join(OUTPUT,'map',f)).mtimeMs); } catch { return 0; } };
+      const mtf = () => { try { return Math.floor(fs.statSync(path.join(OUTPUT,'flag','web','anchors.json')).mtimeMs); } catch { return 0; } };
       return j(res,200,{ cities: readJSON(path.join(DATA,'city-screen.json'),[]),
                          adjacency: readJSON(path.join(DATA,'adjacency.json'),{}),
-                         mapVersion: mt('map_L2_with_cities.jpg'), overviewVersion: mt('overview_1024.jpg') });
+                         owners: readJSON(path.join(DATA,'city-owner.json'),{}),
+                         flags: readJSON(path.join(DATA,'flag-anchors.json'),{}),
+                         mapVersion: mt('map_L2_with_cities.jpg'), overviewVersion: mt('overview_1024.jpg'),
+                         flagVersion: mtf() });
     }
     if (p === '/api/edit/cities' && req.method==='POST') {
       const b=JSON.parse((await body(req)).toString()||'{}');

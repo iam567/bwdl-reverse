@@ -30,6 +30,8 @@ html,body{margin:0;height:100%;background:#0d0c0a;overflow:hidden;font:14px/1.4 
 #sel .nm{font-size:22px;font-weight:700;color:#f6e9cd;letter-spacing:.08em;
   text-shadow:0 0 14px #c8a45c66}
 #sel .tag{font-size:12px;color:#d7b878;border:1px solid #6b552d;border-radius:5px;padding:2px 7px;background:#c8a45c1a}
+#sel .own{margin-left:auto;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;color:#cfc4ab}
+#sel .own i{width:11px;height:11px;border-radius:3px;border:1px solid #00000066;display:block}
 #sel .hint{margin-top:5px;font-size:12.5px;color:#a89876;display:flex;align-items:center;gap:6px}
 #sel .hint b{color:#e8c06a;font-weight:600}
 /* 城内占位界面 */
@@ -74,7 +76,7 @@ html,body{margin:0;height:100%;background:#0d0c0a;overflow:hidden;font:14px/1.4 
 <canvas id="fx"></canvas>
 <div id="where">—</div>
 <div id="btn" title="大地图"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg></div>
-<div id="sel"><div class="row"><div class="nm" id="selname">—</div><div class="tag" id="seltier"></div></div>
+<div id="sel"><div class="row"><div class="nm" id="selname">—</div><div class="tag" id="seltier"></div><div class="own" id="selown"></div></div>
   <div class="hint">再点一次 <b>进入城中</b> · 点空白处取消</div></div>
 <div id="cityview">
   <div class="cv-top"><div class="cv-name" id="cvname"></div><div class="cv-tier" id="cvtier"></div></div>
@@ -107,12 +109,44 @@ let vw=innerWidth,vh=innerHeight;
 /* ---------- 特效层 ---------- */
 const fx=$('fx'), fxc=fx.getContext('2d');
 let DPR=1, raf=0, sel=null, selT0=0;
+/* 势力旗 */
+const MIN_FLAG_PX=26;              // 捏到最小时旗子也不低于这个高度，否则看不出势力范围
+let owners={}, flagMeta={}, flagImg={};
+const OWNER_NAME={han:'汉室·献帝',caocao:'曹操',yuanshao:'袁绍',sunjian:'孙坚',lvbu:'吕布',
+  liuyan:'刘焉',liubiao:'刘表',player:'我军',spare:'——',none:'无主'};
+const OWNER_COLOR={han:'#F2C430',caocao:'#2B5FD9',yuanshao:'#8E3FC9',sunjian:'#E0342A',
+  lvbu:'#2A2A30',liuyan:'#14B85A',liubiao:'#12BCD4',player:'#A8D82C',spare:'#E8368F',none:'#8A8578'};
+const ownerOf=c=>owners[c.id]||owners[String(c.id)]||'none';
+function loadFlags(ver){
+  for(const k in flagMeta){ const im=new Image();
+    im.onload=kick; im.src='/image/flag/web/'+k+'.png?v='+ver; flagImg[k]=im; }}
 function sizeFx(){DPR=Math.min(devicePixelRatio||1,2.5);
   fx.width=Math.round(vw*DPR);fx.height=Math.round(vh*DPR);fx.style.width=vw+'px';fx.style.height=vh+'px';}
 function kick(){if(!raf)raf=requestAnimationFrame(fxLoop);}
 function fxLoop(now){raf=0;
-  fxc.setTransform(1,0,0,1,0,0); fxc.clearRect(0,0,fx.width,fx.height); fxc.setTransform(DPR,0,0,DPR,0,0);
-  if(sel){drawSel(fxc,sel,now); raf=requestAnimationFrame(fxLoop);}}
+  const ctx=fxc;
+  ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,fx.width,fx.height); ctx.setTransform(DPR,0,0,DPR,0,0);
+  const M=s*K;
+  /* 顺序要紧：聚光用 destination-out 挖洞，挖之前画的东西会被一起擦掉，
+     所以先压暗地图，再画旗，最后画选中光环。 */
+  if(sel) drawSpot(ctx,sel,now);
+  for(const c of cities) drawFlag(ctx,c,M, sel && c.id!==sel.id ? .5 : 1);
+  if(sel){ drawRing(ctx,sel,now); raf=requestAnimationFrame(fxLoop); }}
+
+function drawFlag(ctx,c,M,alpha){
+  const k=ownerOf(c), im=flagImg[k], mm=flagMeta[k];
+  if(!im||!im.complete||!im.naturalWidth||!mm)return;
+  const rx=TIER_RX[c.tier||4]*M;
+  const h=Math.max(MIN_FLAG_PX, rx*.62), w=h*mm.w/mm.h;
+  /* 旗杆着地点放在城池图标的上边缘：画布盖在地图之上，旗立在城中间的话
+     杆子会明显压在建筑前面，挪到城后上方就成了「旗飘在城上空」 */
+  const bx=c.x*M+tx, by=c.y*M+ty-rx*.92;
+  const dx=bx-w*mm.ax, dy=by-h*mm.ay;
+  if(dx>vw||dy>vh||dx+w<0||dy+h<0)return;
+  ctx.save(); ctx.globalAlpha=alpha;
+  ctx.shadowColor='rgba(0,0,0,.45)'; ctx.shadowBlur=Math.max(3,h*.05); ctx.shadowOffsetY=Math.max(1,h*.02);
+  ctx.drawImage(im,dx,dy,w,h);
+  ctx.restore();}
 
 /* 地坪半径（1024 坐标）。屏幕上不足 30px 时按下限放大，
    绘制和点击判定共用同一套数值，所以「看得见的光环」就是「点得中的范围」 */
@@ -121,29 +155,31 @@ function ringOf(c,M){const base=TIER_RX[c.tier||4];
   const k=Math.max(1,MIN_R_PX/(base*M));
   return {rx:base*k, ry:base*k/PLATE_AR};}
 
-function drawSel(ctx,c,now){
-  const M=s*K;                                  // 1024 坐标 → 屏幕 px
-  const cx=c.x*M+tx, cy=c.y*M+ty;
-  const R=ringOf(c,M), rx0=R.rx*M, ry0=R.ry*M;
-  const pad=rx0*2+80;
-  if(cx<-pad||cy<-pad||cx>vw+pad||cy>vh+pad)return;   // 城池划出屏幕就不画，免得只剩一片黑
-
+function selGeom(c,now){
+  const M=s*K, cx=c.x*M+tx, cy=c.y*M+ty;
+  const R=ringOf(c,M), rx0=R.rx*M, ry0=R.ry*M, pad=rx0*2+80;
+  if(cx<-pad||cy<-pad||cx>vw+pad||cy>vh+pad)return null;
   const p=Math.min(1,(now-selT0)/320), e=1-Math.pow(1-p,3);
-  const g=1.45-.45*e, a=e, br=.5+.5*Math.sin(now/620);
-  const rx=rx0*g, ry=ry0*g;
+  return {cx,cy,rx0,ry0,p,e,g:1.45-.45*e,a:e,br:.5+.5*Math.sin(now/620)};}
 
-  /* 1) 聚光：压暗四周，只把选中的城留在亮处 */
+function drawSpot(ctx,c,now){                   // 压暗四周，只把选中的城留在亮处
+  const G=selGeom(c,now); if(!G)return;
   ctx.save();
-  ctx.fillStyle='rgba(6,5,4,'+(.46*a)+')';
+  ctx.fillStyle='rgba(6,5,4,'+(.46*G.a)+')';
   ctx.fillRect(0,0,vw,vh);
   ctx.globalCompositeOperation='destination-out';
-  const hy=cy-rx0*.34, hr=Math.max(rx0*1.55,64);
-  const hole=ctx.createRadialGradient(cx,hy,hr*.44,cx,hy,hr);
+  const hy=G.cy-G.rx0*.34, hr=Math.max(G.rx0*1.55,64);
+  const hole=ctx.createRadialGradient(G.cx,hy,hr*.44,G.cx,hy,hr);
   hole.addColorStop(0,'rgba(0,0,0,1)');
   hole.addColorStop(.58,'rgba(0,0,0,.93)');
   hole.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.fillStyle=hole; ctx.beginPath(); ctx.arc(cx,hy,hr,0,TAU); ctx.fill();
-  ctx.restore();
+  ctx.fillStyle=hole; ctx.beginPath(); ctx.arc(G.cx,hy,hr,0,TAU); ctx.fill();
+  ctx.restore();}
+
+function drawRing(ctx,c,now){
+  const G=selGeom(c,now); if(!G)return;
+  const {cx,cy,rx0,ry0,p,a,br}=G;
+  const rx=rx0*G.g, ry=ry0*G.g, e=G.e;
 
   ctx.save(); ctx.translate(cx,cy);
   /* 2) 地面辉光 */
@@ -242,6 +278,8 @@ function selectCity(c){
   sel=c; selT0=performance.now();
   $('selname').textContent=c.name;
   $('seltier').textContent=(TIER_NAME[c.tier||4]||'').replace(/\s/g,'');
+  const k=ownerOf(c);
+  $('selown').innerHTML='<i style="background:'+(OWNER_COLOR[k]||'#888')+'"></i>'+(OWNER_NAME[k]||'无主');
   $('sel').classList.add('show'); kick();}
 function deselect(){if(!sel)return;sel=null;$('sel').classList.remove('show');kick();}
 function onTap(sx,sy){
@@ -260,7 +298,8 @@ function enterCity(c){
     setTimeout(()=>{openCity(c); f.style.transition='opacity .4s'; f.style.opacity='0';},140);});}
 function openCity(c){
   $('cvname').textContent=c.name;
-  $('cvtier').textContent=TIER_NAME[c.tier||4]||'';
+  const ok=ownerOf(c);
+  $('cvtier').innerHTML=(TIER_NAME[c.tier||4]||'')+'　<span style="color:'+(OWNER_COLOR[ok]||'#888')+'">'+(OWNER_NAME[ok]||'无主')+'</span>';
   const box=$('cvadj'); box.innerHTML='';
   const a=adjacency[c.id]||adjacency[String(c.id)]||{adj:[]};
   (a.adj||[]).forEach(id=>{const n=byId.get(id); if(!n)return;
@@ -325,6 +364,7 @@ async function loadImg(url,onprog){const r=await fetch(url);const total=+r.heade
   cities=d.cities.map(c=>({id:c.id,name:c.name,x:+c.x,y:+c.y,tier:c.tier||4}));
   byId=new Map(cities.map(c=>[c.id,c]));
   adjacency=d.adjacency||{};
+  owners=d.owners||{}; flagMeta=d.flags||{}; loadFlags(d.flagVersion||0);
   ovimg.src='/image/map/overview_1024.jpg?v='+(d.overviewVersion||0);
   const url=await loadImg('/image/map/map_L2_with_cities.jpg?v='+(d.mapVersion||0),
     p=>{$('pct').textContent=Math.round(p*100)+'%';$('bari').style.width=(p*100)+'%';});
