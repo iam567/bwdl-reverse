@@ -1,0 +1,13 @@
+Library/
+Temp/
+Obj/
+obj/
+Logs/
+UserSettings/
+Build/
+Builds/
+Render/
+*.csproj
+*.sln
+unity.log
+Assets/Fonts/CJK.ttf
