@@ -192,13 +192,16 @@ public class CityView
 
         foreach (Transform t in popCmds) Object.Destroy(t.gameObject);
         var cmds = CMDS.TryGetValue(b.func, out var cc) ? cc : new string[0];
-        float popW = 150, popH = 9 + Mathf.Ceil(cmds.Length/2f)*32 + 9;
+        /* Sliced 的铜框是画在 RectTransform 范围内的（11px），
+           子物体按 Place 摆是从外沿算起——内边距必须大于框宽，否则按钮压在框上。 */
+        const float IN = 17f, BH = 30f, GAP = 6f;
+        float popW = 176, popH = IN*2 + Mathf.Ceil(cmds.Length/2f)*(BH+GAP) - GAP;
         for (int i = 0; i < cmds.Length; i++) {
             var bt = Panel(popCmds, "b"+i, btnSprite);
-            float bw = cmds.Length==1 ? (popW-18) : (popW-18-5)/2f;
-            Place(bt.rectTransform, 9+(i%2)*(bw+5), 9+(i/2)*32, bw, 28);
-            var t = Label(bt.transform, cmds[i], 13, new Color32(0xFD,0xF3,0xDA,255), TextAnchor.MiddleCenter, FontStyle.Bold);
-            Place(t.rectTransform, 0, 0, bw, 28);
+            float bw = cmds.Length==1 ? (popW-IN*2) : (popW-IN*2-GAP)/2f;
+            Place(bt.rectTransform, IN+(i%2)*(bw+GAP), IN+(i/2)*(BH+GAP), bw, BH);
+            var t = Label(bt.transform, cmds[i], 14, new Color32(0xFD,0xF3,0xDA,255), TextAnchor.MiddleCenter, FontStyle.Bold);
+            Place(t.rectTransform, 0, 0, bw, BH);
             var o = t.gameObject.AddComponent<Outline>();
             o.effectColor = new Color32(0x2E,0x1C,0x04,255); o.effectDistance = new Vector2(1.2f,1.2f); }
         float imgW = picRT.sizeDelta.x, imgH = picRT.sizeDelta.y;
