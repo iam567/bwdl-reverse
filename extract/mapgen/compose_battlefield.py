@@ -11,7 +11,10 @@
      2            → block   障碍   (6/6/6)
      5            → ambush  埋伏点 (5/5/5)
      6            → water   水     (5/3/6)
-     7…12         → r1…r6   山林   (5/6/3)  六个码消耗相同，给六种长相
+     7, 9         → rock    山岩   (5/6/3)
+     8            → forest  密林   (5/6/3)
+     10, 11       → forest  密林   (5/6/3)   ← 灌木并进密林
+     12           → grass   草坡   (5/6/3)
 
    用法: compose_battlefield.py <城池ID> <主题> <地块目录> <输出png> [格边长=64]
 """
@@ -23,8 +26,10 @@ CELL = int(sys.argv[5]) if len(sys.argv) > 5 else 64
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 
-SLOT = {0:'ground', 1:'wuku', 2:'block', 3:'cang', 4:'yao', 5:'ambush', 6:'water'}
-for c in range(7, 13): SLOT[c] = 'r%d' % (c - 6)
+# 7–12 六个码消耗完全一样，可以共用同一张图。
+# 灌木只留一种（码 10、11 共用），山岩一种（码 7、9 共用）。
+SLOT = {0:'ground', 1:'wuku', 2:'block', 3:'cang', 4:'yao', 5:'ambush', 6:'water',
+        7:'rock', 8:'forest', 9:'rock', 10:'forest', 11:'forest', 12:'grass'}
 
 def load(slot):
     fs = glob.glob(os.path.join(TILEDIR, 'bt_%s_%s*.png' % (THEME, slot)))
