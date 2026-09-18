@@ -52,6 +52,23 @@ html,body{margin:0;height:100%;background:#0d0c0a;overflow:hidden;font:14px/1.4 
   display:flex;align-items:center;justify-content:center;font-size:16px;letter-spacing:.1em;cursor:pointer}
 .cv-back:active{background:#2a2419}
 #flash{position:fixed;inset:0;background:#fff7e6;opacity:0;pointer-events:none;z-index:38}
+#cvpic{position:relative;display:none;width:100%;line-height:0}
+#cvpic.show{display:block}
+#cvpic img{width:100%;display:block;border-radius:10px}
+#cvhl{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;border-radius:10px}
+/* 建筑指令面板 */
+#bsheet{position:fixed;left:10px;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 74px);z-index:37;
+  background:linear-gradient(180deg,#242018f2,#15120ef2);border:1px solid #8a6f3c;border-radius:14px;
+  padding:12px 14px;box-shadow:0 12px 34px #000b;transform:translateY(150%);
+  transition:transform .3s cubic-bezier(.2,.9,.25,1)}
+#bsheet.show{transform:translateY(0)}
+.bs-hd{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
+.bs-hd b{font-size:20px;color:#f6e9cd;letter-spacing:.08em}
+.bs-hd span{font-size:12px;color:#a89876}
+.bs-cmds{display:flex;flex-wrap:wrap;gap:8px}
+.bs-cmds div{flex:1 1 calc(50% - 8px);text-align:center;padding:11px 6px;border:1px solid #4a3d29;
+  border-radius:9px;background:#191713;color:#dcd0b6;font-size:15px}
+.bs-cmds div:active{background:#2a2419;border-color:#c8a45c}
 /* 总览面板 */
 #panel{position:fixed;inset:0;z-index:30;background:#0d0c0ad9;backdrop-filter:blur(10px);
   transform:translateX(100%);transition:transform .32s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;
@@ -82,11 +99,16 @@ html,body{margin:0;height:100%;background:#0d0c0a;overflow:hidden;font:14px/1.4 
 <div id="cityview">
   <div class="cv-top"><div class="cv-name" id="cvname"></div><div class="cv-tier" id="cvtier"></div></div>
   <div class="cv-body">
-    <div class="cv-sec">相 邻 城 池</div><div class="cv-adj" id="cvadj"></div>
-    <div class="cv-note">城内管理界面建设中<br>（内政 · 募兵 · 出征 · 武将）</div>
+    <div id="cvpic"><img id="cvimg" alt=""><canvas id="cvhl"></canvas></div>
+    <div id="cvfall">
+      <div class="cv-sec">相 邻 城 池</div><div class="cv-adj" id="cvadj"></div>
+      <div class="cv-note">这座城的城内图还没生成<br>（目前只做了洛阳这座样板城）</div>
+    </div>
   </div>
   <div class="cv-back" id="cvback">← 返回大地图</div>
 </div>
+<div id="bsheet"><div class="bs-hd"><b id="bsname"></b><span id="bsfunc"></span></div>
+  <div class="bs-cmds" id="bscmds"></div></div>
 <div id="flash"></div>
 <div id="panel">
   <header><b>天下形势</b><div id="close">×</div></header>
@@ -302,6 +324,61 @@ function enterCity(c){
     const f=$('flash');
     f.style.transition='opacity .12s'; f.style.opacity='.9';
     setTimeout(()=>{openCity(c); f.style.transition='opacity .4s'; f.style.opacity='0';},140);});}
+/* ---------- 城内视图 ---------- */
+const CITY_VIEW={13:'luoyang'};                 // 目前只做了洛阳这座样板城
+const BS_CMDS={内政:['开垦','劝商','治水','巡查'],人事:['搜索','登用','奖赏','任命'],
+  军事:['移动','战争','征兵','输送'],外交:['同盟','离间','招揽','情报'],
+  金粮:['买入粮草','卖出粮草'],武器:['购买武器','购买马匹'],
+  学院:['提升智力'],医馆:['治疗武将']};
+let cvData=null, cvMask=null;                   // 蒙版画进离屏画布，点哪按像素颜色查建筑
+async function loadCityView(key){
+  const d=await (await fetch('/image/cityview/'+key+'.json')).json();
+  const im=new Image();
+  await new Promise((ok,no)=>{im.onload=ok;im.onerror=no;im.src='/image/cityview/'+key+'_mask.png';});
+  const cv=document.createElement('canvas'); cv.width=d.size[0]; cv.height=d.size[1];
+  cv.getContext('2d',{willReadFrequently:true}).drawImage(im,0,0);
+  cvMask=cv; cvData=d;
+  $('cvimg').src='/image/cityview/'+key+'.jpg';
+}
+function pickBuilding(e){
+  if(!cvData||!cvMask)return null;
+  const r=$('cvimg').getBoundingClientRect();
+  const x=Math.round((e.clientX-r.left)/r.width*cvData.size[0]);
+  const y=Math.round((e.clientY-r.top)/r.height*cvData.size[1]);
+  if(x<0||y<0||x>=cvData.size[0]||y>=cvData.size[1])return null;
+  const p=cvMask.getContext('2d').getImageData(x,y,1,1).data;
+  for(const k in cvData.buildings){const m=cvData.buildings[k].mask;
+    if(m[0]===p[0]&&m[1]===p[1]&&m[2]===p[2]) return {key:k,...cvData.buildings[k]};}
+  /* 兜底：院落围墙有缺口时补洞会漏，院内空地在蒙版上是黑的
+     （校场就是这种）。落在某个建筑包围盒里也算点中。 */
+  let best=null;
+  for(const k in cvData.buildings){const b=cvData.buildings[k].box;
+    if(x>=b[0]&&x<=b[2]&&y>=b[1]&&y<=b[3]){
+      const a=(b[2]-b[0])*(b[3]-b[1]);
+      if(!best||a<best.a) best={a,k};}}
+  return best ? {key:best.k,...cvData.buildings[best.k]} : null;
+}
+function hlBuilding(b){                          // 在选中的建筑上描一圈金边
+  const cv=$('cvhl'), r=$('cvimg').getBoundingClientRect();
+  cv.width=Math.round(r.width*2); cv.height=Math.round(r.height*2);
+  const x=cv.getContext('2d'); x.clearRect(0,0,cv.width,cv.height);
+  if(!b)return;
+  const f=cv.width/cvData.size[0];
+  x.save(); x.scale(f,f);
+  x.shadowColor='rgba(255,196,84,.95)'; x.shadowBlur=26;
+  x.strokeStyle='rgba(255,236,170,.95)'; x.lineWidth=7/f*2;
+  x.strokeRect(b.box[0]+3,b.box[1]+3,b.box[2]-b.box[0]-6,b.box[3]-b.box[1]-6);
+  x.restore();
+}
+function showSheet(b){
+  if(!b){$('bsheet').classList.remove('show');hlBuilding(null);return;}
+  $('bsname').textContent=b.name; $('bsfunc').textContent='· '+b.func;
+  const box=$('bscmds'); box.innerHTML='';
+  for(const t of (BS_CMDS[b.func]||[])){const el=document.createElement('div');el.textContent=t;box.appendChild(el);}
+  $('bsheet').classList.add('show'); hlBuilding(b);
+}
+$('cvpic').addEventListener('click',e=>{ showSheet(pickBuilding(e)); });
+
 function openCity(c){
   $('cvname').textContent=c.name;
   const ok=ownerOf(c);
@@ -313,8 +390,13 @@ function openCity(c){
     el.onclick=()=>{closeCity();setTimeout(()=>{selectCity(n);centerOn(n.x*K,n.y*K,true);toast('→ '+n.name);},60);};
     box.appendChild(el);});
   if(!box.children.length)box.innerHTML='<div style="border-style:dashed;color:#6f6552">（无陆路相邻）</div>';
+  const key=CITY_VIEW[c.id];
+  $('cvpic').classList.toggle('show',!!key);
+  $('cvfall').style.display=key?'none':'';
+  showSheet(null);
+  if(key) loadCityView(key).catch(()=>{ $('cvpic').classList.remove('show'); $('cvfall').style.display=''; });
   $('cityview').classList.add('show');}
-function closeCity(){$('cityview').classList.remove('show');if(sel)$('sel').classList.add('show');}
+function closeCity(){$('cityview').classList.remove('show');showSheet(null);if(sel)$('sel').classList.add('show');}
 $('cvback').onclick=closeCity;
 
 /* ---------- 拖动 / 双指缩放 / 滚轮 ---------- */
