@@ -288,6 +288,26 @@ const server = http.createServer(async (req,res) => {
 
     if (p === '/')         return serveFile(res,STATIC,'/index.html');
     if (p === '/settings') return serveFile(res,STATIC,'/settings.html');
+    if (p === '/edit' || p === '/edit/') return serveFile(res,STATIC,'/edit.html');
+
+    /* ---- 城池坐标编辑器 ---- */
+    if (p === '/api/edit/cities' && req.method==='GET') {
+      return j(res,200,{ cities: readJSON(path.join(DATA,'city-screen.json'),[]),
+                         adjacency: readJSON(path.join(DATA,'adjacency.json'),{}) });
+    }
+    if (p === '/api/edit/cities' && req.method==='POST') {
+      const b=JSON.parse((await body(req)).toString()||'{}');
+      if(!Array.isArray(b.cities)) return j(res,400,{error:'cities 须为数组'});
+      const file=path.join(DATA,'city-screen.json');
+      const cur=readJSON(file,[]);
+      try { fs.copyFileSync(file, path.join(DATA,`city-screen.bak-${Date.now()}.json`)); } catch {}
+      const byId=new Map(cur.map(c=>[c.id,c])); let n=0;
+      for(const c of b.cities){ const e=byId.get(c.id);
+        if(e && Number.isFinite(+c.x) && Number.isFinite(+c.y)){ e.x=+c.x; e.y=+c.y; e.edited=true; n++; } }
+      writeJSON(file,cur);
+      logEvent(`地图编辑器保存了 ${n} 座城池坐标`);
+      return j(res,200,{ok:true,saved:n});
+    }
     if (p.startsWith('/source/')) return serveFile(res,SOURCE,p.slice(7),'public, max-age=86400');
     if (p.startsWith('/image/'))  return serveFile(res,OUTPUT,p.slice(6),'public, max-age=86400');
 

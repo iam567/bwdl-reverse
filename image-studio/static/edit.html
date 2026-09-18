@@ -1,0 +1,109 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>城池坐标编辑器</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:#12110f;color:#e8e3da;font:13px/1.5 -apple-system,"PingFang SC",system-ui,sans-serif;overflow:hidden}
+#bar{position:fixed;top:0;left:0;right:0;height:46px;background:#1c1a17;border-bottom:1px solid #2f2b26;display:flex;align-items:center;gap:10px;padding:0 14px;z-index:5}
+#bar b{color:#c8a45c;margin-right:6px}
+button{background:#c8a45c;color:#1a1509;border:0;border-radius:6px;padding:7px 14px;font:600 13px inherit;cursor:pointer}
+button.ghost{background:transparent;border:1px solid #3d3226;color:#e8e3da}
+button:disabled{opacity:.4;cursor:not-allowed}
+#msg{margin-left:auto;color:#9a9187}
+#msg.ok{color:#6fae6f}#msg.err{color:#c96a5a}
+#wrap{position:absolute;top:46px;left:0;right:0;bottom:0;cursor:grab}
+#wrap.dragging{cursor:grabbing}
+canvas{display:block}
+#hint{position:fixed;bottom:12px;left:14px;color:#7d7568;font-size:12px;background:#1c1a17cc;padding:6px 10px;border-radius:6px}
+#sel{position:fixed;bottom:12px;right:14px;color:#e8e3da;font-size:12px;background:#1c1a17cc;padding:6px 10px;border-radius:6px;min-width:180px}
+</style></head><body>
+<div id="bar">
+  <b>城池坐标编辑器</b>
+  <button id="save">保存到服务器</button>
+  <button id="reload" class="ghost">重载上次保存</button>
+  <button id="bg" class="ghost">底图：第一层 3277</button>
+  <button id="fit" class="ghost">适应窗口</button>
+  <label style="color:#9a9187;margin-left:6px"><input type="checkbox" id="edges" checked> 显示连线</label>
+  <span id="msg">载入中…</span>
+</div>
+<div id="wrap"><canvas id="cv"></canvas></div>
+<div id="hint">拖空白处平移 · 滚轮缩放 · 拖圆点移动城池 · 选中后方向键微调（Shift ×10）</div>
+<div id="sel">未选中</div>
+<script>
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d'),wrap=document.getElementById('wrap');
+const $=id=>document.getElementById(id);
+let img=new Image(), imgReady=false, K=1;           // K = 底图像素 / 1024 坐标
+let cities=[], adj={}, dirty=false;
+let view={x:0,y:0,s:0.3};                            // 屏幕 = (图 * s) + (x,y)
+let selId=null, drag=null;                           // drag: {type:'pan'|'city', ...}
+const TIER_R={1:13,2:11,3:9,4:8,5:7,6:6};
+const BGS=[['第一层 3277','/image/map/terrain_L1_3277.jpg'],['第二层 6528','/image/map/terrain_L2_6528.jpg']];
+let bgIdx=0;
+
+function setMsg(t,c){const m=$('msg');m.textContent=t;m.className=c||''}
+function resize(){cv.width=wrap.clientWidth;cv.height=wrap.clientHeight;draw()}
+function toScr(px,py){return[px*K*view.s+view.x, py*K*view.s+view.y]}
+function toMap(sx,sy){return[(sx-view.x)/(view.s*K),(sy-view.y)/(view.s*K)]}
+function fit(){if(!imgReady)return;view.s=Math.min(cv.width/img.width,cv.height/img.height)*0.98;
+  view.x=(cv.width-img.width*view.s)/2;view.y=(cv.height-img.height*view.s)/2;draw()}
+function loadBg(){imgReady=false;setMsg('载入底图 '+BGS[bgIdx][0]+'…');
+  img=new Image();img.onload=()=>{imgReady=true;K=img.width/1024;fit();setMsg('就绪 · '+img.width+'px','ok')};
+  img.onerror=()=>setMsg('底图加载失败','err');img.src=BGS[bgIdx][1]}
+
+function draw(){
+  ctx.fillStyle='#0d0c0a';ctx.fillRect(0,0,cv.width,cv.height);
+  if(!imgReady)return;
+  ctx.imageSmoothingEnabled=view.s<1;
+  ctx.drawImage(img,view.x,view.y,img.width*view.s,img.height*view.s);
+  const byId=new Map(cities.map(c=>[c.id,c]));
+  if($('edges').checked){ctx.lineWidth=1.5;ctx.strokeStyle='rgba(255,60,60,.75)';
+    for(const c of cities)for(const n of (adj[c.id]?.adj||[]))if(c.id<n&&byId.has(n)){
+      const[a,b]=toScr(c.x,c.y),[e,f]=toScr(byId.get(n).x,byId.get(n).y);
+      ctx.beginPath();ctx.moveTo(a,b);ctx.lineTo(e,f);ctx.stroke()}}
+  ctx.font='600 13px -apple-system,PingFang SC,sans-serif';ctx.textAlign='center';ctx.textBaseline='top';
+  for(const c of cities){
+    const[sx,sy]=toScr(c.x,c.y),r=(TIER_R[c.tier]||8)*Math.max(.7,Math.min(1.6,view.s*2.2));
+    ctx.beginPath();ctx.arc(sx,sy,r+3,0,7);ctx.fillStyle='rgba(0,0,0,.45)';ctx.fill();
+    ctx.beginPath();ctx.arc(sx,sy,r,0,7);ctx.fillStyle=c.id===selId?'#ffdd55':(c.edited?'#6fae6f':'#c8a45c');ctx.fill();
+    ctx.lineWidth=2;ctx.strokeStyle='#fff';ctx.stroke();
+    ctx.beginPath();ctx.moveTo(sx-r*.6,sy);ctx.lineTo(sx+r*.6,sy);ctx.moveTo(sx,sy-r*.6);ctx.lineTo(sx,sy+r*.6);
+    ctx.strokeStyle='rgba(0,0,0,.6)';ctx.lineWidth=1;ctx.stroke();
+    const t=c.name,w=ctx.measureText(t).width+10;
+    ctx.fillStyle='rgba(20,16,10,.85)';ctx.fillRect(sx-w/2,sy+r+4,w,18);
+    ctx.fillStyle=c.id===selId?'#ffdd55':'#f2e8d4';ctx.fillText(t,sx,sy+r+6)}
+}
+function hit(sx,sy){let best=null;for(const c of cities){const[x,y]=toScr(c.x,c.y),d=Math.hypot(sx-x,sy-y);
+  if(d<16&&(!best||d<best.d))best={c,d}}return best?.c||null}
+function updSel(){const c=cities.find(x=>x.id===selId);
+  $('sel').textContent=c?`${c.name}  x=${c.x.toFixed(1)}  y=${c.y.toFixed(1)}  (度 ${adj[c.id]?.adj?.length??'?'})`:'未选中'}
+
+wrap.addEventListener('mousedown',e=>{const c=hit(e.offsetX,e.offsetY);
+  if(c){selId=c.id;const[cx,cy]=toScr(c.x,c.y);drag={type:'city',c,dx:e.offsetX-cx,dy:e.offsetY-cy}}
+  else{selId=null;drag={type:'pan',sx:e.offsetX-view.x,sy:e.offsetY-view.y};wrap.classList.add('dragging')}
+  updSel();draw()});
+window.addEventListener('mousemove',e=>{if(!drag)return;const r=cv.getBoundingClientRect(),ox=e.clientX-r.left,oy=e.clientY-r.top;
+  if(drag.type==='pan'){view.x=ox-drag.sx;view.y=oy-drag.sy}
+  else{const[mx,my]=toMap(ox-drag.dx,oy-drag.dy);drag.c.x=mx;drag.c.y=my;drag.c.edited=true;dirty=true;updSel()}
+  draw()});
+window.addEventListener('mouseup',()=>{drag=null;wrap.classList.remove('dragging')});
+wrap.addEventListener('wheel',e=>{e.preventDefault();const f=e.deltaY<0?1.15:1/1.15,ns=Math.max(.05,Math.min(4,view.s*f));
+  view.x=e.offsetX-(e.offsetX-view.x)*(ns/view.s);view.y=e.offsetY-(e.offsetY-view.y)*(ns/view.s);view.s=ns;draw()},{passive:false});
+window.addEventListener('keydown',e=>{const c=cities.find(x=>x.id===selId);if(!c)return;
+  const st=(e.shiftKey?10:1)/K*0.5;let m=true;   // 半个底图像素为一步
+  if(e.key==='ArrowLeft')c.x-=st;else if(e.key==='ArrowRight')c.x+=st;else if(e.key==='ArrowUp')c.y-=st;else if(e.key==='ArrowDown')c.y+=st;else m=false;
+  if(m){e.preventDefault();c.edited=true;dirty=true;updSel();draw()}});
+window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
+
+async function load(){const r=await fetch('/api/edit/cities');if(!r.ok){setMsg('读取失败 '+r.status,'err');return}
+  const d=await r.json();cities=d.cities.map(c=>({...c,x:+c.x,y:+c.y}));adj=d.adjacency;dirty=false;draw();updSel()}
+$('save').onclick=async()=>{setMsg('保存中…');
+  const r=await fetch('/api/edit/cities',{method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({cities:cities.map(c=>({id:c.id,x:+c.x.toFixed(2),y:+c.y.toFixed(2)}))})});
+  const d=await r.json().catch(()=>({}));if(r.ok){dirty=false;setMsg('已保存 '+cities.length+' 座 · '+new Date().toLocaleTimeString(),'ok')}
+  else setMsg(d.error||'保存失败','err')};
+$('reload').onclick=()=>{if(dirty&&!confirm('放弃未保存的修改？'))return;load().then(()=>setMsg('已重载','ok'))};
+$('fit').onclick=fit;
+$('bg').onclick=()=>{bgIdx=(bgIdx+1)%BGS.length;$('bg').textContent='底图：'+BGS[bgIdx][0];loadBg()};
+$('edges').onchange=draw;
+window.addEventListener('resize',resize);
+resize();loadBg();load();
+</script></body></html>

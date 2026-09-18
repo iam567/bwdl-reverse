@@ -162,3 +162,17 @@ python3 stitch.py <grid.json> <块目录> <前缀> <out.jpg>   # 羽化拼接
 python3 snap_junction.py <工作目录>                      # 城池吸附到路口
 python3 compose_cities.py <拼接图> <k> <scale> <out> [铜牌png]   # 贴城池+标签
 ```
+
+## 城池坐标编辑器（`/edit`）
+
+路口吸附的算法调了四轮仍不理想（射线法、均值漂移、路头补丁），
+人眼一秒钟的判断算法做不好。改为可视化编辑器：
+
+- `https://sg.areu.pro/edit/`，与生图平台共用登录
+- 底图可切换第一层 3277 / 第二层 6528；拖空白平移、滚轮缩放、拖圆点移动城池
+- 红线是邻接表的 52 条边，圆点标注该城度数，方便对准路口
+- 方向键微调（半个底图像素一步，Shift ×10）
+- 保存 → `POST /api/edit/cities`，写 `data/city-screen.json` 并自动备份上一版
+- 坐标始终存 1024 坐标系，各层按 k 换算
+
+保存后拉回本地跑 `compose_cities.py` 即可重新合成。

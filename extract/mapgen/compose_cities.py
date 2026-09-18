@@ -2,20 +2,41 @@
    用法: compose_cities.py <stitched.jpg> <k源px→画布px> <scale> <out.jpg>
    城池尺寸基准（scale=1 时，画布按 1024/块 计）：帝都 240 → 寨堡 120，再乘 k/3.2 归一到当前层。"""
 import json, sys, re
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 d = '/private/tmp/claude-501/-Users-jingtaoliang-Library-Application-Support-Claude-scratch-workspaces-f957231f-5fbc-4d4a-963a-340bcb0af660-00815451-9bc4-4860-9586-919b36cb44d7-scratch-2026-09-18-ecf554/3967dfb5-862b-435e-accf-a939a7154915/scratchpad'
 stitched, k, scale, out = sys.argv[1], float(sys.argv[2]), float(sys.argv[3]), sys.argv[4]
 plate_path = sys.argv[5] if len(sys.argv) > 5 else None
+ground_path = sys.argv[6] if len(sys.argv) > 6 else None
+ground = None
+if ground_path:
+    ground = Image.open(ground_path).convert('RGBA')
+    ground = ground.crop(ground.split()[3].point(lambda a: 255 if a > 128 else 0).getbbox())
 plate = None
 if plate_path:
     plate = Image.open(plate_path).convert('RGBA')
     solid = plate.split()[3].point(lambda a: 255 if a > 128 else 0)
     plate = plate.crop(solid.getbbox())
 scr = json.load(open(d+'/city-screen.json')); latest = json.load(open(d+'/city_latest.json'))
+ADJ = json.load(open(d+'/adjacency.json'))
+POS = {c['id']: (c['x']*k, c['y']*k) for c in scr}
+import math
 src = open(d+'/sgapp/cities.js', encoding='utf-8').read()
 tiers = {int(m.group(1)): int(m.group(3)) for m in re.finditer(r"(\d+):\['([^']+)',(\d),", src)}
 TIER_PX = {1:240, 2:210, 3:180, 4:158, 5:138, 6:120}
 bg = Image.open(stitched).convert('RGBA')
+# 在地形上找一块 ≥95% 是路面的 96×96 窗口，作为地坪纹理源
+_rgb = bg.convert('RGB'); _px = _rgb.load(); _W, _H = _rgb.size
+def _is_road(x, y):
+    r, g, b = _px[x, y]; return r>170 and g>135 and b<150 and (r-b)>50 and abs(r-g)<55
+road_patch = None
+for _y in range(200, _H-300, 48):
+    for _x in range(200, _W-300, 48):
+        _n = sum(1 for _dx in range(0, 96, 6) for _dy in range(0, 96, 6) if _is_road(_x+_dx, _y+_dy))
+        if _n >= 243:                                   # 256 采样点中 ≥95%
+            road_patch = _rgb.crop((_x, _y, _x+96, _y+96)).convert('RGBA'); break
+    if road_patch: break
+if road_patch is None:
+    road_patch = Image.new('RGBA', (96, 96), (214, 180, 120, 255))     # 兜底：平均土路色
 g = ImageDraw.Draw(bg, 'RGBA')
 fs = max(14, int(26 * (k/3.2)))                    # 标签字号随层级放大
 fnt = None
@@ -32,14 +53,43 @@ for c in sorted(scr, key=lambda q: q['y']):
     ic = ic.crop(ic.split()[3].point(lambda a: 255 if a > 128 else 0).getbbox())
     tw = int(TIER_PX[tiers.get(c['id'],4)] * scale * (k/3.2)); th = int(ic.height*tw/ic.width)
     ic = ic.resize((tw,th), Image.LANCZOS)
-    # 落地锚点：等距建筑底座菱形最宽的一行 ≈ 地面接触中心线。逐城计算，不用固定比例。
-    am = ic.split()[3]
-    widths = [sum(1 for x in range(0, tw, 2) if am.getpixel((x, y)) > 128) for y in range(0, th, 2)]
-    lo = int(len(widths)*0.45)                            # 只在下半部分找，避开高塔
-    base_row = (lo + max(range(lo, len(widths)), key=lambda i: widths[i])) * 2 if len(widths) > lo else int(th*0.7)
-    base_row = max(base_row, int(th*0.55))                # 保底不高于 55%
+    # 落地锚点：底座菱形中心（含护城河）≈ 图高 76%。「最宽行」会被护城河骗到底边，弃用。
+    base_row = int(th * 0.66)                            # 城压低，底座坐在地坪中心
+    # 地坪：路口被城的地坪整个盖住，路走到地坪边缘即止，玩家不会以为能绕城而过
+    pw_ = int(tw * 1.35)
+    # 先把每条邻接边的路头"接"进地坪：从城心沿边方向铺一段土路纹理，盖住路头与地坪之间的草地
+    cx_, cy_ = c['x']*k, c['y']*k
+    road_w = int(tw * 0.22)                              # 路宽 ≈ 城宽 22%，与地形上的土路相当
+    reach  = int(pw_ * 0.62)                             # 铺到地坪半径外一点，保证与真实路头重叠
+    for nb in ADJ[str(c['id'])]['adj']:
+        if nb not in POS: continue
+        ang = math.atan2(POS[nb][1]-cy_, POS[nb][0]-cx_)
+        seg_len = reach
+        seg = road_patch.resize((seg_len, road_w), Image.LANCZOS)
+        # 沿路方向羽化：靠城一端实心，远端渐隐，避免在真实路面上留硬边
+        m = Image.new('L', (seg_len, road_w), 0); md = ImageDraw.Draw(m)
+        for i in range(seg_len):
+            a = 255 if i < seg_len*0.55 else int(255*(1-(i-seg_len*0.55)/(seg_len*0.45)))
+            md.line([(i,0),(i,road_w)], fill=a)
+        m = m.filter(ImageFilter.GaussianBlur(road_w*0.18))
+        seg.putalpha(m)
+        seg = seg.rotate(-math.degrees(ang), expand=True, resample=Image.BICUBIC)
+        # 段的起点在城心，沿 ang 方向延伸：把旋转后图的中心放到 城心 + 半段长
+        mx = cx_ + (seg_len/2)*math.cos(ang); my = cy_ + (seg_len/2)*math.sin(ang)
+        bg.alpha_composite(seg, (int(mx - seg.width/2), int(my - seg.height/2)))
+    if ground is not None:
+        ph_ = int(ground.height * pw_ / ground.width)
+        plate_g = ground.resize((pw_, ph_), Image.LANCZOS)
+    else:
+        ph_ = int(pw_ * 0.5)
+        plate_g = road_patch.resize((pw_, ph_), Image.LANCZOS)
+        mask = Image.new('L', (pw_, ph_), 0)
+        ImageDraw.Draw(mask).ellipse([0, 0, pw_-1, ph_-1], fill=255)
+        plate_g.putalpha(mask.filter(ImageFilter.GaussianBlur(pw_ * 0.06)))
+    bg.alpha_composite(plate_g, (int(c['x']*k - pw_/2), int(c['y']*k - ph_/2)))
     bg.alpha_composite(ic, (int(c['x']*k - tw/2), int(c['y']*k - base_row)))
-    labels.append((c['name'], c['x']*k, c['y']*k + (th - base_row) + 6*(k/3.2)))   # 城池底边下方
+    plate_bottom = c['y']*k + ph_/2
+    labels.append((c['name'], c['x']*k, max(c['y']*k + (th - base_row), plate_bottom) + 4*(k/3.2)))   # 地坪下缘之下
 # 标签最后统一画，避免被后画的城池盖住
 if fnt:
     pad = int(6*(k/3.2)); rad = int(5*(k/3.2))
