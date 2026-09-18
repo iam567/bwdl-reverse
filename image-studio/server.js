@@ -98,17 +98,41 @@ async function generate(it) {
   it.status='running'; it.startedAt=Date.now(); it.error=null; it.attempts++;
   workerMsg = `正在生成：${it.label}`; persistItems();
 
-  const payload = { model: cfg.model, prompt: it.prompt, size: it.size || cfg.size, n:1 };
-  if (cfg.quality    && cfg.quality    !== 'auto') payload.quality = cfg.quality;
-  if (cfg.background && cfg.background !== 'auto') payload.background = cfg.background;
+  const size    = it.size    || cfg.size;
+  const quality = it.quality || cfg.quality;
+  const model   = it.model   || cfg.model;
 
   const ctl = new AbortController();
-  const timer = setTimeout(()=>ctl.abort(), 10*60*1000);
+  const timer = setTimeout(()=>ctl.abort(), 12*60*1000);
   let r;
   try {
-    r = await fetch(`${OPENAI_BASE}/images/generations`, { method:'POST', signal:ctl.signal,
-      headers:{ authorization:`Bearer ${cfg.apiKey}`, 'content-type':'application/json' },
-      body: JSON.stringify(payload) });
+    if (it.refItem) {
+      /* ---- 派生图：以参考图约束人脸一致性，走 /images/edits ---- */
+      const ref = byId.get(it.refItem);
+      if (!ref || !ref.file)
+        throw new Error(`参考图尚未生成：${ref ? ref.label : it.refItem}`);
+      const buf = await fsp.readFile(path.join(OUTPUT, ref.file));
+      const fd = new FormData();
+      fd.append('model', model);
+      fd.append('prompt', it.prompt);
+      fd.append('size', size);
+      fd.append('n', '1');
+      if (quality && quality !== 'auto') fd.append('quality', quality);
+      fd.append('image[]', new Blob([buf], { type:'image/png' }), 'ref.png');
+      r = await fetch(`${OPENAI_BASE}/images/edits`, {
+        method:'POST', signal:ctl.signal,
+        headers:{ authorization:`Bearer ${cfg.apiKey}` },
+        body: fd });
+    } else {
+      const payload = { model, prompt: it.prompt, size, n:1 };
+      if (quality && quality !== 'auto') payload.quality = quality;
+      if (cfg.background && cfg.background !== 'auto' && !it.noBackground)
+        payload.background = cfg.background;
+      r = await fetch(`${OPENAI_BASE}/images/generations`, {
+        method:'POST', signal:ctl.signal,
+        headers:{ authorization:`Bearer ${cfg.apiKey}`, 'content-type':'application/json' },
+        body: JSON.stringify(payload) });
+    }
   } finally { clearTimeout(timer); }
 
   const txt = await r.text();
@@ -136,8 +160,15 @@ async function pump() {
     for (;;) {
       const cfg = loadConfig();
       if (cfg.paused) { workerMsg = '已暂停'; break; }
-      const it = items.find(x => x.status === 'queued');
-      if (!it) { workerMsg = '队列已清空'; break; }
+      const ready = x => !x.refItem || byId.get(x.refItem)?.file;
+      let it = items.find(x => x.status === 'queued' && ready(x));
+      if (!it) {
+        const blocked = items.filter(x => x.status === 'queued');
+        workerMsg = blocked.length
+          ? `等待参考图：还有 ${blocked.length} 项派生图未就绪`
+          : '队列已清空';
+        break;
+      }
       try { await generate(it); logEvent(`✅ ${it.label} 生成完成`); }
       catch (e) {
         it.status='failed'; it.error=String(e.message||e).slice(0,500); it.finishedAt=Date.now();

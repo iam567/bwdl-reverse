@@ -1,270 +1,143 @@
 'use strict';
-/* 从武将数据表生成素材目录 + 每张图的 prompt。
-   核心设计：STYLE_ANCHOR 全局固定不变，只有「主体描述」随武将属性变化。
-   这是保证 239 张头像风格一致的唯一手段 —— 风格词一旦随机漂移，整套图就散了。 */
+/* 从武将数据表生成「卡牌 + 头像」双份素材目录。
+   卡牌 = 独立生成；头像 = 以卡牌为参考图派生，保证同一张脸。 */
 const fs = require('node:fs');
 const path = require('node:path');
+const T = require('./traits.js');
+const { ALLUSION, personaPose } = require('./allusions.js');
 
-/* ============ 全局风格锚点（所有图共用，逐字不变）============ */
-const STYLE_ANCHOR =
-  '中国三国时代题材的角色立绘。写实厚涂油画风格，笔触厚重可见，' +
-  '统一采用土褐、青灰、暗金的低饱和配色，背景为单一深色（近黑的墨绿或深褐），' +
-  '戏剧性的single-source侧逆光从画面左上打下，人物边缘有冷调轮廓光。' +
-  '严格半身构图，人物占画面高度约百分之七十，视线朝向画面左前方。' +
+/* ============ 卡牌风格锚点（B · 高饱和游戏 CG）============
+   只锁「画风 / 色系逻辑 / 面孔族裔 / 卡面构图」。
+   姿势与光位由典故或性格决定，不写在这里。 */
+const CARD_ANCHOR =
+  '高品质中式卡牌游戏角色立绘，SSR 级视觉冲击力。厚涂数字绘画，笔触精致收敛。' +
+  '强对比高饱和——金属甲片有明确的高光与环境色反射，织物有丝绸的光泽与厚度，皮肤通透有血色。' +
+  '人物为东亚面孔，符合汉末中原或相应地域族群的相貌特征，骨相与五官比例真实可信。' +
+  '背景是虚化的场景氛围，有纵深、空气感与飘散的微粒，不要空洞的纯色背景。' +
+  '竖版卡面构图：人物取景在腰部以上，占画面高度约八成，头部位于画面上部三分之一的中央区域。' +
+  '细节密度拉满，甲胄纹样、织物编织、武器配饰都经得起放大看。' +
   '画面中不得出现任何文字、字母、汉字、签名、水印、边框或UI元素。';
 
+/* 头像由卡牌派生（走 images/edits 传参考图） */
+const AVATAR_PROMPT =
+  '以参考图中的人物为唯一依据，保持完全相同的面部特征、骨相、发型、发饰、' +
+  '甲胄与服饰的款式和配色，就像同一位画师为同一个角色画的另一张图。' +
+  '重新构图为游戏头像：正方形画面，胸部以上的紧凑半身，头部占画面高度约百分之六十，' +
+  '面部清晰居中，略带四分之三侧角，视线朝向观者。' +
+  '背景简化为与人物配色协调的单一柔和色块或极简渐变，去掉原有的复杂场景、旗帜与杂物。' +
+  '保持完全一致的厚涂画风、光照方向与色调。' +
+  '画面中不得出现任何文字、字母、签名、水印、边框或UI元素。';
+
 const NEGATIVE =
-  '避免：动漫风、赛璐璐平涂、3D渲染感、塑料质感、过曝高饱和、现代服装、' +
-  '多个人物、全身像、文字水印、对称正面证件照构图。';
+  '避免：照片写实、素描稿、线稿、水墨、水彩、平涂动漫、3D渲染感、塑料质感、' +
+  '现代服装、多个人物、文字水印、构图呆板的证件照。' +
+  '尤其避免：整体欠曝、画面过暗、纯黑或纯色空背景、面部陷入阴影、' +
+  '西方面孔、通用动漫脸、以及与其他立绘雷同的角度与表情。';
 
-
-/* ============ 女性武将 ============
-   原表没有性别字段，且靠名字会误判（如「董茶奴」实为南蛮男将董荼那）。
-   下列 ID 是逐张比对 228 张原始头像后确认的，共 20 人。 */
-const MYSTIC_YOUNG = new Set([4]);   // 南斗：原画是年轻男子，不是白须老者
-const FEMALE = new Set([30,33,41,74,82,130,131,132,134,141,149,179,187,188,197,198,214,216,225,226]);
-
-/* 女性细分：女将 / 才女 / 贵妇 */
-function femaleRole(wu, zhi) {
-  if (wu >= 75) return 'warrior_f';
-  if (zhi >= 85) return 'talent_f';
-  return 'noble_f';
-}
-/* 年龄段（原画里明确是长者/中年的，单独标出） */
-const ELDER_F  = new Set([132]);              // 吴国太
-const MATRON_F = new Set([74,216,225,226]);   // 卞氏、蔡氏、刘氏
-
-/* 既定形象过强的女性，显式覆盖 */
-const ICONIC_F = {
-  '貂蝉':   '绝色舞姬，柳眉杏目，肌肤胜雪，云鬓高绾插步摇，着绯红广袖舞衣，披帛垂落，神情含愁带媚',
-  '小乔':   '江东美人，清丽婉约，鹅蛋脸，发髻简洁插碧玉簪，着淡青色曲裾深衣，气质温婉',
-  '大乔':   '江东美人，端庄沉静，较小乔更显成熟，发髻端整，着月白曲裾深衣，眉宇间有轻愁',
-  '孙尚香': '弓腰姬，英气勃勃，高马尾束发，着轻便女式鳞甲外罩绯色战裙，腰佩双剑，眼神锐利自信',
-  '祝融夫人': '南中蛮族女王，深色肌肤，编发缀骨饰与羽毛，着兽皮与青铜片拼接的战装，手持飞刀，神情剽悍',
-  '花鬘':   '南中蛮族少女，深色肌肤，散发编小辫缀彩珠，着轻便皮甲与藤编护具，年轻矫健',
-  '黄月英': '才女，相貌平实但眼神极为聪慧专注，发髻朴素，着素色深衣，手边有精巧木制机关器械',
-  '蔡琰':   '才女，气质清冷孤高，长发半束，着素色广袖深衣，怀抱古琴或胡笳，眉间有流离之苦',
-  '吕玲绮': '将门之女，银白色女式明光甲，高束马尾，面容冷峻英挺，手按长枪',
-  '马云禄': '西凉女将，健美英挺，着西凉样式轻甲外罩赭色披风，发辫束起，肤色微深，神情爽利',
-  '鲍三娘': '女武将，红色抹额束发，着朴素扎甲，身形精悍，神情坚毅',
-  '孙鲁班': '权门贵女，容貌明艳但眼神凌厉多疑，华贵发饰，着织锦深衣，气场逼人'
-};
-
-function femaleBody(role, id) {
-  const elder  = ELDER_F.has(id), matron = MATRON_F.has(id);
-  if (elder)  return '年长妇人，body 端坐雍容，银发梳作端整高髻插金饰，着深色织锦广袖礼服，不着甲'
-                     .replace('body ', '');
-  if (matron) return '中年贵妇，仪态端严，发髻梳整插玉饰，着深色曲裾深衣，不着甲';
-  if (role === 'warrior_f')
-    return '身形挺拔矫健而不魁梧，着合身的女式轻甲（收腰、护肩、护臂），衣甲之下露出行动便利的战裙';
-  if (role === 'talent_f')
-    return '身形纤秀，不着甲，着广袖交领深衣，衣料柔软有垂坠感';
-  return '身形纤柔，不着甲，着曲裾深衣或襦裙，衣饰精致';
-}
-function femaleFace(role, de, id) {
-  if (ELDER_F.has(id))  return '面容慈和而有威仪，眼角有细纹，神情沉稳';
-  if (MATRON_F.has(id)) return '面容端丽，神情持重内敛';
-  let m = role === 'warrior_f' ? '眉目英挺，眼神明亮果决，肤色健康'
-        : role === 'talent_f'  ? '眉目清秀，眼神沉静聪慧，气质书卷'
-        :                        '眉目柔美，肌肤细腻，神情温婉';
-  if (de >= 90)      m += '，气度端方';
-  else if (de <= 35) m += '，眼神微冷，带一丝算计';
-  return m;
-}
-const FEMALE_NEGATIVE =
-  '严禁：胡须、络腮胡、男性化面部轮廓、男性体格。' +
-  '同时避免：现代服饰、暴露或性化的着装、比基尼、过度夸张的身材比例、动漫萌系画风。';
-
-/* ============ 属性 → 外貌特征 ============
-   身份判定先于兵种：兵种是战斗属性，不能决定服饰主体。
-   文武倾向由 智力 - 武力 的差值决定。 */
-function roleOf(wu, zhi, bingli, jice) {
-  // 方士/术士组：全表仅 管辂/南斗/于吉/北斗 四人满足（兵力 0 且计策点 300）。
-  // 他们武智被人为拉平到 105-120，会骗过下面的 智-武 差值判定，必须先拦。
-  if (Number(bingli) === 0 && Number(jice) === 300) return 'mystic';
-  if (zhi - wu >= 25) return 'scholar';   // 谋士
-  if (wu - zhi >= 25) return 'warrior';   // 猛将
-  return 'officer';                       // 均衡型武官
-}
-function bodyTrait(role, wu) {
-  if (role === 'mystic')
-    return '身着道家鹤氅或宽大法袍，不着任何甲胄，手持卜筮用的蓍草、罗盘或拂尘';
-  if (role === 'scholar')
-    return '身形清癯修长，肩窄，不着甲，着宽袖交领深衣，手持羽扇或竹简';
-  if (role === 'warrior') {
-    if (wu >= 110) return '体格魁梧异常，肩背如铁塔，颈项粗壮，重甲在身，握持长柄重兵';
-    if (wu >= 95)  return '身形健硕，肌肉线条分明，双手骨节粗大，着明光重甲';
-    return '体格结实，军人体态，着扎甲';
-  }
-  return '身形匀称，武官体态，着轻便鳞甲外罩官袍';
-}
-function faceTrait(role, wu, zhi, de, id) {
-  // 只取最强的一条智力/武力特征 + 最多一条德行特征，避免堆叠矛盾
-  let main;
-  if (role === 'mystic')
-    main = MYSTIC_YOUNG.has(id)
-      ? '面容清俊年轻，几近中性，双目如有星光，不似凡人，长发未束，神情超然物外'
-      : '面容清奇脱俗，双目如有星光，不似凡人，须发花白，长须及胸，神情超然物外';
-  else if (role === 'scholar')
-    main = zhi >= 110 ? '眉目疏朗，眼神澄澈深远，额高，神情从容不迫'
-         : '目光内敛沉静，眼尾细长，似在权衡';
-  else if (role === 'warrior')
-    main = wu >= 110 ? '浓眉虬髯，面部轮廓刚硬如刀削，颊侧有旧伤疤，目光灼人'
-         : '面部棱角分明，短须，眼神沉稳锐利';
-  else
-    main = '五官端正，神情沉静，短须修整';
-
-  let moral = '';
-  if (de >= 90)      moral = '，整体气度仁厚雍容';
-  else if (de <= 25) moral = '，眼神阴鸷，嘴角微沉，带压迫感';
-  else if (de <= 50) moral = '，神情倨傲冷淡';
-  return main + moral;
-}
-function gearAccent(bingzhong, role) {
-  // 兵种只做配饰点缀，不改服装主体；文士与方士不挂兵器
-  const n = Number(bingzhong);
-  if (role === 'mystic')
-    return '袍服有暗纹星斗图样，色调为玄青与素白，背景光线带一丝非自然的冷调';
-  if (role === 'scholar')
-    return n === 2 ? '衣料与配色带江南水乡气息，青碧色系'
-         : n === 3 ? '衣料略厚重，配色偏山地土褐'
-         :           '衣料为中原素色麻葛，配色土黄';
-  switch (n) {
-    case 2:  return '配饰点缀带南方水军痕迹：蓑领、湿润的布料质感、腰间短刀';
-    case 3:  return '配饰点缀带山地部队痕迹：毛皮护肩、厚重护腕';
-    default: return '配饰点缀带中原平原军痕迹：披膊、环首刀';
-  }
-}
-function moodTrait(de, zhong) {
-  if (de >= 90 && zhong >= 95) return '氛围庄重，带有可托付的沉稳感';
-  if (de <= 25) return '氛围压抑危险，光线更硬，阴影更重';
-  if (zhong <= 60) return '氛围疏离，眼神游移，似有二心';
-  return '氛围肃穆';
-}
-
-/* 名将特例：既定形象太强的，属性推不出来，必须显式指定 */
-const ICONIC = {
-  '诸葛亮': '头戴纶巾，手执白羽扇，面如冠玉，三绺长须，不着甲胄，氅衣宽大',
-  '关羽':   '面如重枣，丹凤眼卧蚕眉，五绺长髯及胸，绿锦战袍外罩鳞甲',
-  '张飞':   '豹头环眼，燕颔虎须，声势外放，黑面浓髯，重甲',
-  '赵云':   '面容俊朗年轻，白袍银甲，手持长枪，英气逼人',
-  '曹操':   '身量不高但气场极强，细目长髯，眼神多疑锐利，玄色锦袍',
-  '刘备':   '双耳垂肩，面白无须或短须，神情仁厚，着朴素战袍',
-  '司马懿': '鹰视狼顾之相，颈项可回转，眼神深沉阴鸷，玄色深衣',
-  '周瑜':   '姿容俊美，气度儒雅而带锋芒，江东轻甲',
-  '吕布':   '极高大健硕，头戴三叉束发紫金冠，面容英俊而桀骜，手持方天画戟'
-};
-
-/* ============ 读 CSV ============ */
-function readCSV(p) {
-  return fs.readFileSync(p, 'utf8').split(/\r?\n/).filter(Boolean).map(l => l.split(','));
-}
+const readCSV = p => fs.readFileSync(p,'utf8').split(/\r?\n/).filter(Boolean).map(l=>l.split(','));
+const N = v => parseInt(v,10) || 0;
 
 function buildPortraits(csvPath) {
   const rows = readCSV(csvPath);
   const seen = new Map();
   const out = [];
+
   for (const r of rows) {
-    const [id, name, , bingzhong, , tili, zhi, wu, de, zhong] = r;
-    const N = s => parseInt(s, 10) || 0;
-    // 同名武将（原表有重复）加后缀区分
+    const [id, name, , bingzhong, bingli, tili, zhi, wu, de, zhong, jice] = r;
+    const oid = N(id);
     const n = seen.get(name) || 0; seen.set(name, n + 1);
     const label = n ? `${name}(变体${n + 1})` : name;
+    const isF = T.FEMALE.has(oid);
 
-    const oid = N(id);
-    const isF = FEMALE.has(oid);
-    let subject, negative = NEGATIVE, role, roleName;
-
+    /* --- 身份与外貌 --- */
+    let subject, negative = NEGATIVE, roleName;
     if (isF) {
-      /* ---- 女性路径：绝不复用男性特征词（那里有「短须」「虬髯」） ---- */
-      role = femaleRole(N(wu), N(zhi));
+      const role = T.femaleRole(N(wu), N(zhi));
       roleName = { warrior_f:'女武将', talent_f:'才女', noble_f:'仕女' }[role];
-      subject = ICONIC_F[name]
-        ? `主体：${name}，三国时代女性人物。${ICONIC_F[name]}。${moodTrait(N(de), N(zhong))}。`
-        : [
-            `主体：${name}，三国时代${roleName}`,
-            femaleBody(role, oid),
-            femaleFace(role, N(de), oid),
-            gearAccent(bingzhong, role === 'warrior_f' ? 'warrior' : 'scholar'),
-            moodTrait(N(de), N(zhong))
+      subject = T.ICONIC_F[name]
+        ? `主体：${name}，三国时代女性人物。${T.ICONIC_F[name]}。`
+        : [`主体：${name}，三国时代${roleName}`,
+           T.femaleBody(role, oid), T.femaleFace(role, N(de), oid),
+           T.gearAccent(bingzhong, role === 'warrior_f' ? 'warrior' : 'scholar')
           ].join('。') + '。';
-      negative = NEGATIVE + FEMALE_NEGATIVE;
+      negative = NEGATIVE + T.FEMALE_NEGATIVE;
     } else {
-      role = roleOf(N(wu), N(zhi), r[4], r[10]);
+      const role = T.roleOf(N(wu), N(zhi), bingli, jice);
       roleName = { mystic:'方士术士', scholar:'文臣谋士', warrior:'武将', officer:'武官' }[role];
-      subject = ICONIC[name]
-        ? `主体：${name}，三国时代人物。${ICONIC[name]}。${moodTrait(N(de), N(zhong))}。`
-        : [
-            `主体：${name}，三国时代${roleName}`,
-            bodyTrait(role, N(wu)),
-            faceTrait(role, N(wu), N(zhi), N(de), oid),
-            gearAccent(bingzhong, role),
-            moodTrait(N(de), N(zhong))
+      subject = T.ICONIC[name]
+        ? `主体：${name}，三国时代人物。${T.ICONIC[name]}。`
+        : [`主体：${name}，三国时代${roleName}`,
+           T.bodyTrait(role, N(wu)), T.faceTrait(role, N(wu), N(zhi), N(de), oid),
+           T.gearAccent(bingzhong, role)
           ].join('。') + '。';
     }
 
+    /* --- 姿势：典故优先，否则按性格推导 --- */
+    const allu = ALLUSION[name];
+    const pp = personaPose(N(wu), N(zhi), N(de), N(zhong), N(tili), isF);
+    const scene = allu
+      ? `画面情境（依据其生平的著名一刻）：${allu}。`
+      : `姿态与神情（依据其性格）：${pp.pose}。`;
+    const light = `光线：${pp.light}。`;
+
+    const meta = { 性别: isF?'女':'男', 武力:N(wu), 智力:N(zhi), 德:N(de),
+                   忠诚:N(zhong), 体力:N(tili), 登场年:N(r[13]),
+                   兵种:['','平原军','水军','山地军'][N(bingzhong)]||'平原军',
+                   典故: allu ? '有' : '性格推导' };
+
     out.push({
-      id: `portrait_${id}`,
-      category: 'portrait',
-      label,
-      meta: { 性别: isF ? '女' : '男', 武力: N(wu), 智力: N(zhi), 德: N(de), 忠诚: N(zhong), 体力: N(tili),
-              兵种: ['', '平原军', '水军', '山地军'][N(bingzhong)] || '平原军' },
-      source: `/source/avatar/${id}.png`,
-      size: '1024x1536',
-      prompt: `${STYLE_ANCHOR}\n\n${subject}\n\n${negative}`
+      id: `card_${id}`, category:'card', label, meta,
+      source: `/source/avatar/${id}.png`, size:'1024x1536',
+      prompt: `${CARD_ANCHOR}\n\n${scene}${light}\n\n${subject}\n\n${negative}`
+    });
+    out.push({
+      id: `avatar_${id}`, category:'avatar', label, meta,
+      source: `/source/avatar/${id}.png`, size:'1024x1024',
+      refItem: `card_${id}`,
+      prompt: AVATAR_PROMPT
     });
   }
   return out;
 }
 
-/* ============ CG / 场景 / 单位 ============ */
+/* ============ CG / 场景（沿用，换成卡牌画风）============ */
 const CG = [
-  ['lib1',   '世界地图底图',  '中国汉末十三州的古地图，羊皮纸质感，墨线勾勒山川河流与城池，暗金与土褐配色，边角磨损，俯视平面视角'],
-  ['lib13',  '标题主视觉',    '三国题材游戏标题背景，远景为烽烟中的城郭与旌旗，前景大片留白供标题压字，史诗感，低饱和'],
-  ['lib59',  '君主登基场景',  '汉代宫殿大殿内部，玉阶之上空置的主位，两侧列戟，烛火幽微，尘埃在光柱中浮动，无人物'],
-  ['lib106', '战败/灭亡',     '战后废墟，断折的旌旗半埋于焦土，远处城郭冒烟，天空铅灰，荒凉肃杀，无人物'],
-  ['lib302', '内政建设',      '汉代城池内的市井与农田俯瞰，水渠纵横，谷仓与集市，秋收时节的暖褐色调，安定繁盛']
+  ['lib1','世界地图底图','中国汉末十三州的古地图，羊皮纸质感，墨线勾勒山川河流与城池，暗金与土褐，俯视平面视角'],
+  ['lib13','标题主视觉','远景为烽烟中的城郭与旌旗，前景大片留白供标题压字，史诗感'],
+  ['lib59','君主登基','汉代宫殿大殿内部，玉阶之上空置的主位，两侧列戟，烛火幽微，无人物'],
+  ['lib106','战败灭亡','战后废墟，断折的旌旗半埋于焦土，远处城郭冒烟，荒凉肃杀，无人物'],
+  ['lib302','内政建设','汉代城池内的市井与农田俯瞰，水渠纵横，谷仓与集市，秋收暖色调'],
 ];
 const SCENE = [
-  ['lib120','平原会战','开阔平原上两军对垒的远景，尘土飞扬，骑兵阵列，低角度'],
+  ['lib120','平原会战','开阔平原两军对垒远景，尘土飞扬，骑兵阵列'],
   ['lib121','山地伏击','狭窄山道，两侧陡壁，滚石与埋伏的旗影'],
-  ['lib122','水战','长江江面上的楼船与艨艟，浪涌，帆影，水汽'],
+  ['lib122','水战','长江江面的楼船与艨艟，浪涌，帆影，水汽'],
   ['lib123','攻城','高大夯土城墙下的云梯与冲车，箭雨'],
   ['lib124','火攻','夜色中的连营大火，火光映红江面与天空'],
-  ['lib125','树林遭遇','茂密树林中的行军队列，光线破碎，视野受阻'],
-  ['lib126','守城','城楼上的守军视角，俯瞰城下攻城部队'],
-  ['lib127','骑兵冲锋','重骑兵正面冲锋的动势，长矛前指，尘浪'],
-  ['lib128','弓兵齐射','弓箭手阵列仰角齐射，箭矢离弦的瞬间'],
+  ['lib125','树林遭遇','茂密树林中的行军队列，光线破碎'],
+  ['lib126','守城','城楼上俯瞰城下攻城部队'],
+  ['lib127','骑兵冲锋','重骑兵正面冲锋，长矛前指，尘浪'],
+  ['lib128','弓兵齐射','弓箭手阵列仰角齐射，箭矢离弦瞬间'],
   ['lib129','单挑','两名武将马上交锋的对峙瞬间，周围士兵退开成圆'],
   ['lib130','夜袭','月下潜行的部队，火把星点，营帐轮廓'],
-  ['lib131','雨战','大雨中的泥泞战场，能见度低，旗帜湿重下垂'],
-  ['lib132','雪战','雪原上的行军，白茫茫，脚印与车辙，寒冷'],
+  ['lib131','雨战','大雨中的泥泞战场，旗帜湿重下垂'],
+  ['lib132','雪战','雪原行军，脚印与车辙，寒冷'],
   ['lib136','凯旋','得胜部队入城，百姓夹道，旌旗招展，暖色调'],
-  ['lib206','粮道','运粮车队穿行于山道，牛车与民夫，尘土'],
-  ['lib207','议事','汉代军帐内的沙盘与将领围立的剪影，烛光，无清晰面孔']
+  ['lib206','粮道','运粮车队穿行山道，牛车与民夫'],
+  ['lib207','议事','汉代军帐内的沙盘与将领围立的剪影，烛光'],
 ];
+const buildSimple = (list, category, size, extra) => list.map(([f,label,desc]) => ({
+  id:`${category}_${f}`, category, label, source:`/source/lib/${f}.png`, size,
+  prompt:`${CARD_ANCHOR}\n\n${extra}\n\n画面内容：${desc}。\n\n${NEGATIVE}`
+}));
 
-function buildSimple(list, category, sizeDefault, styleExtra) {
-  return list.map(([file, label, desc]) => ({
-    id: `${category}_${file}`,
-    category, label,
-    source: `/source/lib/${file}.png`,
-    size: sizeDefault,
-    prompt: `${STYLE_ANCHOR}\n\n${styleExtra}\n\n画面内容：${desc}。\n\n${NEGATIVE}`
-  }));
-}
-
-/* ============ 主流程 ============ */
-const csv = process.argv[2] || path.join(__dirname, 'officers.csv');
+const csv = process.argv[2] || path.join(__dirname,'officers.csv');
 const catalog = [
   ...buildPortraits(csv),
-  ...buildSimple(CG, 'cg', '1024x1536',
-    '这是一张游戏用的全屏场景插画，不是人物立绘。构图要为界面留出可压字的负空间。'),
-  ...buildSimple(SCENE, 'scene', '1536x1024',
-    '这是一张横向的战斗场景插画。以远景/中景为主，人物不需要清晰面孔，重点是气氛与地形。')
+  ...buildSimple(CG,'cg','1024x1536','这是一张全屏场景插画，不是人物立绘。构图要为界面留出可压字的负空间。'),
+  ...buildSimple(SCENE,'scene','1536x1024','这是一张横向战斗场景插画。以远景中景为主，人物不需要清晰面孔，重点是气氛与地形。'),
 ];
-fs.writeFileSync(path.join(__dirname, 'assets.json'), JSON.stringify(catalog, null, 2));
-const byCat = {};
-for (const a of catalog) byCat[a.category] = (byCat[a.category] || 0) + 1;
-console.log('生成素材条目:', catalog.length);
-for (const [k, v] of Object.entries(byCat)) console.log(`  ${k}: ${v}`);
+fs.writeFileSync(path.join(__dirname,'assets.json'), JSON.stringify(catalog,null,2));
+const by={}; for(const a of catalog) by[a.category]=(by[a.category]||0)+1;
+console.log('素材条目:', catalog.length);
+for(const [k,v] of Object.entries(by)) console.log(`  ${k}: ${v}`);
