@@ -75,20 +75,30 @@ html,body{margin:0;height:100%;background:#0d0c0a;overflow:hidden;font:14px/1.4 
 #cvpic.show{display:block}
 #cvpic img{width:100%;display:block;border-radius:10px}
 #cvhl,#cvlbl{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;border-radius:10px}
-/* 建筑指令面板 */
-#bsheet{position:fixed;left:10px;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);z-index:37;
-  background:linear-gradient(180deg,#242018f2,#15120ef2);border:1px solid #8a6f3c;border-radius:14px;
-  padding:12px 14px;box-shadow:0 12px 34px #000b;
-  transform:translateY(calc(100% + 30px));            /* 收起时整条移出屏幕，别在底边露出一道暗边 */
-  transition:transform .3s cubic-bezier(.2,.9,.25,1)}
-#bsheet.show{transform:translateY(0)}
-.bs-hd{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
-.bs-hd b{font-size:20px;color:#f6e9cd;letter-spacing:.08em}
-.bs-hd span{font-size:12px;color:#a89876}
-.bs-cmds{display:flex;flex-wrap:wrap;gap:8px}
-.bs-cmds div{flex:1 1 calc(50% - 8px);text-align:center;padding:11px 6px;border:1px solid #4a3d29;
-  border-radius:9px;background:#191713;color:#dcd0b6;font-size:15px}
-.bs-cmds div:active{background:#2a2419;border-color:#c8a45c}
+/* 建筑指令浮窗：贴着被点的建筑弹出，只挡它旁边一小块 */
+#bpop{position:absolute;width:150px;z-index:6;padding:8px 9px 9px;line-height:1.35;
+  border:11px solid transparent;border-image:url(/image/cityview/menu.png) 62 fill / 11px / 0 stretch;
+  opacity:0;transform:scale(.9);pointer-events:none;
+  transition:opacity .16s,transform .18s cubic-bezier(.2,.9,.25,1);
+  filter:drop-shadow(0 6px 16px #000a)}
+#bpop.show{opacity:1;transform:scale(1);pointer-events:auto}
+#bpop::after{content:'';position:absolute;width:0;height:0;border:7px solid transparent}
+#bpop.right::after{left:-17px;top:calc(50% - 7px);border-right-color:#7a6238}
+#bpop.left::after {right:-17px;top:calc(50% - 7px);border-left-color:#7a6238}
+#bpop.below::after{top:-17px;left:calc(50% - 7px);border-bottom-color:#7a6238}
+#bpop.above::after{bottom:-17px;left:calc(50% - 7px);border-top-color:#7a6238}
+.bp-hd{display:flex;align-items:baseline;gap:5px;margin-bottom:8px;
+  padding-bottom:6px;border-bottom:1px solid #ffffff1f}
+.bp-hd b{font-size:16px;color:#f7ecd4;letter-spacing:.06em;text-shadow:0 1px 3px #000a}
+.bp-hd span{font-size:10.5px;color:#b9a47a}
+.bp-cmds{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.bp-cmds div{text-align:center;padding:8px 1px;font-size:12.5px;color:#2a1c08;
+  font-weight:700;letter-spacing:0;text-shadow:0 1px 0 #ffffff4d;cursor:pointer;white-space:nowrap;
+  /* 按钮两端的铜钉在横向 90px 以内，切片必须切到它们外侧，否则会被拉成椭圆 */
+  border:6px 9px solid transparent;
+  border-image:url(/image/cityview/btn.png) 30 90 fill / 6px 9px / 0 stretch}
+.bp-cmds div:active{filter:brightness(1.25)}
+.bp-cmds div.wide{grid-column:1 / -1}
 /* 总览面板 */
 #panel{position:fixed;inset:0;z-index:30;background:#0d0c0ad9;backdrop-filter:blur(10px);
   transform:translateX(100%);transition:transform .32s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;
@@ -128,15 +138,17 @@ html,body{margin:0;height:100%;background:#0d0c0a;overflow:hidden;font:14px/1.4 
     <div class="cv-stats" id="cvstats"></div>
   </div>
   <div class="cv-body">
-    <div id="cvpic"><img id="cvimg" alt=""><canvas id="cvhl"></canvas><canvas id="cvlbl"></canvas></div>
+    <div id="cvpic"><img id="cvimg" alt=""><canvas id="cvhl"></canvas><canvas id="cvlbl"></canvas>
+      <div id="bpop"><div class="bp-hd"><b id="bsname"></b><span id="bsfunc"></span></div>
+        <div class="bp-cmds" id="bscmds"></div></div>
+    </div>
     <div id="cvfall">
       <div class="cv-sec">相 邻 城 池</div><div class="cv-adj" id="cvadj"></div>
       <div class="cv-note">这座城的城内图还没生成<br>（目前只做了洛阳这座样板城）</div>
     </div>
   </div>
 </div>
-<div id="bsheet"><div class="bs-hd"><b id="bsname"></b><span id="bsfunc"></span></div>
-  <div class="bs-cmds" id="bscmds"></div></div>
+
 <div id="flash"></div>
 <div id="panel">
   <header><b>天下形势</b><div id="close">×</div></header>
@@ -488,13 +500,53 @@ function drawLabels(){
 let hlKey=null;
 function showSheet(b){
   hlKey = b ? b.key : null;
-  if(!b){$('bsheet').classList.remove('show');hlBuilding(null);drawLabels();return;}
+  const pop=$('bpop');
+  if(!b){pop.classList.remove('show');hlBuilding(null);drawLabels();return;}
   $('bsname').textContent=b.name; $('bsfunc').textContent='· '+b.func;
+  const cmds=BS_CMDS[b.func]||[];
   const box=$('bscmds'); box.innerHTML='';
-  for(const t of (BS_CMDS[b.func]||[])){const el=document.createElement('div');el.textContent=t;box.appendChild(el);}
-  $('bsheet').classList.add('show'); hlBuilding(b); drawLabels();
+  for(const t of cmds){const el=document.createElement('div');
+    if(cmds.length===1)el.className='wide';
+    el.textContent=t; box.appendChild(el);}
+  pop.classList.add('show');
+  placePop(b);
+  hlBuilding(b); drawLabels();
 }
-$('cvpic').addEventListener('click',e=>{ showSheet(pickBuilding(e)); });
+/* 浮窗贴着建筑放。四个候选位各算两笔账：压住这座建筑多少、超出画面多少，
+   两者加权取最小的那个——所以它总是从建筑旁边探出来，而不是盖在它脸上。 */
+const POP_ORIGIN={right:'0% 50%',left:'100% 50%',below:'50% 0%',above:'50% 100%'};
+function placePop(b){
+  const pop=$('bpop'), wrap=$('cvpic');
+  const cw=wrap.clientWidth, ch=wrap.clientHeight;
+  if(!cw||!cvData)return;
+  const f=cw/cvData.size[0];
+  const bx0=b.box[0]*f, by0=b.box[1]*f, bx1=b.box[2]*f, by1=b.box[3]*f;
+  const mx=(bx0+bx1)/2, my=(by0+by1)/2;
+  const pw=pop.offsetWidth, ph=pop.offsetHeight, gap=9;
+  const cands=[
+    ['right', bx1+gap,        my-ph/2],
+    ['left',  bx0-gap-pw,     my-ph/2],
+    ['below', mx-pw/2,        by1+gap],
+    ['above', mx-pw/2,        by0-gap-ph],
+  ];
+  const over=(x,y)=>Math.max(0,Math.min(x+pw,bx1)-Math.max(x,bx0))
+                   *Math.max(0,Math.min(y+ph,by1)-Math.max(y,by0));
+  const out=(x,y)=>Math.max(0,4-x)+Math.max(0,x+pw-(cw-4))
+                  +Math.max(0,4-y)+Math.max(0,y+ph-(ch-4));
+  let best=null;
+  for(const [side,x,y] of cands){
+    const cost=over(x,y)/400 + out(x,y)*3;
+    if(!best||cost<best.cost)best={cost,side,x,y};
+  }
+  for(const k of ['right','left','above','below']) pop.classList.toggle(k, k===best.side);
+  pop.style.transformOrigin=POP_ORIGIN[best.side];
+  pop.style.left=Math.round(Math.min(Math.max(4,best.x), Math.max(4,cw-pw-4)))+'px';
+  pop.style.top =Math.round(Math.min(Math.max(4,best.y), Math.max(4,ch-ph-4)))+'px';
+}
+$('cvpic').addEventListener('click',e=>{
+  if($('bpop').contains(e.target))return;          // 点浮窗自己不当作点地图
+  showSheet(pickBuilding(e));
+});
 
 /* 万以上折成「x.x万」，四位数以内照原样 */
 const wan=v=>v>=10000 ? (v/10000).toFixed(1)+'<em>万</em>' : String(v);
