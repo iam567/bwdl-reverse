@@ -57,26 +57,6 @@ for c in sorted(scr, key=lambda q: q['y']):
     base_row = int(th * 0.66)                            # 城压低，底座坐在地坪中心
     # 地坪：路口被城的地坪整个盖住，路走到地坪边缘即止，玩家不会以为能绕城而过
     pw_ = int(tw * 1.35)
-    # 先把每条邻接边的路头"接"进地坪：从城心沿边方向铺一段土路纹理，盖住路头与地坪之间的草地
-    cx_, cy_ = c['x']*k, c['y']*k
-    road_w = int(tw * 0.22)                              # 路宽 ≈ 城宽 22%，与地形上的土路相当
-    reach  = int(pw_ * 0.62)                             # 铺到地坪半径外一点，保证与真实路头重叠
-    for nb in ADJ[str(c['id'])]['adj']:
-        if nb not in POS: continue
-        ang = math.atan2(POS[nb][1]-cy_, POS[nb][0]-cx_)
-        seg_len = reach
-        seg = road_patch.resize((seg_len, road_w), Image.LANCZOS)
-        # 沿路方向羽化：靠城一端实心，远端渐隐，避免在真实路面上留硬边
-        m = Image.new('L', (seg_len, road_w), 0); md = ImageDraw.Draw(m)
-        for i in range(seg_len):
-            a = 255 if i < seg_len*0.55 else int(255*(1-(i-seg_len*0.55)/(seg_len*0.45)))
-            md.line([(i,0),(i,road_w)], fill=a)
-        m = m.filter(ImageFilter.GaussianBlur(road_w*0.18))
-        seg.putalpha(m)
-        seg = seg.rotate(-math.degrees(ang), expand=True, resample=Image.BICUBIC)
-        # 段的起点在城心，沿 ang 方向延伸：把旋转后图的中心放到 城心 + 半段长
-        mx = cx_ + (seg_len/2)*math.cos(ang); my = cy_ + (seg_len/2)*math.sin(ang)
-        bg.alpha_composite(seg, (int(mx - seg.width/2), int(my - seg.height/2)))
     if ground is not None:
         ph_ = int(ground.height * pw_ / ground.width)
         plate_g = ground.resize((pw_, ph_), Image.LANCZOS)
