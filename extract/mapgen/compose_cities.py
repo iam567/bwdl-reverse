@@ -32,8 +32,14 @@ for c in sorted(scr, key=lambda q: q['y']):
     ic = ic.crop(ic.split()[3].point(lambda a: 255 if a > 128 else 0).getbbox())
     tw = int(TIER_PX[tiers.get(c['id'],4)] * scale * (k/3.2)); th = int(ic.height*tw/ic.width)
     ic = ic.resize((tw,th), Image.LANCZOS)
-    bg.alpha_composite(ic, (int(c['x']*k - tw/2), int(c['y']*k - th*0.62)))
-    labels.append((c['name'], c['x']*k, c['y']*k + th*0.38 + 6*(k/3.2)))   # 城池底边下方
+    # 落地锚点：等距建筑底座菱形最宽的一行 ≈ 地面接触中心线。逐城计算，不用固定比例。
+    am = ic.split()[3]
+    widths = [sum(1 for x in range(0, tw, 2) if am.getpixel((x, y)) > 128) for y in range(0, th, 2)]
+    lo = int(len(widths)*0.45)                            # 只在下半部分找，避开高塔
+    base_row = (lo + max(range(lo, len(widths)), key=lambda i: widths[i])) * 2 if len(widths) > lo else int(th*0.7)
+    base_row = max(base_row, int(th*0.55))                # 保底不高于 55%
+    bg.alpha_composite(ic, (int(c['x']*k - tw/2), int(c['y']*k - base_row)))
+    labels.append((c['name'], c['x']*k, c['y']*k + (th - base_row) + 6*(k/3.2)))   # 城池底边下方
 # 标签最后统一画，避免被后画的城池盖住
 if fnt:
     pad = int(6*(k/3.2)); rad = int(5*(k/3.2))
