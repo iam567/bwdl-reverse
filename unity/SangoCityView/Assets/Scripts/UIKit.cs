@@ -76,8 +76,30 @@ public static class UIKit
         return Sprite.Create(t, new Rect(0,0,24,24), new Vector2(.5f,.5f), 100, 0,
                              SpriteMeshType.FullRect, new Vector4(8,8,8,8));
     }
+    /// 深色实底 + 金边，给信息条这类要压住背景的面板用。
+    /// Frame() 的中心几乎透明，压在地图上字会看不清。
+    public static Sprite Plate()
+    {
+        const int S = 32, R = 8;
+        var t = new Texture2D(S, S, TextureFormat.RGBA32, false);
+        for (int y = 0; y < S; y++)
+            for (int x = 0; x < S; x++)
+            {
+                float dx = Mathf.Max(R - x, x - (S - 1 - R), 0);
+                float dy = Mathf.Max(R - y, y - (S - 1 - R), 0);
+                float d = Mathf.Sqrt(dx * dx + dy * dy);       // 到圆角矩形边界的距离
+                float a = Mathf.Clamp01(R - d);
+                bool edge = d > R - 2.2f;
+                var c = edge ? new Color(.60f, .47f, .24f, 1f) : new Color(.086f, .075f, .055f, .95f);
+                t.SetPixel(x, y, new Color(c.r, c.g, c.b, c.a * a));
+            }
+        t.Apply();
+        return Sprite.Create(t, new Rect(0,0,S,S), new Vector2(.5f,.5f), 100, 0,
+                             SpriteMeshType.FullRect, new Vector4(R+2,R+2,R+2,R+2));
+    }
+
     /// 椭圆光环：贴地的选中标记
-    public static Sprite Ring(int w = 256, int h = 171, float thick = .07f)
+    public static Sprite Ring(int w = 384, int h = 256, float thick = .085f)
     {
         var t = new Texture2D(w, h, TextureFormat.RGBA32, false);
         float cx = w / 2f, cy = h / 2f;
@@ -86,9 +108,12 @@ public static class UIKit
             {
                 float dx = (x - cx) / (w / 2f), dy = (y - cy) / (h / 2f);
                 float d = Mathf.Sqrt(dx * dx + dy * dy);
-                float a = Mathf.Clamp01(1f - Mathf.Abs(d - .92f) / thick);
+                float a = Mathf.Clamp01(1f - Mathf.Abs(d - .90f) / thick);
+                float glow = Mathf.Clamp01(1f - Mathf.Abs(d - .90f) / .34f);        // 环外一圈柔光
                 float lower = Mathf.InverseLerp(0f, 1f, (cy - y) / cy * .5f + .5f); // 下半亮上半淡
-                t.SetPixel(x, y, new Color(1f, .94f, .74f, a * a * Mathf.Lerp(.22f, 1f, lower)));
+                float dir = Mathf.Lerp(.25f, 1f, lower);
+                t.SetPixel(x, y, new Color(1f, .95f, .76f,
+                    Mathf.Clamp01(a * a * dir + glow * glow * .16f * dir)));
             }
         t.Apply();
         return Sprite.Create(t, new Rect(0,0,w,h), new Vector2(.5f,.5f), 100);

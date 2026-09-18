@@ -5,6 +5,7 @@ using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public static class Builder
 {
@@ -53,5 +54,44 @@ public static class Builder
         var r = BuildPipeline.BuildPlayer(opt);
         Debug.Log("构建结果: " + r.summary.result + " 用时 " + r.summary.totalTime);
         EditorApplication.Exit(r.summary.result == BuildResult.Succeeded ? 0 : 3);
+    }
+
+    /// 不出包，直接把主地图（选中某城）渲一张 PNG，方便自查
+    public static void RenderMap()
+    {
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        UIKit.UIFont = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/CJK.ttf");
+
+        var camGO = new GameObject("Cam", typeof(Camera));
+        var cam = camGO.GetComponent<Camera>();
+        cam.clearFlags = CameraClearFlags.SolidColor;
+        cam.backgroundColor = new Color(.082f, .067f, .043f);
+        cam.orthographic = true;
+        var rt = new RenderTexture(750, 1624, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
+        cam.targetTexture = rt;
+
+        var go = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+        var canvas = go.GetComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceCamera;
+        canvas.worldCamera = cam; canvas.planeDistance = 10;
+        var sc = go.GetComponent<CanvasScaler>();
+        sc.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        sc.referenceResolution = new Vector2(375, 812); sc.matchWidthOrHeight = 0;
+
+        var data = JsonUtility.FromJson<MapData>(
+            File.ReadAllText(Path.Combine(UIKit.ArtDir, "map.json")));
+        var mv = new MapView((RectTransform)go.transform, data, 375, 812);
+        mv.Select(data.cities.Find(c => c.name == "陈留"));
+
+        Canvas.ForceUpdateCanvases();
+        cam.Render();
+        var shot = new Texture2D(rt.width, rt.height, TextureFormat.RGB24, false);
+        RenderTexture.active = rt;
+        shot.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+        shot.Apply(); RenderTexture.active = null;
+        Directory.CreateDirectory("Render");
+        File.WriteAllBytes("Render/mapview.png", shot.EncodeToPNG());
+        Debug.Log("地图渲染完成 → Render/mapview.png");
+        EditorApplication.Exit(0);
     }
 }

@@ -20,15 +20,15 @@ public class MapView
     readonly Dictionary<int,RectTransform> flagRT = new();
     readonly Dictionary<int,Image> flagImg = new();
     Image ring;
-    RectTransform bar; Text barName, barTier, barOwner;
+    RectTransform bar; Text barName, barTier, barOwner; Image ownerChip;
     MapData.City sel;
-    float zoom = 3f;                                // 屏幕 UI 单位 / 1024 单位
+    float zoom = 2.2f;                              // 屏幕 UI 单位 / 1024 单位
     const float ZMIN = 375f/1024f, ZMAX = 6f;
     Vector2 drag; bool dragging; float downT; Vector2 downPos;
 
     public MapView(Transform parent, MapData d, float screenW, float screenH)
     {
-        data = d;
+        data = d; vw = screenW; vh = screenH;
         Root = Node("MapView", parent); Fill(Root);
         var clip = Node("Clip", Root); Fill(clip);
         clip.gameObject.AddComponent<RectMask2D>();
@@ -44,6 +44,10 @@ public class MapView
 
         ring = Panel(map, "Ring", Ring(), false);
         ring.raycastTarget = false;
+        // 和旗子一样用左上角锚点：Apply() 里的坐标全按「左上为原点」算，
+        // 留着默认的居中锚点会把环甩到画面外。
+        ring.rectTransform.anchorMin = ring.rectTransform.anchorMax = new Vector2(0, 1);
+        ring.rectTransform.pivot = new Vector2(0, 1);
         ring.gameObject.SetActive(false);
 
         foreach (var f in d.flags) flagTex[f.key] = Load("flags/" + f.key + ".png");
@@ -61,13 +65,17 @@ public class MapView
         bar = Node("Bar", Root);
         Place(bar, 12, screenH - 84, screenW - 24, 72);
         var bi = bar.gameObject.AddComponent<Image>();
-        bi.sprite = Frame(); bi.type = Image.Type.Sliced; bi.raycastTarget = false;
+        bi.sprite = Plate(); bi.type = Image.Type.Sliced; bi.raycastTarget = false;
         barName  = Label(bar, "", 22, new Color32(0xF6,0xE9,0xCD,255), TextAnchor.MiddleLeft, FontStyle.Bold);
         Place(barName.rectTransform, 14, 6, 140, 30);
         barTier  = Label(bar, "", 11, new Color32(0xD7,0xB8,0x78,255));
         Place(barTier.rectTransform, 96, 14, 80, 16);
-        barOwner = Label(bar, "", 13, new Color32(0xCF,0xC4,0xAB,255), TextAnchor.MiddleRight, FontStyle.Bold);
-        Place(barOwner.rectTransform, screenW - 24 - 150, 8, 136, 26);
+        // 势力用「色块 + 米色字」，不用纯色字——曹操的靛蓝压在暗底上读不出来
+        ownerChip = Node("chip", bar).gameObject.AddComponent<Image>();
+        ownerChip.raycastTarget = false;
+        Place(ownerChip.rectTransform, screenW - 24 - 76, 18, 11, 11);
+        barOwner = Label(bar, "", 13, new Color32(0xE6,0xDC,0xC4,255), TextAnchor.MiddleLeft, FontStyle.Bold);
+        Place(barOwner.rectTransform, screenW - 24 - 60, 8, 60, 26);
         Label(bar, "再点一次 进入城中 · 点空白处取消", 11, new Color32(0xA8,0x98,0x76,255))
             .rectTransform.SetParent(bar, false);
         Place((RectTransform)bar.GetChild(bar.childCount-1), 14, 40, 300, 20);
@@ -80,10 +88,13 @@ public class MapView
 
     MapData.City FindByName(string n) => data.cities.Find(c => c.name == n) ?? data.cities[0];
 
+    float vw, vh;                                   // 视口尺寸（参考分辨率），构造时传进来
+
+    /// 用传进来的参考分辨率算，不能读 parent.rect——构造时画布还没布局，那会儿宽高是 0，
+    /// 拿它算出来的居中会整体偏掉半屏。
     void CenterOn(MapData.City c)
     {
-        var p = map.parent as RectTransform;
-        map.anchoredPosition = new Vector2(p.rect.width/2 - c.x*zoom, -(p.rect.height/2 - c.y*zoom));
+        map.anchoredPosition = new Vector2(vw/2 - c.x*zoom, -(vh/2 - c.y*zoom));
     }
 
     void Apply()
@@ -158,6 +169,8 @@ public class MapView
         Select(best);
     }
 
+    public MapData.City Selected => sel;
+
     public void Select(MapData.City c)
     {
         sel = c;
@@ -168,9 +181,9 @@ public class MapView
         barName.text = c.name;
         barTier.text = st != null ? st.tierName : "";
         var f = data.flags.Find(q => q.key == c.owner);
-        barOwner.text = "◼ " + (f != null ? f.use : "无主");
+        barOwner.text = f != null ? f.use : "无主";
         ColorUtility.TryParseHtmlString(f != null ? f.hex : "#8A8578", out var col);
-        barOwner.color = col;
+        ownerChip.color = col;
         Apply();
     }
 }
