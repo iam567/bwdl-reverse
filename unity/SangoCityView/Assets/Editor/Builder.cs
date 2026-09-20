@@ -187,4 +187,53 @@ public static class Builder
         Debug.Log("行军渲染完成 → Render/march.png");
         EditorApplication.Exit(0);
     }
+
+    // ── 战斗试玩版 ──────────────────────────────────────────────────
+    const string BATTLE_SCENE = "Assets/Scenes/Battle.unity";
+
+    static void MakeBattleScene()
+    {
+        Directory.CreateDirectory("Assets/Scenes");
+        var s = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+        var camGO = new GameObject("Main Camera", typeof(Camera));
+        var cam = camGO.GetComponent<Camera>();
+        cam.clearFlags = CameraClearFlags.SolidColor;
+        cam.backgroundColor = new Color(.04f, .04f, .05f);
+        camGO.tag = "MainCamera";
+
+        new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
+
+        var go = new GameObject("BattleGame");
+        var bg = go.AddComponent<BattleGame>();
+        bg.font = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/CJK.ttf");
+        if (bg.font == null) Debug.LogError("字体没找到：Assets/Fonts/CJK.ttf");
+
+        EditorSceneManager.SaveScene(s, BATTLE_SCENE);
+    }
+
+    public static void BuildBattleMac()
+    {
+        MakeBattleScene();
+        PlayerSettings.companyName = "sango";
+        PlayerSettings.productName = "SangoBattle";
+        PlayerSettings.defaultScreenWidth = 500;
+        PlayerSettings.defaultScreenHeight = 1083;
+        PlayerSettings.defaultIsNativeResolution = false;
+        PlayerSettings.resizableWindow = true;
+        PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
+        PlayerSettings.runInBackground = true;
+
+        var opt = new BuildPlayerOptions {
+            scenes = new[] { BATTLE_SCENE },
+            locationPathName = "Build/SangoBattle.app",
+            target = BuildTarget.StandaloneOSX,
+            targetGroup = BuildTargetGroup.Standalone,
+            options = BuildOptions.None,
+        };
+        var r = BuildPipeline.BuildPlayer(opt);
+        Debug.Log("战斗试玩版构建: " + r.summary.result + " 用时 " + r.summary.totalTime);
+        EditorApplication.Exit(r.summary.result == BuildResult.Succeeded ? 0 : 3);
+    }
+
 }

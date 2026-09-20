@@ -1,0 +1,67 @@
+# -*- coding: utf-8 -*-
+"""把战斗要用的素材投进 Unity 工程的 StreamingAssets。
+
+   原则：做过新素材的用新的，没做过的先用原版 jar 里抽出来的那份。
+     新  战场地块（5 套地域 × 10 槽位，64px）、战场部队（蓝红 × 3 兵种 × 5 方位）、武将头像
+     旧  阵型选择的卷轴与 VS 框、阵型战的地面/小兵/兵力条/城墙、属性图标、指令条
+
+   用法: stage_battle_assets.py [工程目录=unity/SangoCityView]
+"""
+import sys, os, shutil, glob, json, csv
+from PIL import Image
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
+PROJ = os.path.join(ROOT, sys.argv[1] if len(sys.argv) > 1 else 'unity/SangoCityView')
+DST  = os.path.join(PROJ, 'Assets/StreamingAssets/Art/battle')
+
+for sub in ('tiles', 'units', 'maps', 'orig', 'avatar'):
+    os.makedirs(os.path.join(DST, sub), exist_ok=True)
+
+n = 0
+for f in glob.glob(os.path.join(ROOT, 'assets/battletile/px/*.png')):
+    shutil.copy2(f, os.path.join(DST, 'tiles', os.path.basename(f))); n += 1
+print('地块  %d 张（新）' % n)
+
+n = 0
+for f in glob.glob(os.path.join(ROOT, 'assets/battleunit/px/*.png')):
+    shutil.copy2(f, os.path.join(DST, 'units', os.path.basename(f))); n += 1
+print('部队  %d 张（新）' % n)
+
+n = 0
+for f in glob.glob(os.path.join(ROOT, 'extract/data/battlemaps/*.map')):
+    shutil.copy2(f, os.path.join(DST, 'maps', os.path.basename(f))); n += 1
+print('战场  %d 张 .map' % n)
+
+# 原版素材：这几样还没做新的
+ORIG = {302: '阵型选择的卷轴底', 90: 'VS 框', 49: '四个阵型图标',
+        98: '阵型战四种地面', 56: '阵型战小兵', 11: '兵力条',
+        306: '城墙', 15: '属性图标', 52: '指令条', 51: '战棋层旧单位(备用)',
+        31: '旧地形块(备用)', 2: '光标'}
+for k, why in ORIG.items():
+    src = os.path.join(ROOT, 'extract/images/lib%d.png' % k)
+    if os.path.exists(src): shutil.copy2(src, os.path.join(DST, 'orig', 'lib%d.png' % k))
+    else: print('  缺 lib%d（%s）' % (k, why))
+print('原版  %d 张' % len(ORIG))
+
+shutil.copy2(os.path.join(ROOT, 'extract/data/city-theme.json'), os.path.join(DST, 'city-theme.json'))
+shutil.copy2(os.path.join(ROOT, 'extract/data/officers.csv'),    os.path.join(DST, 'officers.csv'))
+
+# 头像按武将 ID 重命名，运行时好查。
+# 原图 1024²，一张 250KB，265 张就是 65MB；战斗界面里只显示 60–90px，
+# 缩到 256² 够用，整体掉到 5MB 左右。
+rows = list(csv.reader(open(os.path.join(ROOT, 'extract/data/officers.csv'), encoding='utf-8')))
+ids = {r[0] for r in rows}
+n = 0
+for f in glob.glob(os.path.join(ROOT, 'assets/avatar/avatar_*.jpg')):
+    oid = os.path.basename(f).split('_')[1]
+    if oid in ids:
+        im = Image.open(f).convert('RGB')
+        if max(im.size) > 256: im = im.resize((256, 256), Image.LANCZOS)
+        im.save(os.path.join(DST, 'avatar', '%s.jpg' % oid), quality=88)
+        n += 1
+print('头像  %d 张（新）' % n)
+
+size = sum(os.path.getsize(os.path.join(dp, f))
+           for dp, _, fs in os.walk(DST) for f in fs)
+print('合计 %.1f MB → %s' % (size/1e6, os.path.relpath(DST, ROOT)))

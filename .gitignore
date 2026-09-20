@@ -4,3 +4,9 @@ __pycache__/
 *.pyc
 .claude/
 work/
+
+# Unity 构建产物
+unity/*/Build/
+unity/*/Library/
+unity/*/Temp/
+unity/*/Logs/
