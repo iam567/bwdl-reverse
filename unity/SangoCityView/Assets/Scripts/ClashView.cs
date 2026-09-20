@@ -226,6 +226,7 @@ public class ClashView
     float tickAt;
     int turnSide;                          // 0 我方 1 敌方
     int turnIdx;
+    int extra;                             // cF：这枚棋是不是已经用掉了第二次行动
     public int ActingSide = -1, ActingIdx = -1;
     string over;
 
@@ -235,41 +236,54 @@ public class ClashView
         if (over != null || Time.time < tickAt) return;
         tickAt = Time.time + TICK;
 
-        var side  = turnSide == 0 ? mine : theirs;
-        var other = turnSide == 0 ? theirs : mine;
-        // 跳过已阵亡的
-        int guard = 0;
-        while (turnIdx < side.Count && !side[turnIdx].Alive && guard++ < 64) turnIdx++;
-
-        if (turnIdx < side.Count)
+        // 原版的 do { cH = s(cD); ... } while (!cH)：
+        // 没真正做成事的棋（阵亡、待机、被挡住）不占节拍，直接轮下一枚。
+        ActingSide = -1;
+        for (int guard = 0; guard < 128; guard++)
         {
-            ActingSide = turnSide; ActingIdx = turnIdx;
-            Act(side, other, turnSide == 0, turnIdx);
-            turnIdx++;
+            var side  = turnSide == 0 ? mine : theirs;
+            var other = turnSide == 0 ? theirs : mine;
+            if (turnIdx >= side.Count) { turnSide = 1 - turnSide; turnIdx = 0; extra = 0; continue; }
+
+            var p = side[turnIdx];
+            int idx = turnIdx;
+            bool did = p.Alive && Act(side, other, turnSide == 0, turnIdx);
+
+            // if (!cb[cD] || bU[cD] >= 2 || cF >= 1) { cD++; cF = 0; } else cF++;
+            // bU >= 2 是弓兵和步兵 —— 只有武将(0)和骑兵(1)能动第二次。
+            bool twice = p.Alive && (p.Arm == Arm.None || p.Arm == Arm.Qi);
+            if (!p.Alive || !twice || extra >= 1) { turnIdx++; extra = 0; }
+            else extra++;
+
+            if (did) { ActingSide = turnSide; ActingIdx = idx; break; }
         }
-        else { turnSide = 1 - turnSide; turnIdx = 0; ActingSide = -1; }
 
         if (Formation.TotalTroops(theirs) == 0 || foe.Hp <= 0) over = "敌军溃败";
         else if (Formation.TotalTroops(mine) == 0 || me.Hp <= 0) over = "我军溃败";
         Redraw();
     }
 
-    /// b.s(by)：一枚兵棋的一次行动
-    void Act(List<Piece> side, List<Piece> other, bool ours, int i)
+    /// b.s(by)：一枚兵棋的一次行动。返回它是不是真做成了事（原版的 cH）。
+    bool Act(List<Piece> side, List<Piece> other, bool ours, int i)
     {
         var p = side[i];
         var self  = ours ? me : foe;
         var enemy = ours ? foe : me;
         // 轮到它了才读令。敌方一律前进。
         int cmd = ours ? orders[(int)p.Arm] : 0;
-        if (cmd == 1) return;                                  // 待机：原地不动
+        if (cmd == 1) return false;                            // 待机：原地不动，不占节拍
 
-        int t = FindAdjacent(other, p);
+        // b.m(by) 按兵种分派：武将/骑兵/步兵 走近战 m(by,by2)，弓兵走远射 o(by,by2)。
+        // o() 沿上下左右四条直线各扫 by3 = 1..by2-1 格，默认 by2 = 5 → 射程 4 格。
+        int t = p.Arm == Arm.Gong ? FindInRange(other, p, ARROW_RANGE)
+                                  : FindAdjacent(other, p);
         if (t >= 0 && cmd != 2)                                // 撤退的不恋战
         {
             var q = other[t];
             int dmg = BattleRules.Damage(BattleRules.Atk(self, p.Arm),
                                          BattleRules.Def(enemy), p.Troops, rng);
+            if (p.Arm == Arm.Gong)                             // 射出去的箭，画一下
+                shots.Add(new Shot { X0 = p.Col, Y0 = p.Row, X1 = q.Col, Y1 = q.Row, At = Time.time });
             if (q.Arm == Arm.None)
             {
                 if (ours) foe.Hp = Mathf.Max(0, foe.Hp - BattleRules.HpHit(dmg));
@@ -283,11 +297,11 @@ public class ClashView
                 if (q.Troops <= 0) { q.Troops = 0; q.Alive = false; }
                 other[t] = q;
             }
-            return;
+            return true;
         }
 
         var tgt = Nearest(other, p);
-        if (tgt.x < 0) return;
+        if (tgt.x < 0) return false;
         int dir = cmd == 2 ? -1 : 1;                           // 撤退就反着走
         int nx = p.Col, ny = p.Row;
         if (cmd == 3)                                          // 包围：先拉开纵向再压上
@@ -297,13 +311,14 @@ public class ClashView
         else
             ny += dir * System.Math.Sign(tgt.y - p.Row);
 
-        if (nx < 0 || ny < 0 || nx >= BattleRules.GridW || ny >= BattleRules.GridH) return;
-        if (walls.ContainsKey(new Vector2Int(nx, ny))) return;
-        if (Occupied(mine, nx, ny) || Occupied(theirs, nx, ny)) return;
+        if (nx < 0 || ny < 0 || nx >= BattleRules.GridW || ny >= BattleRules.GridH) return false;
+        if (walls.ContainsKey(new Vector2Int(nx, ny))) return false;
+        if (Occupied(mine, nx, ny) || Occupied(theirs, nx, ny)) return false;
         // bX 跟着走向更新：b.c/d/e/f 分别置 0 上 / 1 下 / 2 左 / 3 右
         if (nx != p.Col) p.Dir = nx > p.Col ? 3 : 2;
         else if (ny != p.Row) p.Dir = ny > p.Row ? 1 : 0;
         p.Col = nx; p.Row = ny; side[i] = p;
+        return true;
     }
 
     static bool Occupied(List<Piece> ps, int x, int y)
@@ -311,6 +326,22 @@ public class ClashView
         foreach (var p in ps) if (p.Alive && p.Col == x && p.Row == y) return true;
         return false;
     }
+    public const int ARROW_RANGE = 4;          // o() 里 by3 < by2(=5)，也就是 1..4 格
+
+    /// o()：沿上下左右四条直线扫，碰到的第一个敌人就是目标
+    static int FindInRange(List<Piece> other, Piece p, int range)
+    {
+        int[] dx = { 0, 0, -1, 1 }, dy = { -1, 1, 0, 0 };
+        for (int d = 0; d < 4; d++)
+            for (int k = 1; k <= range; k++)
+            {
+                int x = p.Col + dx[d] * k, y = p.Row + dy[d] * k;
+                for (int i = 0; i < other.Count; i++)
+                    if (other[i].Alive && other[i].Col == x && other[i].Row == y) return i;
+            }
+        return -1;
+    }
+
     static int FindAdjacent(List<Piece> other, Piece p)
     {
         for (int i = 0; i < other.Count; i++)
@@ -365,6 +396,17 @@ public class ClashView
         sp = Sprite.Create(fig, new Rect(col * 16, ours ? 16 : 0, 16, 16), new Vector2(.5f, .5f), 100);
         figCache[key] = sp; return sp;
     }
+    struct Shot { public int X0, Y0, X1, Y1; public float At; }
+    readonly List<Shot> shots = new List<Shot>();
+    static Texture2D arrowTex; static Sprite arrowSp;
+    static Sprite Arrow()
+    {
+        if (arrowSp != null) return arrowSp;
+        arrowTex = Tex("orig/lib63.png");
+        arrowSp = Sprite.Create(arrowTex, new Rect(0, 0, 16, 16), new Vector2(.5f, .5f), 100);
+        return arrowSp;
+    }
+
     // 被击中的爆点
     static Texture2D hitTex; static Sprite hitSp;
     static Sprite Hit()
@@ -389,6 +431,23 @@ public class ClashView
         }
         DrawSide(mine,   true);
         DrawSide(theirs, false);
+
+        shots.RemoveAll(sh => Time.time - sh.At > .5f);
+        foreach (var sh in shots)                            // 箭：从弓兵连到目标
+        {
+            int dx = System.Math.Sign(sh.X1 - sh.X0), dy = System.Math.Sign(sh.Y1 - sh.Y0);
+            int n = Mathf.Max(Mathf.Abs(sh.X1 - sh.X0), Mathf.Abs(sh.Y1 - sh.Y0));
+            for (int k = 1; k <= n; k++)
+            {
+                var im = Node("ar", gridRoot).gameObject.AddComponent<Image>();
+                Place((RectTransform)im.transform, (sh.X0 + dx * k) * C, (sh.Y0 + dy * k) * C, C, C);
+                im.sprite = Arrow(); im.raycastTarget = false;
+                if (dy != 0) im.rectTransform.localEulerAngles = new Vector3(0, 0, dy > 0 ? 90 : -90);
+                else if (dx < 0) { im.rectTransform.localScale = new Vector3(-1, 1, 1);
+                                   im.rectTransform.anchoredPosition += new Vector2(C, 0); }
+                tmp.Add(im.gameObject);
+            }
+        }
 
         var a = Formation.ByArm(mine,   me.Hp);
         var b = Formation.ByArm(theirs, foe.Hp);
