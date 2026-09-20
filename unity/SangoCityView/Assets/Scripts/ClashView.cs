@@ -320,7 +320,9 @@ public class ClashView
                                          BattleRules.Def(enemy), p.Troops, rng,
                                          ours ? cd : 0, p.Arm);
             // b.c(boolean)：打人的和挨打的都是武将本人 → aq=1，跳出去单挑
-            if (p.Arm == Arm.None && q.Arm == Arm.None) { OnDuel?.Invoke(); return true; }
+            // 双方都站着才打得起来；有一方体力已空就不进单挑了，直接算伤害
+            if (p.Arm == Arm.None && q.Arm == Arm.None && me.Hp > 0 && foe.Hp > 0)
+            { OnDuel?.Invoke(); return true; }
             if (p.Arm == Arm.Gong)                             // 射出去的箭，画一下
                 shots.Add(new Shot { X0 = p.Col, Y0 = p.Row, X1 = q.Col, Y1 = q.Row, At = Time.time });
             if (q.Arm == Arm.None)

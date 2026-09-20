@@ -77,7 +77,7 @@ public class BattleGame : MonoBehaviour
 
         clash.OnDuel();                            // 双方武将碰上的那一屏
         yield return Shot(dir, "5b_单挑");
-        duel.RoundForTest(1);
+        duel.PickForTest(1);
         yield return Shot(dir, "5c_单挑·强攻");
 
         // 再来一场攻城：把敌方放到城池格上

@@ -15,7 +15,7 @@ ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 PROJ = os.path.join(ROOT, sys.argv[1] if len(sys.argv) > 1 else 'unity/SangoCityView')
 DST  = os.path.join(PROJ, 'Assets/StreamingAssets/Art/battle')
 
-for sub in ('tiles', 'units', 'maps', 'orig', 'avatar'):
+for sub in ('tiles', 'units', 'maps', 'orig', 'avatar', 'duel'):
     os.makedirs(os.path.join(DST, sub), exist_ok=True)
 
 n = 0
@@ -44,6 +44,12 @@ for k, why in ORIG.items():
     if os.path.exists(src): shutil.copy2(src, os.path.join(DST, 'orig', 'lib%d.png' % k))
     else: print('  缺 lib%d（%s）' % (k, why))
 print('原版  %d 张' % len(ORIG))
+
+# 单挑：15 帧骑将（已对位）、四张背景、面板与光标
+n = 0
+for f in glob.glob(os.path.join(ROOT, 'assets/duel/px/*')):
+    shutil.copy2(f, os.path.join(DST, 'duel', os.path.basename(f))); n += 1
+print('单挑  %d 张（新）' % n)
 
 shutil.copy2(os.path.join(ROOT, 'extract/data/city-theme.json'), os.path.join(DST, 'city-theme.json'))
 shutil.copy2(os.path.join(ROOT, 'extract/data/officers.csv'),    os.path.join(DST, 'officers.csv'))
