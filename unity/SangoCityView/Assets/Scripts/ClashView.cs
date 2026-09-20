@@ -148,6 +148,7 @@ public class ClashView
     {
         Object.Destroy(pick.gameObject);
         plotPts = me.Plots;
+        turnIdx = 1;          // cD = bI > 1 ? 1 : 0 —— 0 号是武将，压阵最后动
         mine   = Formation.Build(me,  formation,      true,  siege, weAttack);
         theirs = Formation.Build(foe, rng.Next(4),     false, siege, weAttack);
         walls  = siege ? Formation.Walls(weAttack) : new Dictionary<Vector2Int, int>();
@@ -269,20 +270,27 @@ public class ClashView
         {
             var side  = turnSide == 0 ? mine : theirs;
             var other = turnSide == 0 ? theirs : mine;
-            if (turnIdx >= side.Count)
-            {
-                turnSide = 1 - turnSide; turnIdx = 0; extra = 0;
-                if (turnSide == 0 && cd != 0)                 // 我方又轮了一整圈
-                {
-                    cd = (cd & 0xF0) | Mathf.Max(0, (cd & 0xF) - 1);
-                    if ((cd & 0xF) == 0) cd = 0;
-                }
-                continue;
-            }
+            if (turnIdx >= side.Count) turnIdx = 0;          // 走完一圈回绕到 0（武将）
 
             var p = side[turnIdx];
             int idx = turnIdx;
             bool did = p.Alive && Act(side, other, turnSide == 0, turnIdx);
+
+            // 原版是先 s(cD) 再判断切边，用的是上一轮留下的 cF
+            if (idx == 0 && extra >= 1)
+            {
+                extra = 0;
+                turnSide = 1 - turnSide;
+                var ns = turnSide == 0 ? mine : theirs;
+                turnIdx = ns.Count > 1 ? 1 : 0;              // cD = bI > 1 ? 1 : 0
+                if (turnSide == 0 && cd != 0)                // 我方又轮了一整圈
+                {
+                    cd = (cd & 0xF0) | Mathf.Max(0, (cd & 0xF) - 1);
+                    if ((cd & 0xF) == 0) cd = 0;
+                }
+                if (did) { ActingSide = 1 - turnSide; ActingIdx = idx; break; }
+                continue;
+            }
 
             // if (!cb[cD] || bU[cD] >= 2 || cF >= 1) { cD++; cF = 0; } else cF++;
             // bU >= 2 是弓兵和步兵 —— 只有武将(0)和骑兵(1)能动第二次。
