@@ -154,22 +154,53 @@ public static class BattleRules
         return Mathf.Min(loss, troops);
     }
 
-    // ── 还没挖到的 ─────────────────────────────────────────────────────
-    // 阵型战里每一「日」三个兵种之间具体怎么减员，没在反编译里定位到函数。
-    // 这里用一个临时算法顶着，好让试玩跑得起来——**它不是原版公式**：
-    //   接战的双方各按 战力 × 参战兵棋数 求和，弱势一方按比例掉兵，
-    //   再叠一点随机。等挖到真公式（或拿模拟器打出实际数列）就换掉。
-    public static void Attrition(int myMight, int myTroops, int foeMight, int foeTroops,
-                                 System.Random rng, out int myLoss, out int foeLoss)
+    // ── 阵型战的实际结算 ──────────────────────────────────────────────
+    // 阵型战不是回合制，是 b.T() 里 sleep(100) + repaint 的实时循环：
+    // 兵棋自动走位、贴上就打。下面是打一次的伤害，出处 b.V() b.java:5211。
+
+    /// b.d(boolean,byte)：攻击力。**挂在武将的武力上**，按兵种打折。
+    public static int Atk(Officer o, Arm a)
     {
-        float a = Mathf.Max(1, myMight), b = Mathf.Max(1, foeMight);
-        float total = a + b;
-        myLoss  = Mathf.RoundToInt(myTroops  * (b / total) * 0.22f * (0.8f + rng.Next(40) / 100f));
-        foeLoss = Mathf.RoundToInt(foeTroops * (a / total) * 0.22f * (0.8f + rng.Next(40) / 100f));
-        myLoss  = Mathf.Clamp(myLoss,  0, myTroops);
-        foeLoss = Mathf.Clamp(foeLoss, 0, foeTroops);
+        int v;
+        switch (a)
+        {
+            case Arm.None: v = o.Might + o.Might * ArmBonus(o.ArmLv) / 100; break;
+            case Arm.Qi:   v = o.Might; break;
+            default:       v = o.Might * 3 / 5; break;
+        }
+        return Mathf.Max(1, v);
     }
-    public const string AttritionNote = "每日减员用的是临时算法，不是原版公式（原版那段还没定位到）";
+    /// 防御力用的是**副属性** S 的加成，不是兵种等级 R
+    public static int Def(Officer o) => o.Might + o.Might * ArmBonus(o.SubLv) / 100;
+
+    /// b.a(short)：整数平方根，封顶 15
+    public static int ISqrt(int s)
+    {
+        for (int i = 15; i > 0; i--) if (i * i <= s) return i;
+        return 0;
+    }
+
+    /// b.V()：一枚兵棋打一次造成多少伤害
+    public static int Damage(int atk, int def, int attackerTroops, System.Random rng)
+    {
+        def = Mathf.Max(1, def);
+        int n4 = atk * atk / def;
+        int n3 = atk >= def ? Mathf.Min(n4, atk * 3 / 2) : Mathf.Max(n4, atk * 2 / 3);
+        n3 = ISqrt(n3) * 5;
+        n3 = n3 * attackerTroops / 100;            // 按这枚兵棋还剩多少兵缩放
+        n3 += rng.Next(n3 / 10 + 1);
+        return Mathf.Min(110, n3);
+    }
+    /// 打到武将本人身上是扣体力，不是扣兵
+    public static int HpHit(int damage) => damage / 4 + 1;
+
+    /// b.a(short,short)：计策成功率。挂了很久的那条，终于对上了。
+    public static bool PlotHits(Officer me, Officer foe, System.Random rng)
+    {
+        int n = me.Int + 20 - foe.Int;
+        if (n < 0) return false;
+        return rng.Next(100) <= ISqrt(n) * 10;
+    }
 
     // ── 数据装载 ───────────────────────────────────────────────────────
     public static Dictionary<int, Officer> LoadOfficers(string csvPath)

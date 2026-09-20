@@ -32,6 +32,8 @@ public class BattleGame : MonoBehaviour
         return null;
     }
 
+    void Update() { clash?.Tick(); }
+
     void Start()
     {
         UIFont = font;

@@ -23,7 +23,7 @@ public class ClashView
     int formation;                                 // 光标 0–3
     List<Piece> mine, theirs;
     Dictionary<Vector2Int, int> walls;
-    int day = 1;
+    int round;
     readonly int[] orders = new int[4];             // 武将/骑/弓/步 各自的令
     static readonly string[] ORDER = { "前进", "待机", "撤退", "包围", "计策" };
     static readonly string[] ARM = { "武将", "骑兵", "弓兵", "步兵" };
@@ -134,7 +134,7 @@ public class ClashView
 
     // 自检模式用的三个口子，正常玩走的是按钮
     public void PickForTest(int f) { formation = f; StartClash(); }
-    public void AdvanceForTest() { NextDay(); }
+    public void AdvanceForTest() { Running = true; for (int i = 0; i < 40; i++) { tickAt = 0; Tick(); } }
     public void FinishForTest() { Finish(); }
 
     // ── 阵型战 ─────────────────────────────────────────────────────────
@@ -155,7 +155,7 @@ public class ClashView
         field = Node("field", Root); Fill(field);
 
         dayT = Label(field, "", 15, new Color32(0xF2,0xE8,0xD4,255));
-        Place(dayT.rectTransform, 14, 14, 200, 22);
+        Place(dayT.rectTransform, 14, 14, 300, 22);
 
         var ground = Node("g", field).gameObject.AddComponent<Image>();
         var g98 = Tex("orig/lib98.png");
@@ -204,11 +204,11 @@ public class ClashView
         Place(go, refW - 130, 66, 110, 30);
         var gi = go.gameObject.AddComponent<Image>(); gi.sprite = Frame(); gi.type = Image.Type.Sliced;
         var gb = go.gameObject.AddComponent<Button>(); gb.transition = Selectable.Transition.None;
-        gb.onClick.AddListener(NextDay);
-        var gl = Label(go, "推进一日", 13, new Color32(0xF0,0xE0,0xB8,255), TextAnchor.MiddleCenter);
+        gb.onClick.AddListener(() => { Running = !Running; over = null; Redraw(); });
+        var gl = Label(go, "开打 / 暂停", 13, new Color32(0xF0,0xE0,0xB8,255), TextAnchor.MiddleCenter);
         Fill(gl.rectTransform);
 
-        noteT = Label(field, BattleRules.AttritionNote, 11, new Color32(0xC0,0x90,0x70,255));
+        noteT = Label(field, "下完令点「开打」，兵棋自动走位交战（原版就是实时跑的）", 11, new Color32(0xB0,0xA8,0x90,255));
         Place(noteT.rectTransform, 14, ORDER_Y + 112, refW - 28, 18);
 
         var quit = Node("quit", field);
@@ -220,47 +220,99 @@ public class ClashView
         Fill(ql.rectTransform);
     }
 
-    void NextDay()
+    // ── 实时自动战 ─────────────────────────────────────────────────────
+    // 原版 b.T() 是 sleep(100)+repaint 的循环：下完令兵棋就自动走位、贴上就打。
+    // 这里照搬这个结构，一拍 0.12 秒。
+    public bool Running;
+    float tickAt;
+    string over;
+
+    public void Tick()
     {
-        // 参战的兵棋：下「前进」或「包围」的才算接战
-        int myM = 0, myT = 0, foeM = 0, foeT = 0;
-        foreach (var p in mine)
-            if (p.Alive && p.Arm != Arm.None && (orders[(int)p.Arm] == 0 || orders[(int)p.Arm] == 3))
-            { myM += BattleRules.PieceMight(me, p.Arm); myT += p.Troops; }
-        foreach (var p in theirs)
-            if (p.Alive && p.Arm != Arm.None) { foeM += BattleRules.PieceMight(foe, p.Arm); foeT += p.Troops; }
-
-        BattleRules.Attrition(myM, myT, foeM, foeT, rng, out int myLoss, out int foeLoss);
-        Bleed(mine,   myLoss,  p => orders[(int)p.Arm] == 0 || orders[(int)p.Arm] == 3);
-        Bleed(theirs, foeLoss, p => true);
-
-        int cc = BattleRules.Counter(me, foe);             // 兵种克制只影响体力消耗的方向
-        me.Hp  = Mathf.Max(0, me.Hp  - (3 - cc));
-        foe.Hp = Mathf.Max(0, foe.Hp - (3 + cc));
-
-        day++;
-        if (Formation.TotalTroops(mine) == 0 || Formation.TotalTroops(theirs) == 0
-            || me.Hp == 0 || foe.Hp == 0) { Redraw(); Finish(); return; }
+        if (!Running || Time.time < tickAt) return;
+        tickAt = Time.time + .12f;
+        Step(mine, theirs, true);
+        Step(theirs, mine, false);
+        round++;
+        if (Formation.TotalTroops(mine) == 0 || me.Hp <= 0)  { over = "我军溃败"; Running = false; }
+        if (Formation.TotalTroops(theirs) == 0 || foe.Hp <= 0){ over = over ?? "敌军溃败"; Running = false; }
+        if (round > 600) { over = "鸣金收兵"; Running = false; }
         Redraw();
     }
 
-    void Bleed(List<Piece> ps, int loss, System.Func<Piece, bool> engaged)
+    void Step(List<Piece> side, List<Piece> other, bool ours)
     {
-        var idx = new List<int>();
-        for (int i = 0; i < ps.Count; i++)
-            if (ps[i].Alive && ps[i].Arm != Arm.None && engaged(ps[i])) idx.Add(i);
-        if (idx.Count == 0) return;
-        // 从最前面（最靠近敌方）的兵棋开始掉，和「前排先死」的观感一致
-        idx.Sort((a, b) => ps[b].Col.CompareTo(ps[a].Col));
-        foreach (int i in idx)
+        var self = ours ? me : foe;
+        var enemy = ours ? foe : me;
+        for (int i = 0; i < side.Count; i++)
         {
-            if (loss <= 0) break;
-            var p = ps[i];
-            int d = Mathf.Min(p.Troops, loss);
-            p.Troops -= d; loss -= d;
-            if (p.Troops <= 0) { p.Troops = 0; p.Alive = false; }
-            ps[i] = p;
+            var p = side[i];
+            if (!p.Alive) continue;
+            // cj[兵种]：这一兵种的令。武将本人吃 orders[0]。
+            int cmd = ours ? orders[(int)p.Arm] : 0;          // 敌方一律前进
+            if (cmd == 1) continue;                           // 待机：原地不动，但仍会被打
+
+            int t = FindAdjacent(other, p);
+            if (t >= 0 && cmd != 2)                           // 撤退的不打
+            {
+                var q = other[t];
+                int dmg = BattleRules.Damage(BattleRules.Atk(self, p.Arm),
+                                             BattleRules.Def(enemy), p.Troops, rng);
+                if (q.Arm == Arm.None)                        // 打到武将本人是扣体力
+                {
+                    if (ours) foe.Hp = Mathf.Max(0, foe.Hp - BattleRules.HpHit(dmg));
+                    else      me.Hp  = Mathf.Max(0, me.Hp  - BattleRules.HpHit(dmg));
+                }
+                else
+                {
+                    q.Troops -= dmg;
+                    if (q.Troops <= 0) { q.Troops = 0; q.Alive = false; }
+                    other[t] = q;
+                }
+                continue;
+            }
+            // 没贴上就走。撤退是反着走。
+            int dir = cmd == 2 ? -1 : 1;
+            var tgt = Nearest(other, p);
+            if (tgt.x < 0) continue;
+            int nx = p.Col, ny = p.Row;
+            if (Mathf.Abs(tgt.x - p.Col) >= Mathf.Abs(tgt.y - p.Row))
+                nx += dir * System.Math.Sign(tgt.x - p.Col);
+            else
+                ny += dir * System.Math.Sign(tgt.y - p.Row);
+            if (cmd == 3 && rng.Next(2) == 0)                 // 包围：一半概率绕侧
+                { nx = p.Col; ny += tgt.y >= p.Row ? 1 : -1; }
+            if (nx < 0 || ny < 0 || nx >= BattleRules.GridW || ny >= BattleRules.GridH) continue;
+            if (walls.ContainsKey(new Vector2Int(nx, ny))) continue;
+            if (Occupied(mine, nx, ny) || Occupied(theirs, nx, ny)) continue;
+            p.Col = nx; p.Row = ny; side[i] = p;
         }
+    }
+
+    static bool Occupied(List<Piece> ps, int x, int y)
+    {
+        foreach (var p in ps) if (p.Alive && p.Col == x && p.Row == y) return true;
+        return false;
+    }
+    static int FindAdjacent(List<Piece> other, Piece p)
+    {
+        for (int i = 0; i < other.Count; i++)
+        {
+            var q = other[i];
+            if (q.Alive && Mathf.Abs(q.Col - p.Col) + Mathf.Abs(q.Row - p.Row) == 1) return i;
+        }
+        return -1;
+    }
+    static Vector2Int Nearest(List<Piece> other, Piece p)
+    {
+        var best = new Vector2Int(-1, -1); int bd = 999;
+        foreach (var q in other)
+        {
+            if (!q.Alive) continue;
+            int d = Mathf.Abs(q.Col - p.Col) + Mathf.Abs(q.Row - p.Row);
+            if (d < bd) { bd = d; best = new Vector2Int(q.Col, q.Row); }
+        }
+        return best;
     }
 
     void Finish()
@@ -314,7 +366,7 @@ public class ClashView
         var b = Formation.ByArm(theirs, foe.Hp);
         for (int i = 0; i < 4; i++) { armCount[i].text = a[i].ToString(); foeCount[i].text = b[i].ToString(); }
         for (int i = 0; i < 4; i++) orderT[i].text = ORDER[orders[i]];
-        dayT.text = "第 " + day + " 日" + (siege ? "   攻城战" : "");
+        dayT.text = (over ?? (Running ? "交战中" : "下令后点「开打」")) + (siege ? "   · 攻城战" : "   · 野战");
     }
 
     void DrawSide(List<Piece> ps, bool ours)
