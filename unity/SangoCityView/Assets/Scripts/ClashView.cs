@@ -134,7 +134,7 @@ public class ClashView
 
     // 自检模式用的三个口子，正常玩走的是按钮
     public void PickForTest(int f) { formation = f; StartClash(); }
-    public void AdvanceForTest() { Running = true; for (int i = 0; i < 40; i++) { tickAt = 0; Tick(); } }
+    public void AdvanceForTest() { for (int i = 0; i < 120; i++) { tickAt = 0; Tick(); } }
     public void FinishForTest() { Finish(); }
 
     // ── 阵型战 ─────────────────────────────────────────────────────────
@@ -200,15 +200,8 @@ public class ClashView
             orderT[i] = Label(b, "", 14, new Color32(0xF0,0xE0,0xB8,255), TextAnchor.MiddleCenter);
             Fill(orderT[i].rectTransform);
         }
-        var go = Node("go", orderRoot);
-        Place(go, refW - 130, 66, 110, 30);
-        var gi = go.gameObject.AddComponent<Image>(); gi.sprite = Frame(); gi.type = Image.Type.Sliced;
-        var gb = go.gameObject.AddComponent<Button>(); gb.transition = Selectable.Transition.None;
-        gb.onClick.AddListener(() => { Running = !Running; over = null; Redraw(); });
-        var gl = Label(go, "开打 / 暂停", 13, new Color32(0xF0,0xE0,0xB8,255), TextAnchor.MiddleCenter);
-        Fill(gl.rectTransform);
 
-        noteT = Label(field, "下完令点「开打」，兵棋自动走位交战（原版就是实时跑的）", 11, new Color32(0xB0,0xA8,0x90,255));
+        noteT = Label(field, "兵棋一秒动一枚。轮到谁才读它那一兵种当前的令——中途改令只影响还没动的", 11, new Color32(0xB0,0xA8,0x90,255));
         Place(noteT.rectTransform, 14, ORDER_Y + 112, refW - 28, 18);
 
         var quit = Node("quit", field);
@@ -221,72 +214,89 @@ public class ClashView
     }
 
     // ── 实时自动战 ─────────────────────────────────────────────────────
-    // 原版 b.T() 是 sleep(100)+repaint 的循环：下完令兵棋就自动走位、贴上就打。
-    // 这里照搬这个结构，一拍 0.12 秒。
-    public bool Running;
+    // 原版 b.java:5480 那个主循环：每 100ms 一帧，攒够 10 帧（≈1 秒）才动**一枚**兵棋，
+    // cD 从 1 开始逐枚往后推，一方走完换另一方。
+    // 关键在 b.s(by) 的第一行 —— bY[0][by] = cj[bU[0][by]]：
+    // **轮到这枚棋时才去读它那一兵种当前的令**。
+    // 所以你中途把骑兵从「前进」切成「撤退」，已经动过的那枚照样往前，
+    // 还没轮到的三枚就掉头 —— 这正是原版能微操的地方，没有开打/暂停这回事。
+    const float TICK = 1.0f;              // 10 帧 × 100ms
     float tickAt;
+    int turnSide;                          // 0 我方 1 敌方
+    int turnIdx;
+    public int ActingSide = -1, ActingIdx = -1;
     string over;
 
     public void Tick()
     {
-        if (!Running || Time.time < tickAt) return;
-        tickAt = Time.time + .12f;
-        Step(mine, theirs, true);
-        Step(theirs, mine, false);
-        round++;
-        if (Formation.TotalTroops(mine) == 0 || me.Hp <= 0)  { over = "我军溃败"; Running = false; }
-        if (Formation.TotalTroops(theirs) == 0 || foe.Hp <= 0){ over = over ?? "敌军溃败"; Running = false; }
-        if (round > 600) { over = "鸣金收兵"; Running = false; }
+        if (mine == null) return;                 // 还在阵型选择那屏，兵还没摆
+        if (over != null || Time.time < tickAt) return;
+        tickAt = Time.time + TICK;
+
+        var side  = turnSide == 0 ? mine : theirs;
+        var other = turnSide == 0 ? theirs : mine;
+        // 跳过已阵亡的
+        int guard = 0;
+        while (turnIdx < side.Count && !side[turnIdx].Alive && guard++ < 64) turnIdx++;
+
+        if (turnIdx < side.Count)
+        {
+            ActingSide = turnSide; ActingIdx = turnIdx;
+            Act(side, other, turnSide == 0, turnIdx);
+            turnIdx++;
+        }
+        else { turnSide = 1 - turnSide; turnIdx = 0; ActingSide = -1; }
+
+        if (Formation.TotalTroops(theirs) == 0 || foe.Hp <= 0) over = "敌军溃败";
+        else if (Formation.TotalTroops(mine) == 0 || me.Hp <= 0) over = "我军溃败";
         Redraw();
     }
 
-    void Step(List<Piece> side, List<Piece> other, bool ours)
+    /// b.s(by)：一枚兵棋的一次行动
+    void Act(List<Piece> side, List<Piece> other, bool ours, int i)
     {
-        var self = ours ? me : foe;
+        var p = side[i];
+        var self  = ours ? me : foe;
         var enemy = ours ? foe : me;
-        for (int i = 0; i < side.Count; i++)
-        {
-            var p = side[i];
-            if (!p.Alive) continue;
-            // cj[兵种]：这一兵种的令。武将本人吃 orders[0]。
-            int cmd = ours ? orders[(int)p.Arm] : 0;          // 敌方一律前进
-            if (cmd == 1) continue;                           // 待机：原地不动，但仍会被打
+        // 轮到它了才读令。敌方一律前进。
+        int cmd = ours ? orders[(int)p.Arm] : 0;
+        if (cmd == 1) return;                                  // 待机：原地不动
 
-            int t = FindAdjacent(other, p);
-            if (t >= 0 && cmd != 2)                           // 撤退的不打
+        int t = FindAdjacent(other, p);
+        if (t >= 0 && cmd != 2)                                // 撤退的不恋战
+        {
+            var q = other[t];
+            int dmg = BattleRules.Damage(BattleRules.Atk(self, p.Arm),
+                                         BattleRules.Def(enemy), p.Troops, rng);
+            if (q.Arm == Arm.None)
             {
-                var q = other[t];
-                int dmg = BattleRules.Damage(BattleRules.Atk(self, p.Arm),
-                                             BattleRules.Def(enemy), p.Troops, rng);
-                if (q.Arm == Arm.None)                        // 打到武将本人是扣体力
-                {
-                    if (ours) foe.Hp = Mathf.Max(0, foe.Hp - BattleRules.HpHit(dmg));
-                    else      me.Hp  = Mathf.Max(0, me.Hp  - BattleRules.HpHit(dmg));
-                }
-                else
-                {
-                    q.Troops -= dmg;
-                    if (q.Troops <= 0) { q.Troops = 0; q.Alive = false; }
-                    other[t] = q;
-                }
-                continue;
+                if (ours) foe.Hp = Mathf.Max(0, foe.Hp - BattleRules.HpHit(dmg));
+                else      me.Hp  = Mathf.Max(0, me.Hp  - BattleRules.HpHit(dmg));
             }
-            // 没贴上就走。撤退是反着走。
-            int dir = cmd == 2 ? -1 : 1;
-            var tgt = Nearest(other, p);
-            if (tgt.x < 0) continue;
-            int nx = p.Col, ny = p.Row;
-            if (Mathf.Abs(tgt.x - p.Col) >= Mathf.Abs(tgt.y - p.Row))
-                nx += dir * System.Math.Sign(tgt.x - p.Col);
             else
-                ny += dir * System.Math.Sign(tgt.y - p.Row);
-            if (cmd == 3 && rng.Next(2) == 0)                 // 包围：一半概率绕侧
-                { nx = p.Col; ny += tgt.y >= p.Row ? 1 : -1; }
-            if (nx < 0 || ny < 0 || nx >= BattleRules.GridW || ny >= BattleRules.GridH) continue;
-            if (walls.ContainsKey(new Vector2Int(nx, ny))) continue;
-            if (Occupied(mine, nx, ny) || Occupied(theirs, nx, ny)) continue;
-            p.Col = nx; p.Row = ny; side[i] = p;
+            {
+                q.Troops -= dmg;
+                if (q.Troops <= 0) { q.Troops = 0; q.Alive = false; }
+                other[t] = q;
+            }
+            return;
         }
+
+        var tgt = Nearest(other, p);
+        if (tgt.x < 0) return;
+        int dir = cmd == 2 ? -1 : 1;                           // 撤退就反着走
+        int nx = p.Col, ny = p.Row;
+        if (cmd == 3)                                          // 包围：先拉开纵向再压上
+            ny += tgt.y >= p.Row ? -1 : 1;
+        else if (Mathf.Abs(tgt.x - p.Col) >= Mathf.Abs(tgt.y - p.Row))
+            nx += dir * System.Math.Sign(tgt.x - p.Col);
+        else
+            ny += dir * System.Math.Sign(tgt.y - p.Row);
+
+        if (nx < 0 || ny < 0 || nx >= BattleRules.GridW || ny >= BattleRules.GridH) return;
+        if (walls.ContainsKey(new Vector2Int(nx, ny))) return;
+        if (Occupied(mine, nx, ny) || Occupied(theirs, nx, ny)) return;
+        p.Col = nx; p.Row = ny; side[i] = p;
     }
 
     static bool Occupied(List<Piece> ps, int x, int y)
@@ -366,7 +376,7 @@ public class ClashView
         var b = Formation.ByArm(theirs, foe.Hp);
         for (int i = 0; i < 4; i++) { armCount[i].text = a[i].ToString(); foeCount[i].text = b[i].ToString(); }
         for (int i = 0; i < 4; i++) orderT[i].text = ORDER[orders[i]];
-        dayT.text = (over ?? (Running ? "交战中" : "下令后点「开打」")) + (siege ? "   · 攻城战" : "   · 野战");
+        dayT.text = (over ?? "交战中") + (siege ? "   · 攻城战" : "   · 野战");
     }
 
     void DrawSide(List<Piece> ps, bool ours)
@@ -378,6 +388,13 @@ public class ClashView
             Place((RectTransform)im.transform, p.Col * C - 2, p.Row * C - 4, C + 4, C + 4);
             im.sprite = Soldier(p.Arm, ours);          // 原版小兵图，这屏还没做新素材
             im.raycastTarget = false; tmp.Add(im.gameObject);
+            if (ActingSide == (ours ? 0 : 1) && ps.IndexOf(p) == ActingIdx)
+            {
+                var hl = Node("hl", gridRoot).gameObject.AddComponent<Image>();
+                Place((RectTransform)hl.transform, p.Col * C - 2, p.Row * C - 4, C + 4, C + 4);
+                hl.color = new Color(1f, .95f, .3f, .30f); hl.raycastTarget = false;
+                tmp.Add(hl.gameObject); hl.transform.SetSiblingIndex(im.transform.GetSiblingIndex());
+            }
             var l = Label(gridRoot, p.Arm == Arm.None ? "将" : (p.Troops / 100).ToString(),
                           10, Color.white, TextAnchor.MiddleCenter);
             Place(l.rectTransform, p.Col * C, p.Row * C, C, C);
