@@ -46,8 +46,16 @@ async function list() {
   const r = await api('/api/items?' + p);
   pages = r.pages; page = Math.min(page, pages);
   $('results').textContent = `· 共 ${r.total} 项`;
-  $('page').textContent = `${r.page} / ${r.pages}`;
-  $('prev').disabled = r.page <= 1; $('next').disabled = r.page >= r.pages;
+  $('page').textContent = `/ ${r.pages}`;
+  $('prev').disabled = $('first').disabled = r.page <= 1;
+  $('next').disabled = $('last').disabled  = r.page >= r.pages;
+  // 页数下拉：37 页一页页翻太慢，直接选
+  const sel2 = $('pagesel');
+  if (sel2.options.length !== r.pages) {
+    sel2.innerHTML = '';
+    for (let i = 1; i <= r.pages; i++) sel2.add(new Option(i, i));
+  }
+  sel2.value = r.page;
   $('grid').replaceChildren(...r.items.map(it => {
     const card = el('button', undefined, 'tile' + (sel.has(it.id) ? ' sel' : ''));
     const box = el('div', undefined, 'im');
@@ -128,8 +136,11 @@ $('dGen').onclick = async () => {
 };
 for (const id of ['category','status']) $(id).onchange = () => { page = 1; refresh(); };
 let deb; $('q').oninput = () => { clearTimeout(deb); deb = setTimeout(()=>{ page=1; refresh(); }, 300); };
-$('prev').onclick = () => { if (page>1) { page--; list(); } };
-$('next').onclick = () => { if (page<pages) { page++; list(); } };
+$('prev').onclick  = () => { if (page>1) { page--; list(); } };
+$('next').onclick  = () => { if (page<pages) { page++; list(); } };
+$('first').onclick = () => { if (page!==1) { page = 1; list(); } };
+$('last').onclick  = () => { if (page!==pages) { page = pages; list(); } };
+$('pagesel').onchange = e => { const v = +e.target.value; if (v>=1 && v<=pages) { page = v; list(); } };
 
 refresh();
 setInterval(() => { if (!document.hidden) refresh(); }, 5000);
