@@ -9,6 +9,8 @@ public struct Piece
     public Arm Arm;
     public int Troops;        // bZ[][]，这枚兵棋还剩多少兵
     public bool Alive;
+    public int Dir;           // bX[][]：0 上 1 下 2 左 3 右
+    public float HitAt;       // 刚挨打的时刻，用来闪那一下爆点
 }
 
 public static class Formation
@@ -138,8 +140,9 @@ public static class Formation
         BattleRules.ArmSplit(o.Lv, out int x, out int y);
         var list = new List<Piece> {
             // 0 号是武将本人，固定在最左/最右的中间一行
+            // bX[0][0]=3 朝右、bX[1][0]=2 朝左 —— 开局双方就是面对面的
             new Piece { Col = ours ? 1 : BattleRules.GridW - 2, Row = 3,
-                        Arm = Arm.None, Troops = 100, Alive = true }
+                        Arm = Arm.None, Troops = 100, Alive = true, Dir = ours ? 3 : 2 }
         };
         int left = o.Troops;
         for (int i = 1; i < nb; i++)
@@ -151,7 +154,7 @@ public static class Formation
             list.Add(new Piece {
                 Col = Mathf.Clamp(p.x, 0, BattleRules.GridW - 1),
                 Row = Mathf.Clamp(p.y, 0, BattleRules.GridH - 1),
-                Arm = arm, Troops = t, Alive = true });
+                Arm = arm, Troops = t, Alive = true, Dir = ours ? 3 : 2 });
         }
         return list;
     }

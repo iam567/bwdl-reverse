@@ -25,7 +25,9 @@ public class ClashView
     Dictionary<Vector2Int, int> walls;
     int round;
     readonly int[] orders = new int[4];             // 武将/骑/弓/步 各自的令
+    // d.f[5] = 前进/待机/撤退/包围/计策。**计策只有武将那一行有**，兵种没有这一项。
     static readonly string[] ORDER = { "前进", "待机", "撤退", "包围", "计策" };
+    static int OrderCount(int arm) => arm == 0 ? 5 : 4;
     static readonly string[] ARM = { "武将", "骑兵", "弓兵", "步兵" };
 
     Text dayT, noteT;
@@ -196,7 +198,7 @@ public class ClashView
             Place(b, 10 + i * 88, 30, 80, 32);
             var bi = b.gameObject.AddComponent<Image>(); bi.sprite = Frame(); bi.type = Image.Type.Sliced;
             var bt = b.gameObject.AddComponent<Button>(); bt.transition = Selectable.Transition.None;
-            bt.onClick.AddListener(() => { orders[k] = (orders[k] + 1) % ORDER.Length; Redraw(); });
+            bt.onClick.AddListener(() => { orders[k] = (orders[k] + 1) % OrderCount(k); Redraw(); });
             orderT[i] = Label(b, "", 14, new Color32(0xF0,0xE0,0xB8,255), TextAnchor.MiddleCenter);
             Fill(orderT[i].rectTransform);
         }
@@ -272,10 +274,12 @@ public class ClashView
             {
                 if (ours) foe.Hp = Mathf.Max(0, foe.Hp - BattleRules.HpHit(dmg));
                 else      me.Hp  = Mathf.Max(0, me.Hp  - BattleRules.HpHit(dmg));
+                q.HitAt = Time.time; other[t] = q;
             }
             else
             {
                 q.Troops -= dmg;
+                q.HitAt = Time.time;
                 if (q.Troops <= 0) { q.Troops = 0; q.Alive = false; }
                 other[t] = q;
             }
@@ -296,6 +300,9 @@ public class ClashView
         if (nx < 0 || ny < 0 || nx >= BattleRules.GridW || ny >= BattleRules.GridH) return;
         if (walls.ContainsKey(new Vector2Int(nx, ny))) return;
         if (Occupied(mine, nx, ny) || Occupied(theirs, nx, ny)) return;
+        // bX 跟着走向更新：b.c/d/e/f 分别置 0 上 / 1 下 / 2 左 / 3 右
+        if (nx != p.Col) p.Dir = nx > p.Col ? 3 : 2;
+        else if (ny != p.Row) p.Dir = ny > p.Row ? 1 : 0;
         p.Col = nx; p.Row = ny; side[i] = p;
     }
 
@@ -343,17 +350,28 @@ public class ClashView
         wallCache[v] = sp; return sp;
     }
 
-    // lib56 是 12 列 × 2 行的 16×16 小兵：上排红、下排蓝。
-    // 列按兵种取：武将 0、骑兵 3、弓兵 6、步兵 9（同一兵种的几列是动作帧）。
+    // lib56 的 12 列不是动作帧，是 **3 组朝向 × 4 兵种**。照抄 c.a(Graphics,byte,byte,int)：
+    //   朝上 → 列 = 兵种 + 4     朝下 → 列 = 兵种 + 8
+    //   朝右 → 列 = 兵种         朝左 → 同一列水平镜像
+    // 兵种编号就是 bU：0 武将 1 骑兵 2 弓兵 3 步兵；
+    // 行 = 阵营，**上排(红)是我方、下排(蓝)是敌方**——和战棋层反过来，原版就这样。
     static Texture2D fig; static readonly Dictionary<string, Sprite> figCache = new Dictionary<string, Sprite>();
-    static Sprite Soldier(Arm a, bool blue)
+    static Sprite Soldier(Arm a, int dir, bool ours)
     {
-        int col = a == Arm.None ? 0 : a == Arm.Qi ? 3 : a == Arm.Gong ? 6 : 9;
-        var key = col + (blue ? "b" : "r");
+        int col = (int)a + (dir == 0 ? 4 : dir == 1 ? 8 : 0);
+        var key = col + (ours ? "o" : "e");
         if (figCache.TryGetValue(key, out var sp)) return sp;
         if (fig == null) fig = Tex("orig/lib56.png");
-        sp = Sprite.Create(fig, new Rect(col * 16, blue ? 0 : 16, 16, 16), new Vector2(.5f, .5f), 100);
+        sp = Sprite.Create(fig, new Rect(col * 16, ours ? 16 : 0, 16, 16), new Vector2(.5f, .5f), 100);
         figCache[key] = sp; return sp;
+    }
+    // 被击中的爆点
+    static Texture2D hitTex; static Sprite hitSp;
+    static Sprite Hit()
+    {
+        if (hitSp != null) return hitSp;
+        hitTex = Tex("orig/lib58.png");
+        hitSp = Whole(hitTex); return hitSp;
     }
 
     readonly List<GameObject> tmp = new List<GameObject>();
@@ -386,8 +404,19 @@ public class ClashView
             if (!p.Alive) continue;
             var im = Node("p", gridRoot).gameObject.AddComponent<Image>();
             Place((RectTransform)im.transform, p.Col * C - 2, p.Row * C - 4, C + 4, C + 4);
-            im.sprite = Soldier(p.Arm, ours);          // 原版小兵图，这屏还没做新素材
+            im.sprite = Soldier(p.Arm, p.Dir, ours);   // 原版小兵图，这屏还没做新素材
             im.raycastTarget = false; tmp.Add(im.gameObject);
+            if (p.Dir == 2)                            // 朝左＝把朝右那张水平镜像
+            {
+                im.rectTransform.localScale = new Vector3(-1, 1, 1);
+                im.rectTransform.anchoredPosition += new Vector2(C + 4, 0);
+            }
+            if (Time.time - p.HitAt < .45f)            // 刚挨打，闪一下爆点
+            {
+                var hx = Node("hit", gridRoot).gameObject.AddComponent<Image>();
+                Place((RectTransform)hx.transform, p.Col * C, p.Row * C - 2, C, C);
+                hx.sprite = Hit(); hx.raycastTarget = false; tmp.Add(hx.gameObject);
+            }
             if (ActingSide == (ours ? 0 : 1) && ps.IndexOf(p) == ActingIdx)
             {
                 var hl = Node("hl", gridRoot).gameObject.AddComponent<Image>();
