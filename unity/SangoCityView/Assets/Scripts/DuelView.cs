@@ -344,7 +344,7 @@ public class DuelView
         }
         if (step < 0)                              // 没在演：两边轻微起伏
         {
-            if (over != null) return;
+            if (over != null) return;              // 已经分出结果，保持倒地那一帧
             Put(figMe,  homeMe,  baseYMe,  Mathf.Sin(t * 1.7f) * 2.2f, true);
             Put(figFoe, homeFoe, baseYFoe, Mathf.Sin(t * 1.7f + 1.1f) * 2.2f, false);
             return;
@@ -404,9 +404,14 @@ public class DuelView
             if (over != null || step >= queue.Count * 3)
             {
                 queue.Clear(); step = -1; stepT = 0;
-                if (over == null) round++;
-                Put(figMe, homeMe, baseYMe, 0, true); Put(figFoe, homeFoe, baseYFoe, 0, false);
-                SetFrame(figMe, F_IDLE, false); SetFrame(figFoe, F_IDLE, true);
+                if (over == null)
+                {
+                    round++;
+                    // 只有还打得下去才归位。分出结果就别动了——
+                    // 否则刚设好的落马帧会被这里的「摆回本阵 + 待机」抹掉。
+                    Put(figMe, homeMe, baseYMe, 0, true); Put(figFoe, homeFoe, baseYFoe, 0, false);
+                    SetFrame(figMe, F_IDLE, false); SetFrame(figFoe, F_IDLE, true);
+                }
                 menu.gameObject.SetActive(true);
                 Refresh();
             }
