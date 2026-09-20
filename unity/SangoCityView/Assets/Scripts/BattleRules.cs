@@ -176,6 +176,23 @@ public static class BattleRules
            ? DuelBase(o, num, den) / 2
            : -(14 + rng.Next(9));
 
+    /// 单挑的六招（画死在原版 lib60 那张菜单图里）
+    public static readonly string[] DuelMove = { "牵制", "攻击", "全力", "劝降", "逃跑", "投降" };
+
+    /// b.k(我,敌)：劝降。敌越虚弱、忠诚越低越容易；说服力是德七智三。
+    /// 这就是原版收将的正路——先把体力磨下去再劝。
+    public static bool Persuade(Officer me, Officer foe, System.Random rng)
+    {
+        if (foe.Loyal > 99) return false;
+        int n = (me.Virtue * 7 + me.Int * 3) * 10 / 99;
+        n = (n - 70) / 5;
+        if (n == 4) n = 6; else if (n == 5) n = 8;
+        return foe.Hp + foe.Loyal - n + rng.Next(4) < 100;
+    }
+
+    /// 逃跑：**用的就是单挑胜负那个公式**，武力高才跑得掉
+    public static bool Flee(Officer me, Officer foe, System.Random rng) => DuelWin(me, foe, rng);
+
     /// b.c(我,敌)：单挑 AI 的取舍。0/1 = 普通或强攻，2 = 拼必杀，4 = 撤
     public static int DuelDecide(Officer me, Officer foe, System.Random rng)
     {
