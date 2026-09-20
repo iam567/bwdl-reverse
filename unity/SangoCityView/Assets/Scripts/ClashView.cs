@@ -12,6 +12,8 @@ public class ClashView
 {
     public RectTransform Root;
     public System.Action<int, int> OnDone;        // 我方剩余兵力, 敌方剩余兵力
+    public System.Action OnDuel;                  // 双方武将碰上了
+    public int Scene => scene;
 
     readonly float refW, refH;
     readonly Officer me, foe;
@@ -317,6 +319,8 @@ public class ClashView
             int dmg = BattleRules.Damage(BattleRules.Atk(self, p.Arm),
                                          BattleRules.Def(enemy), p.Troops, rng,
                                          ours ? cd : 0, p.Arm);
+            // b.c(boolean)：打人的和挨打的都是武将本人 → aq=1，跳出去单挑
+            if (p.Arm == Arm.None && q.Arm == Arm.None) { OnDuel?.Invoke(); return true; }
             if (p.Arm == Arm.Gong)                             // 射出去的箭，画一下
                 shots.Add(new Shot { X0 = p.Col, Y0 = p.Row, X1 = q.Col, Y1 = q.Row, At = Time.time });
             if (q.Arm == Arm.None)

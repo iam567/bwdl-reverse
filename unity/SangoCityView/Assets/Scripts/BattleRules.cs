@@ -142,6 +142,49 @@ public static class BattleRules
     }
 
     // ── 单挑 ───────────────────────────────────────────────────────────
+    // 触发：阵型战里**双方武将本人**贴上并互相攻击时，b.c(boolean) 走这一支：
+    //   if (bU[被打] == 0 && bU[打人] == 0) { aq = 1; return; }   // 不扣体力，进单挑
+    // 然后 ah() 跑 ae() 算战力、进画面 21 演出，打完回阵型战接着打。
+
+    /// b.ae()：单挑的四个战力。攻用兵种等级 R 的加成，防用副属性 S 的。
+    public static void DuelStats(Officer me, Officer foe,
+                                 out int myAtk, out int myDef, out int foeAtk, out int foeDef)
+    {
+        myAtk  = me.Might  + me.Might  * ArmBonus(me.ArmLv)  / 100;
+        myDef  = me.Might  + me.Might  * ArmBonus(me.SubLv)  / 100;
+        foeAtk = foe.Might + foe.Might * ArmBonus(foe.ArmLv) / 100;
+        foeDef = foe.Might + foe.Might * ArmBonus(foe.SubLv) / 100;
+    }
+
+    /// b.a(武将, 分子, 分母)：单挑的基础伤害
+    public static int DuelBase(Officer o, int num, int den)
+    {
+        int n = o.Might * num / Mathf.Max(1, den);
+        n = Mathf.Min(n, o.Might * 2);
+        n = Mathf.Max(n, o.Might / 3);
+        return n + n / 10;                       // 固定 +10%
+    }
+    /// b.b()：普通攻击，必中，最低 1
+    public static int DuelPlain(Officer o, int num, int den)
+        => Mathf.Max(1, DuelBase(o, num, den) / 20);
+    /// b.c()：强攻。命中率 7±cC 成 —— 克制把它在 60%↔80% 之间摆
+    public static int DuelHeavy(Officer o, int num, int den, int cc, bool isAttacker, System.Random rng)
+        => rng.Next(10) < (isAttacker ? 7 + cc : 7 - cc) ? DuelBase(o, num, den) / 5 : 0;
+    /// b.d()：必杀。命中率 2±cC 成；**落空返回负数，调用点做 L += 负数，等于自伤 14–22 点**
+    public static int DuelCrit(Officer o, int num, int den, int cc, bool isAttacker, System.Random rng)
+        => rng.Next(10) < (isAttacker ? 2 + cc : 2 - cc)
+           ? DuelBase(o, num, den) / 2
+           : -(14 + rng.Next(9));
+
+    /// b.c(我,敌)：单挑 AI 的取舍。0/1 = 普通或强攻，2 = 拼必杀，4 = 撤
+    public static int DuelDecide(Officer me, Officer foe, System.Random rng)
+    {
+        if (me.Hp < 20 && rng.Next(2) == 0) return 4;
+        if (me.Hp < me.HpMax / 2 && foe.Hp - me.Hp > 10 && rng.Next(10) < 3) return 2;
+        if (me.Hp < foe.Hp) return rng.Next(10) < 6 ? 1 : 0;
+        return rng.Next(10) < 6 ? 0 : 1;
+    }
+
     /// b.b(我,敌)：基准 50%，每 20 点武力差折 10%
     public static bool DuelWin(Officer me, Officer foe, System.Random rng)
         => rng.Next(10) < 5 + (me.Might - foe.Might) / 20;

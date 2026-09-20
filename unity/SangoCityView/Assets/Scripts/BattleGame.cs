@@ -20,6 +20,7 @@ public class BattleGame : MonoBehaviour
     RectTransform root;
     BattleField field;
     ClashView clash;
+    DuelView duel;
     Dictionary<int, Officer> book;
 
     /// 自检模式：命令行给 -shots <目录> 就自动走一遍三屏各截一张再退出。
@@ -72,7 +73,12 @@ public class BattleGame : MonoBehaviour
 
         clash.AdvanceForTest();
         clash.AdvanceForTest();
-        yield return Shot(dir, "5_推进两日");
+        yield return Shot(dir, "5_打了一阵");
+
+        clash.OnDuel();                            // 双方武将碰上的那一屏
+        yield return Shot(dir, "5b_单挑");
+        duel.RoundForTest(1);
+        yield return Shot(dir, "5c_单挑·强攻");
 
         // 再来一场攻城：把敌方放到城池格上
         clash.FinishForTest();
@@ -133,6 +139,16 @@ public class BattleGame : MonoBehaviour
             field.Root.gameObject.SetActive(false);
             int terrain = TerrainUnder(foe);
             clash = new ClashView(root, me.O, foe.O, terrain, true, REF_W, REF_H);
+            clash.OnDuel = () =>
+            {
+                clash.Root.gameObject.SetActive(false);
+                duel = new DuelView(root, me.O, foe.O, clash.Scene, REF_W, REF_H);
+                duel.OnDone = () =>
+                {
+                    Object.Destroy(duel.Root.gameObject); duel = null;
+                    clash.Root.gameObject.SetActive(true);   // 单挑打完回阵型战接着打
+                };
+            };
             clash.OnDone = (mine, theirs) =>
             {
                 Object.Destroy(clash.Root.gameObject); clash = null;
