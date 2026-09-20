@@ -248,9 +248,30 @@ public static class BattleRules
     public static readonly string[] SkillDesc = {
         "限制敌将行动",   "向敌将发出单挑邀请", "箭手射程增加",
         "全军攻击力增加", "箭手攻击力大大增加", "利用火器攻击敌军" };
-    public const int SkillRounds = 4;        // l() 里 cd = 0x14，低 4 位是 4
+    /// 持续回合数**每个技能不一样**，是写死在 b.a(byte) 里的：
+    ///   咒缚 cd=0x14(4 回合)  连弩 0x33(3)  呐喊 0x44(4)  火矢 0x53(3)
+    ///   挑战与爆炎不设 cd —— 挑战直接进单挑，爆炎是一次性的范围伤害
+    static readonly int[] SkillCd = { 0x14, 0, 0x33, 0x44, 0x53, 0 };
+    public static int CdOf(int skill) => (skill >= 0 && skill < 6) ? SkillCd[skill] : 0;
 
-    public static int PackBuff(int skill, int rounds) => ((skill + 1) << 4) | rounds;
+    /// 计策点 = 智力 × 13 / 100（b.o()），**每战重算，不是武将身上的 Q[]**。
+    /// 截图里华雄智力 77 → 10 点，对得上。
+    public static int PlotPoints(Officer o) => o.Int * 13 / 100;
+
+    /// 咒缚：用的是标准计策成功判定
+    public static bool Bind(Officer me, Officer foe, System.Random rng) => PlotHits(me, foe, rng);
+
+    /// 挑战 b.m()：**敌方越强越容易请动**，我方远强于对方时几乎请不动
+    public static bool Challenge(Officer me, Officer foe, System.Random rng)
+    {
+        int n = foe.Might + foe.Hp - me.Might - me.Hp + 30;
+        return rng.Next(51) <= ISqrt(n) * 10;
+    }
+
+    /// 爆炎 b.W()：以我方武将为中心，**向前 3 列 × 上下各 1 行**
+    public const int BlazeCols = 3, BlazeRows = 1;
+    public static int BlazeHpDamage(System.Random rng)    => rng.Next(21) + 30;   // 打武将，扣体力
+    public static int BlazeTroopDamage(System.Random rng) => rng.Next(21) + 60;   // 打兵棋，扣兵
     public static int BuffId(int cd) => (cd & 0xF0) >> 4;      // 1..6，0 = 没有
 
     /// ⚠ 这里和原版不一样，是有意改的。

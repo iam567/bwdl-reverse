@@ -147,7 +147,7 @@ public class ClashView
     void StartClash()
     {
         Object.Destroy(pick.gameObject);
-        plotPts = me.Plots;
+        plotPts = BattleRules.PlotPoints(me);   // 智力×13/100，不是武将身上的 Q[]
         turnIdx = 1;          // cD = bI > 1 ? 1 : 0 —— 0 号是武将，压阵最后动
         mine   = Formation.Build(me,  formation,      true,  siege, weAttack);
         theirs = Formation.Build(foe, rng.Next(4),     false, siege, weAttack);
@@ -227,7 +227,7 @@ public class ClashView
             Fill(skillT[i].rectTransform);
         }
 
-        noteT = Label(field, BattleRules.HouseRuleNote, 11, new Color32(0xC8,0xA0,0x60,255));
+        noteT = Label(field, "计策点 = 智力×13/100，每战重算。" + BattleRules.HouseRuleNote, 11, new Color32(0xC8,0xA0,0x60,255));
         Place(noteT.rectTransform, 14, ORDER_Y + 112, refW - 28, 18);
 
         var quit = Node("quit", field);
@@ -314,6 +314,8 @@ public class ClashView
         var enemy = ours ? foe : me;
         // 轮到它了才读令。敌方一律前进。
         int cmd = ours ? orders[(int)p.Arm] : 0;
+        // 咒缚（cd 高 4 位 = 1）：敌方**武将本人**改走 b.v()——只打相邻的，不移动
+        bool bound = !ours && p.Arm == Arm.None && BattleRules.BuffId(cd) == 1;
         if (cmd == 1) return false;                            // 待机：原地不动，不占节拍
 
         // b.m(by) 按兵种分派：武将/骑兵/步兵 走近战 m(by,by2)，弓兵走远射 o(by,by2)。
@@ -349,6 +351,7 @@ public class ClashView
             return true;
         }
 
+        if (bound) return false;                               // 被缚：四周无人就干站着
         var tgt = Nearest(other, p);
         if (tgt.x < 0) return false;
         int dir = cmd == 2 ? -1 : 1;                           // 撤退就反着走
@@ -412,17 +415,50 @@ public class ClashView
 
     void UseSkill(int i)
     {
-        if (i < 2 || i > 4) return;                       // 咒缚/挑战/爆炎还没接
         if (BattleRules.SkillCost[i] > plotPts) return;
-        plotPts -= BattleRules.SkillCost[i];
-        cd = BattleRules.PackBuff(i, BattleRules.SkillRounds);
+        plotPts -= BattleRules.SkillCost[i];              // b.a(byte)：先扣点，再看成不成
         orders[0] = 0;                                    // 下完计策，武将回到前进
+        switch (i)
+        {
+            case 0:                                       // 咒缚：定住敌将四回合
+                if (BattleRules.Bind(me, foe, rng)) cd = BattleRules.CdOf(0);
+                break;
+            case 1:                                       // 挑战：请对方单挑
+                if (BattleRules.Challenge(me, foe, rng)) { Redraw(); OnDuel?.Invoke(); return; }
+                break;
+            case 5: Blaze(); break;                       // 爆炎：一次性范围伤害
+            default: cd = BattleRules.CdOf(i); break;     // 连弩/呐喊/火矢：设增益
+        }
         Redraw();
+    }
+
+    /// b.W()：以我方武将为中心，向前 3 列 × 上下各 1 行
+    void Blaze()
+    {
+        Piece g = mine.Find(p => p.Arm == Arm.None && p.Alive);
+        if (g.Troops == 0 && !g.Alive) return;
+        for (int dx = 1; dx <= BattleRules.BlazeCols; dx++)
+            for (int dy = -BattleRules.BlazeRows; dy <= BattleRules.BlazeRows; dy++)
+            {
+                int x = g.Col + dx, y = g.Row + dy;
+                for (int k = 0; k < theirs.Count; k++)
+                {
+                    var q = theirs[k];
+                    if (!q.Alive || q.Col != x || q.Row != y) continue;
+                    if (q.Arm == Arm.None)
+                        foe.Hp = Mathf.Max(0, foe.Hp - BattleRules.BlazeHpDamage(rng));
+                    else
+                    {
+                        q.Troops -= BattleRules.BlazeTroopDamage(rng);
+                        if (q.Troops <= 0) { q.Troops = 0; q.Alive = false; }
+                    }
+                    q.HitAt = Time.time; theirs[k] = q;
+                }
+            }
     }
 
     void Finish()
     {
-        me.Plots = plotPts;
         me.Troops  = Formation.TotalTroops(mine   ?? new List<Piece>());
         foe.Troops = Formation.TotalTroops(theirs ?? new List<Piece>());
         OnDone?.Invoke(me.Troops, foe.Troops);
@@ -515,10 +551,8 @@ public class ClashView
         skillRoot.gameObject.SetActive(pick);
         for (int i = 0; i < 6; i++)
         {
-            bool wired = i >= 2 && i <= 4;                 // 连弩/呐喊/火矢，其余还没接
-            bool ok = wired && BattleRules.SkillCost[i] <= plotPts;
-            skillT[i].text = BattleRules.SkillName[i] + " " + BattleRules.SkillCost[i]
-                           + (wired ? "" : " 未接");
+            bool ok = BattleRules.SkillCost[i] <= plotPts;
+            skillT[i].text = BattleRules.SkillName[i] + " " + BattleRules.SkillCost[i];
             skillT[i].color = ok ? new Color32(0xF0,0xE0,0xB8,255) : new Color32(0x86,0x7E,0x6C,255);
         }
         int bid = BattleRules.BuffId(cd);
