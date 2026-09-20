@@ -126,11 +126,13 @@ public class BattleGame : MonoBehaviour
         int[] ox = { 4, 5, 3, 4 }, oy = { 9, 10, 11, 12 };
         for (int i = 0; i < OURS.Length; i++)
             if (book.TryGetValue(OURS[i], out var o))
-                roster.Add(new Unit { O = Clone(o), X = ox[i], Y = oy[i], Ours = true, Dir = "e" });
+                roster.Add(new Unit { O = Clone(o), X = ox[i], Y = oy[i], Ours = true, Dir = "e",
+                                      Draw = new Vector2(ox[i], oy[i]) });
         int[] fx = { 26, 27, 28, 27 }, fy = { 8, 9, 10, 11 };
         for (int i = 0; i < FOES.Length; i++)
             if (book.TryGetValue(FOES[i], out var o))
-                roster.Add(new Unit { O = Clone(o), X = fx[i], Y = fy[i], Ours = false, Dir = "e", Flip = true });
+                roster.Add(new Unit { O = Clone(o), X = fx[i], Y = fy[i], Ours = false, Dir = "e", Flip = true,
+                                      Draw = new Vector2(fx[i], fy[i]) });
         foreach (var u in roster) if (u.O.Troops == 0) u.O.Troops = 800;   // 管辂之流开局没兵，给点
 
         field = new BattleField(root, CITY, ThemeOf(CITY), roster, REF_W, REF_H);

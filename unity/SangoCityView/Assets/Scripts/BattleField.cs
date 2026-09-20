@@ -16,6 +16,7 @@ public class Unit
     public bool Alive = true;
     public string Dir = "s";    // 八向精灵目前只做了 s/se/e/ne/n，朝左靠水平翻转
     public bool Flip;
+    public Vector2 Draw;        // 画在哪。向 (X,Y) 插值，走起来是滑过去不是瞬移
 }
 
 public class BattleField
@@ -321,14 +322,43 @@ public class BattleField
     //   四邻有我方就攻击（扣 2 机动力），否则从路径里取一步、够机动力才走。
     // 我原来是一帧里把所有敌军都挪完，看起来就是「啪一下全到脸上」。
     bool enemyTurn; float stepAt; int enemyMp, enemyIdx;
-    const float STEP = 0.22f;
+    Unit acting;                                   // 正在走的那枚，画个圈标出来
+    const float STEP = 0.55f;                      // 一格多久。0.22 太快，看不清是谁在动
+    const float GLIDE = 7f;                        // 滑行速度：越大越快贴到目标格
+    const float PAN   = 6f;                        // 镜头跟随速度
+
+    Vector2 camTarget; bool camInit;
 
     public void Tick()
     {
-        if (!enemyTurn || Time.time < stepAt) return;
-        stepAt = Time.time + STEP;
-        if (!EnemyStep()) StartOurDay();
-        Refresh();
+        bool moving = false;
+        foreach (var u in units)                   // 滑向各自的格子
+        {
+            if (!u.Alive) continue;
+            var want = new Vector2(u.X, u.Y);
+            if ((u.Draw - want).sqrMagnitude > 0.0004f)
+            {
+                u.Draw = Vector2.Lerp(u.Draw, want, 1f - Mathf.Exp(-GLIDE * Time.deltaTime));
+                moving = true;
+            }
+            else u.Draw = want;
+        }
+        if (camInit)                               // 镜头也是滑过去，不硬跳
+        {
+            var cur = board.anchoredPosition;
+            var nxt = Vector2.Lerp(cur, camTarget, 1f - Mathf.Exp(-PAN * Time.deltaTime));
+            if ((cur - nxt).sqrMagnitude > 0.0004f) { board.anchoredPosition = nxt; moving = true; }
+            else board.anchoredPosition = camTarget;
+        }
+
+        if (enemyTurn && Time.time >= stepAt)
+        {
+            stepAt = Time.time + STEP;
+            if (!EnemyStep()) { acting = null; StartOurDay(); }
+            Refresh();
+            return;
+        }
+        if (moving) Refresh();                     // 有东西在动就每帧重绘
     }
 
     /// 走一步。返回 false 表示敌方这一日到此为止。
@@ -356,7 +386,7 @@ public class BattleField
                 if (enemyMp < BattleRules.AttackCost) { enemyIdx++; continue; }
                 enemyMp -= BattleRules.AttackCost;
                 hintText.text = e.O.Name + " 来攻 " + target.O.Name;
-                enemyIdx++;
+                acting = e; enemyIdx++;
                 OnClash?.Invoke(target, e, false);          // 我方是守方
                 return true;
             }
@@ -374,7 +404,7 @@ public class BattleField
             e.Dir = nx != e.X ? "e" : (ny > e.Y ? "s" : "n");
             e.Flip = nx < e.X;
             e.X = nx; e.Y = ny;
-            enemyIdx++;
+            acting = e; enemyIdx++;
             CenterOn(e.X, e.Y);                            // 镜头跟着走，看得见是谁在动
             return true;
         }
@@ -444,6 +474,7 @@ public class BattleField
         board.anchoredPosition = new Vector2(
             Mathf.Clamp(p.x, Mathf.Min(0, vw - W * CELL), 0),
             Mathf.Clamp(p.y, 0, Mathf.Max(0, H * CELL - vh)));
+        camTarget = board.anchoredPosition;        // 拖完要同步，不然一松手镜头弹回去
     }
 
     void CenterOn(int x, int y)
@@ -453,7 +484,8 @@ public class BattleField
         float vh = clip.rect.height > 1 ? clip.rect.height : refH - 172;
         float px = Mathf.Clamp(x * CELL + CELL / 2f - vw / 2f, 0, Mathf.Max(0, W * CELL - vw));
         float py = Mathf.Clamp(y * CELL + CELL / 2f - vh / 2f, 0, Mathf.Max(0, H * CELL - vh));
-        board.anchoredPosition = new Vector2(-px, py);
+        camTarget = new Vector2(-px, py);
+        if (!camInit) { board.anchoredPosition = camTarget; camInit = true; }   // 开局不滑
     }
 
     // ── 重绘 ───────────────────────────────────────────────────────────
@@ -473,8 +505,9 @@ public class BattleField
         foreach (var u in units)                       // 部队
         {
             if (!u.Alive) continue;
+            float ux = u.Draw.x * CELL, uy = u.Draw.y * CELL;
             var im = Node("u", board).gameObject.AddComponent<Image>();
-            Place((RectTransform)im.transform, u.X * CELL, u.Y * CELL, CELL, CELL);
+            Place((RectTransform)im.transform, ux, uy, CELL, CELL);
             im.sprite = UnitSprite(u); im.raycastTarget = false;
             im.color = u.Acted ? new Color(.62f, .62f, .62f, 1f) : Color.white;
             if (u.Flip)
@@ -488,26 +521,28 @@ public class BattleField
             marks.Add(im.gameObject);
 
             var back = Node("bk", board).gameObject.AddComponent<Image>();
-            Place((RectTransform)back.transform, u.X * CELL + 2, u.Y * CELL + CELL - 9, CELL - 4, 8);
+            Place((RectTransform)back.transform, ux + 2, uy + CELL - 9, CELL - 4, 8);
             back.color = new Color(0, 0, 0, .55f); back.raycastTarget = false;
             marks.Add(back.gameObject);
             var bar = Node("bar", board).gameObject.AddComponent<Image>();
             float f = Mathf.Clamp01(u.O.Troops / 1000f);
-            Place((RectTransform)bar.transform, u.X * CELL + 3, u.Y * CELL + CELL - 8, (CELL - 6) * f, 6);
+            Place((RectTransform)bar.transform, ux + 3, uy + CELL - 8, (CELL - 6) * f, 6);
             bar.color = u.Ours ? new Color(.35f, .65f, 1f) : new Color(1f, .35f, .3f);
             bar.raycastTarget = false; marks.Add(bar.gameObject);
 
             var nm = Label(board, u.O.Name + " " + u.O.Troops, 11, Color.white, TextAnchor.UpperCenter);
-            Place(nm.rectTransform, u.X * CELL - 14, u.Y * CELL + CELL, CELL + 28, 14);
+            Place(nm.rectTransform, ux - 14, uy + CELL, CELL + 28, 14);
             var ol = nm.gameObject.AddComponent<Outline>();     // 压在地形上不描边看不清
             ol.effectColor = new Color(0, 0, 0, .95f);
             ol.effectDistance = new Vector2(1.2f, 1.2f);
             marks.Add(nm.gameObject);
-            if (sel == u)
+            if (sel == u || acting == u)
             {
                 var hl = Node("hl", board).gameObject.AddComponent<Image>();
-                Place((RectTransform)hl.transform, u.X * CELL, u.Y * CELL, CELL, CELL);
-                hl.color = new Color(1f, .95f, .4f, .25f); hl.raycastTarget = false;
+                Place((RectTransform)hl.transform, ux, uy, CELL, CELL);
+                hl.color = acting == u ? new Color(1f, .45f, .35f, .35f)
+                                       : new Color(1f, .95f, .4f, .25f);
+                hl.raycastTarget = false;
                 marks.Add(hl.gameObject);
             }
         }
