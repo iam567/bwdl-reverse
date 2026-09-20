@@ -198,7 +198,9 @@ public class DuelView
         Put(im, x, im.rectTransform.anchoredPosition.y, 0, !mirror);
         return im;
     }
-    void SetFrame(Image im, int f, bool mirror) => im.sprite = Frame(mirror ? foeSkin : mySkin, f);
+    /// foeSide 决定用哪一套立绘，和朝向无关——朝向由 Put() 管。
+    /// 两者混用过一次：归顺时让敌将朝右（传 false），结果连立绘也换成了我方的。
+    void SetFrame(Image im, int f, bool foeSide) => im.sprite = Frame(foeSide ? foeSkin : mySkin, f);
 
     void Menu()
     {
@@ -251,9 +253,11 @@ public class DuelView
 
     // 原版 case 5 投降会置 au=2 走一段离场；我原来只弹一行字，看不出发生了什么。
     bool exiting; float exitT; bool exitMine;
-    const float T_EXIT = 1.6f;
+    bool joining; float joinT;                    // 招降成功：降将骑到我方这边来
+    const float T_EXIT = 1.6f, T_JOIN = 1.8f;
 
     void StartExit(bool mine) { exiting = true; exitT = 0; exitMine = mine; menu.gameObject.SetActive(false); }
+    void StartJoin() { joining = true; joinT = 0; menu.gameObject.SetActive(false); }
 
     void Pick(int move)
     {
@@ -265,7 +269,12 @@ public class DuelView
         {
             case 3:                                // 劝降
                 if (BattleRules.Persuade(me, foe, rng))
-                { over = "成功招降!"; SetFrame(figFoe, F_RAISE, true); OnRecruit?.Invoke(foe); Refresh(); return; }
+                {
+                    // 原版这里用帧 11（立枪）配帧 12（平端），而这两个帧号我做新素材时
+                    // 挪用成了奔驰的两帧，手上没有那两个姿势。改成演「归顺」这件事本身：
+                    // 降将掉头骑到我方一侧，停下后和我方同向站着。
+                    over = "成功招降!"; StartJoin(); OnRecruit?.Invoke(foe); Refresh(); return;
+                }
                 report += "招降失败!\n"; break;
             case 4:                                // 逃跑：走的是单挑胜负那个公式
                 if (BattleRules.Flee(me, foe, rng))
@@ -326,6 +335,19 @@ public class DuelView
     public void Tick()
     {
         float t = Time.time;
+        if (joining)                               // 归顺：骑过来，停在我方身侧
+        {
+            joinT += Time.deltaTime;
+            float e = Mathf.Clamp01(joinT / T_JOIN);
+            float dest = homeMe + FIG * 0.62f;     // 停在我方右后方，同向并肩
+            SetFrame(figFoe, e < 1f
+                ? ((int)(joinT / 0.2f) % 2 == 0 ? F_RUN_A : F_RUN_B) : F_IDLE, true);
+            Put(figFoe, Mathf.Lerp(homeFoe, dest, Ease(e)), baseYFoe,
+                e < 1f ? Mathf.Sin(t * 22f) * 2.5f : 0, true);   // 朝右＝和我方同向
+            Put(figMe, homeMe, baseYMe, 0, true);
+            if (e >= 1f) joining = false;
+            return;
+        }
         if (exiting)                               // 掉头骑出画面
         {
             exitT += Time.deltaTime;
@@ -334,7 +356,7 @@ public class DuelView
             var stay = exitMine ? figFoe : figMe;
             float from = exitMine ? homeMe : homeFoe;
             float to   = exitMine ? -FIG - 20f : refW + 20f;      // 从自己那侧退出画面
-            SetFrame(go2, (int)(exitT / 0.2f) % 2 == 0 ? F_RUN_A : F_RUN_B, exitMine);
+            SetFrame(go2, (int)(exitT / 0.2f) % 2 == 0 ? F_RUN_A : F_RUN_B, !exitMine);
             // 往哪边跑就朝哪边：我方向左退 → 翻转；敌方向右退 → 翻转
             Put(go2, Mathf.Lerp(from, to, Ease(e)), exitMine ? baseYMe : baseYFoe,
                 Mathf.Sin(t * 22f) * 2.5f, !exitMine);

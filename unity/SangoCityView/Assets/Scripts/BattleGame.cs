@@ -84,6 +84,7 @@ public class BattleGame : MonoBehaviour
         yield return DuelDemo(dir, "b全力", 2, 34);
         yield return DuelDemo(dir, "c投降", 5, 10);
         yield return DuelDemo(dir, "d落马", 0, 16, 3);   // 牵制必中，体力 3 一击必死
+        yield return DuelDemo(dir, "e招降", 3, 14, 10, 35);   // 体力低、忠诚低才招得动
         field.Root.gameObject.SetActive(true);
         if (clash != null) clash.Root.gameObject.SetActive(true);
 
@@ -104,10 +105,14 @@ public class BattleGame : MonoBehaviour
     }
 
     /// 开一场干净的单挑，下某一招，连拍。关羽 对 吕布，水岸场景。
-    System.Collections.IEnumerator DuelDemo(string dir, string tag, int move, int shots, int foeHp = 0)
+    System.Collections.IEnumerator DuelDemo(string dir, string tag, int move, int shots,
+                                            int foeHp = 0, int foeLoyal = 0)
     {
         var a = Clone(book[7]); var b = Clone(book[196]);
         if (foeHp > 0) b.Hp = foeHp;            // 压低体力，好让这一击就能看到落马
+        // 吕布忠诚 100，而 b.k() 第一行就是 if (忠诚 > 99) return false —— 他永远招不动。
+        // 演示时压低忠诚，才看得到归顺那一段。
+        if (foeLoyal > 0) b.Loyal = foeLoyal;
         duel = new DuelView(root, a, b, 1, REF_W, REF_H);
         yield return new WaitForSeconds(.4f);
         duel.PickForTest(move);
