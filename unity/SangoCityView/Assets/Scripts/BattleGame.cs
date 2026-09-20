@@ -77,15 +77,15 @@ public class BattleGame : MonoBehaviour
 
         clash.OnDuel();                            // 双方武将碰上的那一屏
         yield return Shot(dir, "5b_单挑");
-        // 冲锋途中连拍 4 张，看马腿是不是真的在换
-        duel.PickForTest(1);
-        for (int i = 0; i < 4; i++)
+        // 整整一合连拍：我方冲出去 → 交手 → 退回 → 敌方冲过来 → 交手 → 退回
+        // 一合按原版是 8 秒上下，每 0.25 秒一张，够看清马腿在换。
+        // 用「牵制」——伤害最低，不会一击把人打倒，整合才演得完。
+        duel.PickForTest(0);
+        for (int i = 0; i < 34; i++)
         {
-            yield return new WaitForSeconds(.21f);
-            ScreenCapture.CaptureScreenshot(Path.Combine(dir, "5c_冲锋" + (i + 1) + ".png"));
-            yield return new WaitForSeconds(.19f);
+            yield return new WaitForSeconds(.25f);
+            ScreenCapture.CaptureScreenshot(Path.Combine(dir, "anim_" + i.ToString("00") + ".png"));
         }
-        yield return Shot(dir, "5d_交手");
 
         // 再来一场攻城：把敌方放到城池格上
         clash.FinishForTest();

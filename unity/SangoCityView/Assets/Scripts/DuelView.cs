@@ -225,6 +225,8 @@ public class DuelView
     {
         public bool Mine; public int Move; public int Dmg; public bool SelfHurt;
         public string Line; public string Over; public bool Recruit;
+        public bool Landed;                    // 结算过没有。别拿时间判断——
+                                               // 段间隙把 stepT 设成负数，时间判断会连触发十几次
     }
 
     readonly List<Blow> queue = new List<Blow>();
@@ -339,8 +341,9 @@ public class DuelView
         }
         else if (ph == 1)                            // 交手那一下
         {
-            if (stepT <= Time.deltaTime * 1.5f)      // 刚进这一步：结算
+            if (!b.Landed)                           // 刚进这一步：只结算一次
             {
+                b.Landed = true;
                 Land(b);
                 SetFrame(att, b.Move == 2 ? F_BURST : F_HIT, !b.Mine);
                 SetFrame(def, b.Dmg > 0 ? F_RECOIL : F_RAISE, b.Mine);
