@@ -77,8 +77,15 @@ public class BattleGame : MonoBehaviour
 
         clash.OnDuel();                            // 双方武将碰上的那一屏
         yield return Shot(dir, "5b_单挑");
+        // 冲锋途中连拍 4 张，看马腿是不是真的在换
         duel.PickForTest(1);
-        yield return Shot(dir, "5c_单挑·强攻");
+        for (int i = 0; i < 4; i++)
+        {
+            yield return new WaitForSeconds(.21f);
+            ScreenCapture.CaptureScreenshot(Path.Combine(dir, "5c_冲锋" + (i + 1) + ".png"));
+            yield return new WaitForSeconds(.19f);
+        }
+        yield return Shot(dir, "5d_交手");
 
         // 再来一场攻城：把敌方放到城池格上
         clash.FinishForTest();

@@ -48,10 +48,17 @@ public class DuelView
     }
     float baseYMe, baseYFoe;
     // 帧号沿用原版 lib304 的编号
-    const int F_IDLE = 5, F_THRUST = 0, F_HIT = 4, F_CHARGE = 6, F_BURST = 7,
+    const int F_IDLE = 5, F_THRUST = 0, F_HIT = 4, F_BURST = 7,
               F_RAISE = 8, F_RECOIL = 9, F_FALL = 13;
+    // 奔驰的两帧：马腿姿势不同，交替播才有步频。
+    // 原版冲锋段就是 `300 + ao%2 * 540`，在第 5 帧和第 14 帧之间来回切。
+    const int F_RUN_A = 11, F_RUN_B = 14;
     const float GROUND = 470f;                 // 地面线，两员的脚都落在这儿
-    const float FIG    = 168f;                 // 立绘在屏上多大
+    // 站位全部照原版按比例换算（原版屏宽 176，这里 375）：
+    //   立绘 60 → 128；我方 5 → 81 折合 11 → 173；敌方 115 → 47 折合 245 → 100
+    // 之前我把冲锋落点写成 refW/2 - FIG + 14 = 33，离本阵 28 只差 5 像素，等于没冲；
+    // 而且 FIG 取 168 时两边站位本身就重叠了。
+    const float FIG    = 128f;
 
 
     public DuelView(RectTransform parent, Officer me, Officer foe, int scene,
@@ -75,13 +82,12 @@ public class DuelView
 
         Header();
 
-        figMe  = Fighter(28, false);
-        figFoe = Fighter(refW - 28 - FIG, true);
+        figMe  = Fighter(refW *   5f / 176f, false);
+        figFoe = Fighter(refW * 115f / 176f, true);
         baseYMe  = figMe.rectTransform.anchoredPosition.y;
         baseYFoe = figFoe.rectTransform.anchoredPosition.y;
-        homeMe   = 28; homeFoe = refW - 28 - FIG;          // 各自的本阵
-        atkMe    = refW / 2 - FIG + 14;                    // 冲到对方跟前
-        atkFoe   = refW / 2 - 14;
+        homeMe = refW *   5f / 176f;   atkMe  = refW *  81f / 176f;
+        homeFoe = refW * 115f / 176f;  atkFoe = refW *  47f / 176f;
         SetFrame(figMe, F_IDLE, false); SetFrame(figFoe, F_IDLE, true);
 
         Menu();
@@ -92,22 +98,38 @@ public class DuelView
         Refresh();
     }
 
-    static Texture2D Tex(string f)
+    // Tex 只管 battle/duel/ 下的（背景、面板、光标）；
+    // 立绘在 battle/duelskin/<套>/，走 TexB，别让两条路径混在一起——
+    // 混了会拼出 battle/duel/duelskin/…，而存在性检查用的又是另一条，回退也兜不住。
+    static Texture2D Tex(string f) => TexB(Path.Combine("duel", f));
+    static Texture2D TexB(string rel)
     {
-        var t = Load(Path.Combine("battle", "duel", f));
+        var t = Load(Path.Combine("battle", rel));
         t.filterMode = FilterMode.Point; return t;
     }
+    static bool HasB(string rel) => File.Exists(Path.Combine(ArtDir, "battle", rel));
     static Sprite Frame(string skin, int i)
     {
         var key = skin + "/" + i;
         if (frames.TryGetValue(key, out var s)) return s;
         var rel = Path.Combine("duelskin", skin, "duel_f" + i + ".png");
-        // 某一套还没跑全就退回通用的那张，别让画面开天窗
-        if (!File.Exists(Path.Combine(ArtDir, "battle", rel)))
-            rel = Path.Combine("duelskin", "male_a", "duel_f" + i + ".png");
-        if (!File.Exists(Path.Combine(ArtDir, "battle", rel)))
-            rel = "duel_f" + i + ".png";                    // 最后退回最早那一套
-        s = Whole(Tex(rel)); frames[key] = s; return s;
+        // 缺帧先在**同一套内部**找相近的替身，实在没有才退到通用套——
+        // 退到别人身上会当场换脸，比姿势不对更糟。
+        if (!HasB(rel))
+        {
+            int[] alt = i == F_THRUST ? new[] { F_HIT, F_IDLE }
+                      : i == F_RAISE  ? new[] { F_RECOIL, F_IDLE }
+                      : i == F_RUN_A || i == F_RUN_B ? new[] { F_RUN_B, F_RUN_A, F_IDLE }
+                      : new[] { F_IDLE };
+            foreach (var j in alt)
+            {
+                var t2 = Path.Combine("duelskin", skin, "duel_f" + j + ".png");
+                if (HasB(t2)) { rel = t2; break; }
+            }
+        }
+        if (!HasB(rel)) rel = Path.Combine("duelskin", "male_a", "duel_f" + i + ".png");
+        if (!HasB(rel)) rel = Path.Combine("duel", "duel_f" + i + ".png");   // 最后退回最早那一套
+        s = Whole(TexB(rel)); frames[key] = s; return s;
     }
 
     void Header()
@@ -309,9 +331,10 @@ public class DuelView
 
         if (ph == 0)                                 // 冲过去
         {
-            SetFrame(att, F_THRUST, !b.Mine);
+            // 两帧交替，一步 0.2 秒 —— 原版是每 2 个 100ms 帧换一次
+            SetFrame(att, (int)(stepT / 0.2f) % 2 == 0 ? F_RUN_A : F_RUN_B, !b.Mine);
             SetFrame(def, F_IDLE, b.Mine);
-            Bob(att, Mathf.Lerp(h, a, Ease(k)), by, Mathf.Sin(t * 22f) * 2.5f);  // 马蹄的颠簸
+            Bob(att, Mathf.Lerp(h, a, Ease(k)), by, Mathf.Sin(t * 22f) * 2.5f);
             Bob(def, dh, dy, 0);
         }
         else if (ph == 1)                            // 交手那一下
@@ -327,10 +350,10 @@ public class DuelView
             }
             Bob(att, a, by, 0); Bob(def, dh, dy, Mathf.Sin(t * 30f) * 3f);       // 挨打的抖
         }
-        else                                          // 退回去
+        else                                          // 退回去：也是奔驰，只是方向相反
         {
-            SetFrame(att, F_IDLE, !b.Mine);
-            Bob(att, Mathf.Lerp(a, h, Ease(k)), by, 0);
+            SetFrame(att, (int)(stepT / 0.2f) % 2 == 0 ? F_RUN_B : F_RUN_A, !b.Mine);
+            Bob(att, Mathf.Lerp(a, h, Ease(k)), by, Mathf.Sin(t * 22f) * 2.5f);
             Bob(def, dh, dy, 0);
         }
 
