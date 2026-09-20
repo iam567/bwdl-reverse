@@ -46,34 +46,13 @@ public class DuelView
         }
         return skinMap.TryGetValue(officerId, out var k) ? k : "male_a";
     }
-    float animUntil;                                    // 出招动作演到什么时候
     float baseYMe, baseYFoe;
-
-    /// 每帧：动作演完回待机；待机时两边都轻微起伏，免得看着像定格
-    public void Tick()
-    {
-        if (over == null && animUntil > 0 && Time.time > animUntil)
-        {
-            animUntil = 0;
-            SetFrame(figMe, F_IDLE, false); SetFrame(figFoe, F_IDLE, true);
-        }
-        if (over != null) return;
-        float t = Time.time;
-        Bob(figMe,  baseYMe,  Mathf.Sin(t * 1.7f) * 2.2f);
-        Bob(figFoe, baseYFoe, Mathf.Sin(t * 1.7f + 1.1f) * 2.2f);   // 错开相位，不像双胞胎
-    }
-    static void Bob(Image im, float baseY, float dy)
-    {
-        var rt = im.rectTransform;
-        rt.anchoredPosition = new Vector2(rt.anchoredPosition.x, baseY + dy);
-    }
-
-    // 原版 lib304 的帧号，这套新素材沿用同一套编号
+    // 帧号沿用原版 lib304 的编号
     const int F_IDLE = 5, F_THRUST = 0, F_HIT = 4, F_CHARGE = 6, F_BURST = 7,
               F_RAISE = 8, F_RECOIL = 9, F_FALL = 13;
-
     const float GROUND = 470f;                 // 地面线，两员的脚都落在这儿
-    const float FIG = 168f;
+    const float FIG    = 168f;                 // 立绘在屏上多大
+
 
     public DuelView(RectTransform parent, Officer me, Officer foe, int scene,
                     float refW, float refH)
@@ -100,6 +79,9 @@ public class DuelView
         figFoe = Fighter(refW - 28 - FIG, true);
         baseYMe  = figMe.rectTransform.anchoredPosition.y;
         baseYFoe = figFoe.rectTransform.anchoredPosition.y;
+        homeMe   = 28; homeFoe = refW - 28 - FIG;          // 各自的本阵
+        atkMe    = refW / 2 - FIG + 14;                    // 冲到对方跟前
+        atkFoe   = refW / 2 - 14;
         SetFrame(figMe, F_IDLE, false); SetFrame(figFoe, F_IDLE, true);
 
         Menu();
@@ -212,41 +194,58 @@ public class DuelView
         }
     }
 
-    // ── 一个回合 ───────────────────────────────────────────────────────
+    // ── 一个回合：一来一回的冲阵 ────────────────────────────────────────
+    // 原版 c.d/e(Graphics,boolean)：出手方从自己那侧冲到对方跟前，打完退回，
+    // 然后换对方冲过来。一来一去算一合，约 6 秒。
+    // 我原来做成双方站着不动出招，少了「冲」和「退」这两段。
+
+    class Blow                                     // 先算好，演到那一步再落地
+    {
+        public bool Mine; public int Move; public int Dmg; public bool SelfHurt;
+        public string Line; public string Over; public bool Recruit;
+    }
+
+    readonly List<Blow> queue = new List<Blow>();
+    int step = -1; float stepT;
+    // 原版单挑循环是 sleep(100)，10 帧/秒；一次出手分三段，帧数写死在绘制函数里：
+    //   冲过去 c() 19 帧 → 打击 d/e/a() 3/5/11 帧（牵制/攻击/全力）→ 退回来 b() 17 帧
+    // 单边 3.9 / 4.1 / 4.7 秒，双方一来一回 7.8 / 8.2 / 9.4 秒。
+    const float FRAME = 0.1f;
+    const float T_CHARGE = 19 * FRAME, T_BACK = 17 * FRAME, T_GAP = 0.15f;
+    static readonly float[] T_HIT = { 3 * FRAME, 5 * FRAME, 11 * FRAME };   // 牵制/攻击/全力
+    float homeMe, homeFoe, atkMe, atkFoe;
+
     void Pick(int move)
     {
         if (over != null) { OnDone?.Invoke(); return; }
+        if (step >= 0) return;                     // 正在演，别插队
         report = "";
 
         switch (move)
         {
-            case 3:                                        // 劝降
+            case 3:                                // 劝降
                 if (BattleRules.Persuade(me, foe, rng))
-                {
-                    over = "成功招降!"; SetFrame(figFoe, F_RAISE, true);
-                    OnRecruit?.Invoke(foe); Refresh(); return;
-                }
-                report += "招降失败!\n";
-                break;
-            case 4:                                        // 逃跑：用的是单挑胜负那个公式
+                { over = "成功招降!"; SetFrame(figFoe, F_RAISE, true); OnRecruit?.Invoke(foe); Refresh(); return; }
+                report += "招降失败!\n"; break;
+            case 4:                                // 逃跑：走的是单挑胜负那个公式
                 if (BattleRules.Flee(me, foe, rng)) { over = "自军成功撤离!"; Refresh(); return; }
-                report += "撤退失败...\n";
-                break;
-            case 5: over = "我方投降!"; Refresh(); return;   // 投降没有判定
-            default: Strike(true, move); break;
+                report += "撤退失败...\n"; break;
+            case 5: over = "我方投降!"; Refresh(); return;
+            default: queue.Add(Plan(true, move)); break;
         }
 
         if (over == null)
         {
             int m = BattleRules.DuelDecide(foe, me, rng);
             if (m == 4) over = "敌将逃窜!";
-            else Strike(false, Mathf.Clamp(m, 0, 2));
+            else queue.Add(Plan(false, Mathf.Clamp(m, 0, 2)));
         }
-        round++;
+        if (queue.Count > 0) { step = 0; stepT = 0; menu.gameObject.SetActive(false); }
         Refresh();
     }
 
-    void Strike(bool mine, int move)
+    /// 只算不落地。伤害在冲到跟前那一刻才结算到血条上。
+    Blow Plan(bool mine, int move)
     {
         var o   = mine ? me : foe;
         int num = mine ? myAtk : foeAtk;
@@ -258,42 +257,102 @@ public class DuelView
             case 1:  dmg = BattleRules.DuelHeavy(o, num, den, cc, mine, rng); break;
             default: dmg = BattleRules.DuelCrit (o, num, den, cc, mine, rng); break;
         }
-        var self  = mine ? figMe : figFoe;
-        var other = mine ? figFoe : figMe;
-        SetFrame(self, move == 2 ? F_BURST : F_THRUST, !mine);
-        // 挨打的那边要有反应。原来设成待机帧，看着就像「一方在打，一方傻站着」。
-        SetFrame(other, dmg > 0 ? F_RECOIL : F_IDLE, mine);
-        animUntil = Time.time + .75f;
+        var b = new Blow { Mine = mine, Move = move, Dmg = dmg, SelfHurt = dmg < 0 };
+        string nm = o.Name, mv = BattleRules.DuelMove[move];
+        b.Line = dmg < 0 ? nm + " " + mv + "落空，反受 " + (-dmg) + " 点"
+               : dmg == 0 ? nm + " " + mv + "被闪开"
+               : nm + " " + mv + "命中 " + dmg + " 点";
+        return b;
+    }
 
-        string name = o.Name, mv = BattleRules.DuelMove[move];
-        if (dmg < 0)                       // 「全力」落空：L += 负数 = 自伤
+    void Land(Blow b)
+    {
+        report += b.Line + "\n";
+        var o = b.Mine ? me : foe;
+        if (b.SelfHurt)                            // 「全力」落空：自伤
         {
-            o.Hp = Mathf.Max(0, o.Hp + dmg);
-            report += name + " " + mv + "落空，反受 " + (-dmg) + " 点\n";
-            SetFrame(self, F_RECOIL, !mine);
-            SetFrame(other, F_IDLE, mine);
-            animUntil = Time.time + .75f;
-            if (o.Hp == 0) { over = mine ? "我方武将阵亡!" : "击毙敌将!"; SetFrame(self, F_FALL, !mine); animUntil = 0; }
+            o.Hp = Mathf.Max(0, o.Hp + b.Dmg);
+            if (o.Hp == 0) over = b.Mine ? "我方武将阵亡!" : "击毙敌将!";
             return;
         }
-        if (dmg == 0)
+        if (b.Dmg == 0) return;
+        var tgt = b.Mine ? foe : me;
+        tgt.Hp = Mathf.Max(0, tgt.Hp - b.Dmg);
+        if (tgt.Hp == 0) over = b.Mine ? "击毙敌将!" : "我方武将阵亡!";
+    }
+
+    /// 每帧推进：冲锋 → 命中 → 退回，双方各一遍
+    public void Tick()
+    {
+        float t = Time.time;
+        if (step < 0)                              // 没在演：两边轻微起伏
         {
-            report += name + " " + mv + "被闪开\n";
-            SetFrame(other, F_RAISE, mine);            // 闪开的那边做个格挡动作
+            if (over != null) return;
+            Bob(figMe,  homeMe,  baseYMe,  Mathf.Sin(t * 1.7f) * 2.2f);
+            Bob(figFoe, homeFoe, baseYFoe, Mathf.Sin(t * 1.7f + 1.1f) * 2.2f);
             return;
         }
 
-        var tgt = mine ? foe : me;
-        tgt.Hp = Mathf.Max(0, tgt.Hp - dmg);
-        report += name + " " + mv + "命中 " + dmg + " 点\n";
-        SetFrame(self, F_HIT, !mine);
-        if (tgt.Hp == 0)
+        var b = queue[step / 3];
+        int ph = step % 3;                          // 0 冲锋 1 命中 2 退回
+        float dur = ph == 0 ? T_CHARGE : ph == 1 ? T_HIT[Mathf.Clamp(b.Move, 0, 2)] : T_BACK;
+        stepT += Time.deltaTime;
+        float k = Mathf.Clamp01(stepT / dur);
+
+        var att  = b.Mine ? figMe : figFoe;
+        var def  = b.Mine ? figFoe : figMe;
+        float h  = b.Mine ? homeMe : homeFoe;
+        float a  = b.Mine ? atkMe  : atkFoe;
+        float by = b.Mine ? baseYMe : baseYFoe;
+        float dy = b.Mine ? baseYFoe : baseYMe;
+        float dh = b.Mine ? homeFoe : homeMe;
+
+        if (ph == 0)                                 // 冲过去
         {
-            over = mine ? "击毙敌将!" : "我方武将阵亡!";
-            SetFrame(other, F_FALL, mine);
-            animUntil = 0;                              // 倒下就别回待机了
+            SetFrame(att, F_THRUST, !b.Mine);
+            SetFrame(def, F_IDLE, b.Mine);
+            Bob(att, Mathf.Lerp(h, a, Ease(k)), by, Mathf.Sin(t * 22f) * 2.5f);  // 马蹄的颠簸
+            Bob(def, dh, dy, 0);
+        }
+        else if (ph == 1)                            // 交手那一下
+        {
+            if (stepT <= Time.deltaTime * 1.5f)      // 刚进这一步：结算
+            {
+                Land(b);
+                SetFrame(att, b.Move == 2 ? F_BURST : F_HIT, !b.Mine);
+                SetFrame(def, b.Dmg > 0 ? F_RECOIL : F_RAISE, b.Mine);
+                if (over != null && b.Dmg > 0 && !b.SelfHurt) SetFrame(def, F_FALL, b.Mine);
+                if (over != null && b.SelfHurt) SetFrame(att, F_FALL, !b.Mine);
+                Refresh();
+            }
+            Bob(att, a, by, 0); Bob(def, dh, dy, Mathf.Sin(t * 30f) * 3f);       // 挨打的抖
+        }
+        else                                          // 退回去
+        {
+            SetFrame(att, F_IDLE, !b.Mine);
+            Bob(att, Mathf.Lerp(a, h, Ease(k)), by, 0);
+            Bob(def, dh, dy, 0);
+        }
+
+        if (k >= 1f)
+        {
+            stepT = -T_GAP;                           // 步与步之间留个间隙
+            step++;
+            if (over != null || step >= queue.Count * 3)
+            {
+                queue.Clear(); step = -1; stepT = 0;
+                if (over == null) round++;
+                Bob(figMe, homeMe, baseYMe, 0); Bob(figFoe, homeFoe, baseYFoe, 0);
+                SetFrame(figMe, F_IDLE, false); SetFrame(figFoe, F_IDLE, true);
+                menu.gameObject.SetActive(true);
+                Refresh();
+            }
         }
     }
+
+    static float Ease(float k) => k * k * (3f - 2f * k);
+    static void Bob(Image im, float x, float baseY, float dy)
+        => im.rectTransform.anchoredPosition = new Vector2(x, baseY + dy);
 
     void Refresh()
     {
