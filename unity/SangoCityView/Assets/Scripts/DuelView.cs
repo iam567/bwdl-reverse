@@ -48,8 +48,16 @@ public class DuelView
     }
     float baseYMe, baseYFoe;
     // 帧号沿用原版 lib304 的编号
-    const int F_IDLE = 5, F_THRUST = 0, F_HIT = 4, F_BURST = 7,
+    const int F_IDLE = 5, F_THRUST = 0, F_HIT = 4, F_CHARGE = 6, F_BURST = 7,
               F_RAISE = 8, F_RECOIL = 9, F_FALL = 13;
+    // 打击段不是一张定格。原版 c.a(Graphics,boolean) 里 n = ao<6 ? ao+5 : ao-6，
+    // 也就是**先放 5,6,7,8,9,10（蓄力发光），再放 0,1,2,3,4（突刺）**。
+    // 我们手上只有这几帧，按同样的次序排：
+    static readonly int[][] HIT_SEQ = {
+        new[]{ F_THRUST, F_HIT },                                  // 牵制
+        new[]{ F_THRUST, F_HIT },                                  // 攻击
+        new[]{ F_CHARGE, F_BURST, F_BURST, F_THRUST, F_HIT },      // 全力：先发光再出手
+    };
     // 奔驰的两帧：马腿姿势不同，交替播才有步频。
     // 原版冲锋段就是 `300 + ao%2 * 540`，在第 5 帧和第 14 帧之间来回切。
     const int F_RUN_A = 11, F_RUN_B = 14;
@@ -241,6 +249,12 @@ public class DuelView
     static readonly float[] T_HIT = { 3 * FRAME, 5 * FRAME, 11 * FRAME };   // 牵制/攻击/全力
     float homeMe, homeFoe, atkMe, atkFoe;
 
+    // 原版 case 5 投降会置 au=2 走一段离场；我原来只弹一行字，看不出发生了什么。
+    bool exiting; float exitT; bool exitMine;
+    const float T_EXIT = 1.6f;
+
+    void StartExit(bool mine) { exiting = true; exitT = 0; exitMine = mine; menu.gameObject.SetActive(false); }
+
     void Pick(int move)
     {
         if (over != null) { OnDone?.Invoke(); return; }
@@ -254,16 +268,17 @@ public class DuelView
                 { over = "成功招降!"; SetFrame(figFoe, F_RAISE, true); OnRecruit?.Invoke(foe); Refresh(); return; }
                 report += "招降失败!\n"; break;
             case 4:                                // 逃跑：走的是单挑胜负那个公式
-                if (BattleRules.Flee(me, foe, rng)) { over = "自军成功撤离!"; Refresh(); return; }
+                if (BattleRules.Flee(me, foe, rng))
+                { over = "自军成功撤离!"; StartExit(true); Refresh(); return; }
                 report += "撤退失败...\n"; break;
-            case 5: over = "我方投降!"; Refresh(); return;
+            case 5: over = "我方投降!"; StartExit(true); Refresh(); return;
             default: queue.Add(Plan(true, move)); break;
         }
 
         if (over == null)
         {
             int m = BattleRules.DuelDecide(foe, me, rng);
-            if (m == 4) over = "敌将逃窜!";
+            if (m == 4) { over = "敌将逃窜!"; StartExit(false); }
             else queue.Add(Plan(false, Mathf.Clamp(m, 0, 2)));
         }
         if (queue.Count > 0) { step = 0; stepT = 0; menu.gameObject.SetActive(false); }
@@ -311,6 +326,22 @@ public class DuelView
     public void Tick()
     {
         float t = Time.time;
+        if (exiting)                               // 掉头骑出画面
+        {
+            exitT += Time.deltaTime;
+            float e = Mathf.Clamp01(exitT / T_EXIT);
+            var go2 = exitMine ? figMe : figFoe;
+            var stay = exitMine ? figFoe : figMe;
+            float from = exitMine ? homeMe : homeFoe;
+            float to   = exitMine ? -FIG - 20f : refW + 20f;      // 从自己那侧退出画面
+            SetFrame(go2, (int)(exitT / 0.2f) % 2 == 0 ? F_RUN_A : F_RUN_B, exitMine);
+            // 往哪边跑就朝哪边：我方向左退 → 翻转；敌方向右退 → 翻转
+            Put(go2, Mathf.Lerp(from, to, Ease(e)), exitMine ? baseYMe : baseYFoe,
+                Mathf.Sin(t * 22f) * 2.5f, !exitMine);
+            Put(stay, exitMine ? homeFoe : homeMe, exitMine ? baseYFoe : baseYMe, 0, !exitMine);
+            if (e >= 1f) { exiting = false; go2.gameObject.SetActive(false); }
+            return;
+        }
         if (step < 0)                              // 没在演：两边轻微起伏
         {
             if (over != null) return;
@@ -343,11 +374,14 @@ public class DuelView
         }
         else if (ph == 1)                            // 交手那一下
         {
-            if (!b.Landed)                           // 刚进这一步：只结算一次
+            var seq = HIT_SEQ[Mathf.Clamp(b.Move, 0, 2)];
+            int si = Mathf.Clamp((int)(k * seq.Length), 0, seq.Length - 1);
+            SetFrame(att, seq[si], !b.Mine);
+            // 伤害在这一段的**最后一帧**落地，也就是真正递出兵器的那一下
+            if (!b.Landed && si == seq.Length - 1)
             {
                 b.Landed = true;
                 Land(b);
-                SetFrame(att, b.Move == 2 ? F_BURST : F_HIT, !b.Mine);
                 SetFrame(def, b.Dmg > 0 ? F_RECOIL : F_RAISE, b.Mine);
                 if (over != null && b.Dmg > 0 && !b.SelfHurt) SetFrame(def, F_FALL, b.Mine);
                 if (over != null && b.SelfHurt) SetFrame(att, F_FALL, !b.Mine);

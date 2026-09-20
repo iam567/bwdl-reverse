@@ -77,15 +77,14 @@ public class BattleGame : MonoBehaviour
 
         clash.OnDuel();                            // 双方武将碰上的那一屏
         yield return Shot(dir, "5b_单挑");
-        // 整整一合连拍：我方冲出去 → 交手 → 退回 → 敌方冲过来 → 交手 → 退回
-        // 一合按原版是 8 秒上下，每 0.25 秒一张，够看清马腿在换。
-        // 用「牵制」——伤害最低，不会一击把人打倒，整合才演得完。
-        duel.PickForTest(0);
-        for (int i = 0; i < 34; i++)
-        {
-            yield return new WaitForSeconds(.25f);
-            ScreenCapture.CaptureScreenshot(Path.Combine(dir, "anim_" + i.ToString("00") + ".png"));
-        }
+        // 三种招式各演一遍：攻击 / 全力 / 投降
+        field.Root.gameObject.SetActive(false);
+        if (clash != null) clash.Root.gameObject.SetActive(false);
+        yield return DuelDemo(dir, "a攻击", 1, 34);
+        yield return DuelDemo(dir, "b全力", 2, 34);
+        yield return DuelDemo(dir, "c投降", 5, 10);
+        field.Root.gameObject.SetActive(true);
+        if (clash != null) clash.Root.gameObject.SetActive(true);
 
         // 再来一场攻城：把敌方放到城池格上
         clash.FinishForTest();
@@ -101,6 +100,23 @@ public class BattleGame : MonoBehaviour
         yield return Shot(dir, "7_攻城·守方贴墙");
 
         Application.Quit();
+    }
+
+    /// 开一场干净的单挑，下某一招，连拍。关羽 对 吕布，水岸场景。
+    System.Collections.IEnumerator DuelDemo(string dir, string tag, int move, int shots)
+    {
+        var a = Clone(book[7]); var b = Clone(book[196]);
+        duel = new DuelView(root, a, b, 1, REF_W, REF_H);
+        yield return new WaitForSeconds(.4f);
+        duel.PickForTest(move);
+        for (int i = 0; i < shots; i++)
+        {
+            yield return new WaitForSeconds(.25f);
+            ScreenCapture.CaptureScreenshot(Path.Combine(dir, tag + "_" + i.ToString("00") + ".png"));
+        }
+        yield return new WaitForSeconds(.3f);
+        Object.Destroy(duel.Root.gameObject); duel = null;
+        yield return null;
     }
 
     Unit FindUnit(bool ours)
