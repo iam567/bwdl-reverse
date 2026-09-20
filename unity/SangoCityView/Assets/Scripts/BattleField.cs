@@ -21,7 +21,7 @@ public class Unit
 public class BattleField
 {
     public RectTransform Root;
-    public System.Action<Unit, Unit> OnClash;      // 我方, 敌方 → 交给阵型战
+    public System.Action<Unit, Unit, bool> OnClash;   // 我方, 敌方, 我方是不是攻方
     public System.Action OnQuit;
 
     const int CELL = 44;                            // 一格在屏上多大
@@ -63,7 +63,7 @@ public class BattleField
         Root = Node("BattleField", parent); Fill(Root);
         BuildBoard();
         BuildHud();
-        mp = BattleRules.MoveCap(TotalOurTroops());
+        mp = BattleRules.MoveCap(TotalTroops(true));
         CenterOn(units[0].X, units[0].Y);
         curX = units[0].X; curY = units[0].Y;
         Refresh();
@@ -239,6 +239,7 @@ public class BattleField
 
     void Command(int i)
     {
+        if (enemyTurn) { hintText.text = "敌军行动中..."; return; }
         if (sel == null) { hintText.text = "先点一支我方部队"; return; }
         switch (i)
         {
@@ -283,7 +284,7 @@ public class BattleField
         mp -= BattleRules.AttackCost;
         sel.Acted = true;
         var me = sel; sel = null; mode = "";
-        OnClash?.Invoke(me, foe);
+        OnClash?.Invoke(me, foe, true);
     }
 
     void ShowInfo(Unit u)
@@ -296,41 +297,88 @@ public class BattleField
 
     void EndDay()
     {
-        EnemyTurn();
+        if (enemyTurn) return;
+        enemyTurn = true;
+        enemyMp = BattleRules.MoveCap(TotalTroops(false));
+        enemyIdx = 0;
+        sel = null; mode = ""; reach.Clear();
+        hintText.text = "敌军行动中...";
+        Refresh();
+    }
+
+    void StartOurDay()
+    {
+        enemyTurn = false;
         day++;
         foreach (var u in units) u.Acted = false;
-        mp = BattleRules.MoveCap(TotalOurTroops());
-        sel = null; mode = ""; reach.Clear();
+        mp = BattleRules.MoveCap(TotalTroops(true));
         hintText.text = "战争回合结束！第 " + day + " 日";
         Refresh();
     }
 
-    /// 试玩版的敌方 AI：朝最近的我方靠，贴上了就打。
-    /// 原版的战场 AI 没挖，这里是临时的。
-    void EnemyTurn()
+    // ── 敌方回合：一枚一格地走 ──────────────────────────────────────────
+    // 原版 b.java:3655 一次只处理一枚部队的一格：
+    //   四邻有我方就攻击（扣 2 机动力），否则从路径里取一步、够机动力才走。
+    // 我原来是一帧里把所有敌军都挪完，看起来就是「啪一下全到脸上」。
+    bool enemyTurn; float stepAt; int enemyMp, enemyIdx;
+    const float STEP = 0.22f;
+
+    public void Tick()
     {
-        foreach (var e in units)
+        if (!enemyTurn || Time.time < stepAt) return;
+        stepAt = Time.time + STEP;
+        if (!EnemyStep()) StartOurDay();
+        Refresh();
+    }
+
+    /// 走一步。返回 false 表示敌方这一日到此为止。
+    bool EnemyStep()
+    {
+        if (enemyMp < 2) return false;
+        for (int guard = 0; guard < 64; guard++)
         {
-            if (e.Ours || !e.Alive) continue;
-            Unit best = null; int bd = 999;
+            var list = units.FindAll(u => !u.Ours && u.Alive);
+            if (list.Count == 0) return false;
+            if (enemyIdx >= list.Count) { enemyIdx = 0; return false; }   // 一圈走完就收
+            var e = list[enemyIdx];
+
+            Unit target = null; int bd = 999;
             foreach (var m in units)
             {
                 if (!m.Ours || !m.Alive) continue;
                 int d = Mathf.Abs(m.X - e.X) + Mathf.Abs(m.Y - e.Y);
-                if (d < bd) { bd = d; best = m; }
+                if (d < bd) { bd = d; target = m; }
             }
-            if (best == null) continue;
-            for (int step = 0; step < 3 && bd > 1; step++)
+            if (target == null) return false;
+
+            if (bd == 1)                                   // 贴上了就打，扣 2
             {
-                int nx = e.X + System.Math.Sign(best.X - e.X);
-                int ny = e.Y + System.Math.Sign(best.Y - e.Y);
-                if (Mathf.Abs(best.X - e.X) >= Mathf.Abs(best.Y - e.Y)) ny = e.Y; else nx = e.X;
-                if (nx < 0 || ny < 0 || nx >= W || ny >= H || At(nx, ny) != null) break;
-                if (BattleRules.MoveCost(grid[ny, nx] & 0xF, e.O.Kind) >= 100) break;
-                e.X = nx; e.Y = ny;
-                bd = Mathf.Abs(best.X - e.X) + Mathf.Abs(best.Y - e.Y);
+                if (enemyMp < BattleRules.AttackCost) { enemyIdx++; continue; }
+                enemyMp -= BattleRules.AttackCost;
+                hintText.text = e.O.Name + " 来攻 " + target.O.Name;
+                enemyIdx++;
+                OnClash?.Invoke(target, e, false);          // 我方是守方
+                return true;
             }
+
+            int nx = e.X, ny = e.Y;
+            if (Mathf.Abs(target.X - e.X) >= Mathf.Abs(target.Y - e.Y))
+                nx += System.Math.Sign(target.X - e.X);
+            else ny += System.Math.Sign(target.Y - e.Y);
+
+            int cost = (nx < 0 || ny < 0 || nx >= W || ny >= H) ? 100
+                     : (At(nx, ny) != null ? 100 : BattleRules.MoveCost(grid[ny, nx] & 0xF, e.O.Kind));
+            if (cost > enemyMp || cost >= 100) { enemyIdx++; continue; }
+
+            enemyMp -= cost;
+            e.Dir = nx != e.X ? "e" : (ny > e.Y ? "s" : "n");
+            e.Flip = nx < e.X;
+            e.X = nx; e.Y = ny;
+            enemyIdx++;
+            CenterOn(e.X, e.Y);                            // 镜头跟着走，看得见是谁在动
+            return true;
         }
+        return false;
     }
 
     // ── 计算 ───────────────────────────────────────────────────────────
@@ -376,10 +424,10 @@ public class BattleField
         foreach (var u in units) if (u.Alive && u.X == x && u.Y == y) return u;
         return null;
     }
-    int TotalOurTroops()
+    int TotalTroops(bool ours)
     {
         int s = 0;
-        foreach (var u in units) if (u.Ours && u.Alive) s += u.O.Troops;
+        foreach (var u in units) if (u.Ours == ours && u.Alive) s += u.O.Troops;
         return s;
     }
 
@@ -468,7 +516,7 @@ public class BattleField
         cursorImg.transform.SetAsLastSibling();
 
         dayText.text = "第 " + day + " 日";
-        mpText.text = "机动力 " + mp + " / " + BattleRules.MoveCap(TotalOurTroops());
+        mpText.text = "机动力 " + mp + " / " + BattleRules.MoveCap(TotalTroops(true));
         float bw = (refW - 16) / CMD.Length;
         int hi = mode == "move" ? 0 : mode == "attack" ? 2 : mode == "info" ? 3 : -1;
         cmdSel.enabled = hi >= 0;

@@ -33,7 +33,7 @@ public class BattleGame : MonoBehaviour
         return null;
     }
 
-    void Update() { clash?.Tick(); }
+    void Update() { clash?.Tick(); if (clash == null && duel == null) field?.Tick(); }
 
     void Start()
     {
@@ -62,7 +62,7 @@ public class BattleGame : MonoBehaviour
         field.Refresh();
         yield return Shot(dir, "2_贴住敌军");
 
-        field.OnClash(me, foe);
+        field.OnClash(me, foe, true);
         yield return Shot(dir, "3_阵型选择");
 
         clash.PickForTest(1);                      // 选楔形
@@ -88,7 +88,7 @@ public class BattleGame : MonoBehaviour
             for (int x = 0; x < g.GetLength(1); x++)
                 if ((g[y, x] & 0xF) == 2) { foe.X = x; foe.Y = y; me.X = x - 1; me.Y = y; }
         field.Refresh();
-        field.OnClash(me, foe);
+        field.OnClash(me, foe, true);
         yield return Shot(dir, "6_攻城·阵型选择");
         clash.PickForTest(1);
         yield return Shot(dir, "7_攻城·守方贴墙");
@@ -134,11 +134,11 @@ public class BattleGame : MonoBehaviour
         foreach (var u in roster) if (u.O.Troops == 0) u.O.Troops = 800;   // 管辂之流开局没兵，给点
 
         field = new BattleField(root, CITY, ThemeOf(CITY), roster, REF_W, REF_H);
-        field.OnClash = (me, foe) =>
+        field.OnClash = (me, foe, weAttack) =>
         {
             field.Root.gameObject.SetActive(false);
-            int terrain = TerrainUnder(foe);
-            clash = new ClashView(root, me.O, foe.O, terrain, true, REF_W, REF_H);
+            int terrain = TerrainUnder(weAttack ? foe : me);   // 场景看守方脚下那格
+            clash = new ClashView(root, me.O, foe.O, terrain, weAttack, REF_W, REF_H);
             clash.OnDuel = () =>
             {
                 clash.Root.gameObject.SetActive(false);
