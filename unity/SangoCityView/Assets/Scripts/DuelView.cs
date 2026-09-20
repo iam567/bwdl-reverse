@@ -86,8 +86,13 @@ public class DuelView
         figFoe = Fighter(refW * 115f / 176f, true);
         baseYMe  = figMe.rectTransform.anchoredPosition.y;
         baseYFoe = figFoe.rectTransform.anchoredPosition.y;
-        homeMe = refW *   5f / 176f;   atkMe  = refW *  81f / 176f;
-        homeFoe = refW * 115f / 176f;  atkFoe = refW *  47f / 176f;
+        homeMe  = refW *   5f / 176f;
+        homeFoe = refW * 115f / 176f;
+        // 原版立绘 60×60 里留白多，照坐标换算过来看着不挤；我的图裁到贴边（占画布 92%），
+        // 同样的落点就真的从对方身上穿过去了。改成按实际图宽停在对方身前，只叠一点点。
+        const float BITE = 24f;                     // 允许交叠多少，兵器够得着即可
+        atkMe  = homeFoe - FIG + BITE;
+        atkFoe = homeMe  + FIG - BITE;
         SetFrame(figMe, F_IDLE, false); SetFrame(figFoe, F_IDLE, true);
 
         Menu();
@@ -181,11 +186,8 @@ public class DuelView
         var im = Node("f", Root).gameObject.AddComponent<Image>();
         Place((RectTransform)im.transform, x, GROUND - FIG, FIG, FIG);
         im.raycastTarget = false;
-        if (mirror)                       // 敌方是水平镜像，原版就是同一张图翻过来
-        {
-            im.rectTransform.localScale = new Vector3(-1, 1, 1);
-            im.rectTransform.anchoredPosition += new Vector2(FIG, 0);
-        }
+        // 朝向统一交给 Put() 管：我方默认朝右、敌方默认朝左（翻转）
+        Put(im, x, im.rectTransform.anchoredPosition.y, 0, !mirror);
         return im;
     }
     void SetFrame(Image im, int f, bool mirror) => im.sprite = Frame(mirror ? foeSkin : mySkin, f);
@@ -312,8 +314,8 @@ public class DuelView
         if (step < 0)                              // 没在演：两边轻微起伏
         {
             if (over != null) return;
-            Bob(figMe,  homeMe,  baseYMe,  Mathf.Sin(t * 1.7f) * 2.2f);
-            Bob(figFoe, homeFoe, baseYFoe, Mathf.Sin(t * 1.7f + 1.1f) * 2.2f);
+            Put(figMe,  homeMe,  baseYMe,  Mathf.Sin(t * 1.7f) * 2.2f, true);
+            Put(figFoe, homeFoe, baseYFoe, Mathf.Sin(t * 1.7f + 1.1f) * 2.2f, false);
             return;
         }
 
@@ -336,8 +338,8 @@ public class DuelView
             // 两帧交替，一步 0.2 秒 —— 原版是每 2 个 100ms 帧换一次
             SetFrame(att, (int)(stepT / 0.2f) % 2 == 0 ? F_RUN_A : F_RUN_B, !b.Mine);
             SetFrame(def, F_IDLE, b.Mine);
-            Bob(att, Mathf.Lerp(h, a, Ease(k)), by, Mathf.Sin(t * 22f) * 2.5f);
-            Bob(def, dh, dy, 0);
+            Put(att, Mathf.Lerp(h, a, Ease(k)), by, Mathf.Sin(t * 22f) * 2.5f, b.Mine);
+            Put(def, dh, dy, 0, !b.Mine);
         }
         else if (ph == 1)                            // 交手那一下
         {
@@ -351,13 +353,14 @@ public class DuelView
                 if (over != null && b.SelfHurt) SetFrame(att, F_FALL, !b.Mine);
                 Refresh();
             }
-            Bob(att, a, by, 0); Bob(def, dh, dy, Mathf.Sin(t * 30f) * 3f);       // 挨打的抖
+            Put(att, a, by, 0, b.Mine);
+            Put(def, dh, dy, Mathf.Sin(t * 30f) * 3f, !b.Mine);                   // 挨打的抖
         }
-        else                                          // 退回去：也是奔驰，只是方向相反
+        else                                          // 退回去：掉头，图左右翻转
         {
             SetFrame(att, (int)(stepT / 0.2f) % 2 == 0 ? F_RUN_B : F_RUN_A, !b.Mine);
-            Bob(att, Mathf.Lerp(a, h, Ease(k)), by, Mathf.Sin(t * 22f) * 2.5f);
-            Bob(def, dh, dy, 0);
+            Put(att, Mathf.Lerp(a, h, Ease(k)), by, Mathf.Sin(t * 22f) * 2.5f, !b.Mine);
+            Put(def, dh, dy, 0, !b.Mine);
         }
 
         if (k >= 1f)
@@ -368,7 +371,7 @@ public class DuelView
             {
                 queue.Clear(); step = -1; stepT = 0;
                 if (over == null) round++;
-                Bob(figMe, homeMe, baseYMe, 0); Bob(figFoe, homeFoe, baseYFoe, 0);
+                Put(figMe, homeMe, baseYMe, 0, true); Put(figFoe, homeFoe, baseYFoe, 0, false);
                 SetFrame(figMe, F_IDLE, false); SetFrame(figFoe, F_IDLE, true);
                 menu.gameObject.SetActive(true);
                 Refresh();
@@ -377,8 +380,12 @@ public class DuelView
     }
 
     static float Ease(float k) => k * k * (3f - 2f * k);
-    static void Bob(Image im, float x, float baseY, float dy)
-        => im.rectTransform.anchoredPosition = new Vector2(x, baseY + dy);
+    /// 摆位 + 朝向。绕左上角做水平翻转会把图整体推左一个身位，要补回来。
+    void Put(Image im, float x, float baseY, float dy, bool faceRight)
+    {
+        im.rectTransform.localScale = new Vector3(faceRight ? 1f : -1f, 1f, 1f);
+        im.rectTransform.anchoredPosition = new Vector2(faceRight ? x : x + FIG, baseY + dy);
+    }
 
     void Refresh()
     {
