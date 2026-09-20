@@ -180,10 +180,43 @@ public static class BattleRules
         return 0;
     }
 
+    // ── 计策点能力 ─────────────────────────────────────────────────────
+    // 原版把生效中的增益编在 cd 里：高 4 位 = 能力号(1..6)，低 4 位 = 剩余回合。
+    // 每过一回合低 4 位减 1，减到 0 就清空（b.java:5517）。
+    public static readonly string[] SkillName = { "咒缚", "挑战", "连弩", "呐喊", "火矢", "爆炎" };
+    public static readonly int[] SkillCost    = {    3,     5,     7,     8,     10,    12 };
+    public static readonly string[] SkillDesc = {
+        "限制敌将行动",   "向敌将发出单挑邀请", "箭手射程增加",
+        "全军攻击力增加", "箭手攻击力大大增加", "利用火器攻击敌军" };
+    public const int SkillRounds = 4;        // l() 里 cd = 0x14，低 4 位是 4
+
+    public static int PackBuff(int skill, int rounds) => ((skill + 1) << 4) | rounds;
+    public static int BuffId(int cd) => (cd & 0xF0) >> 4;      // 1..6，0 = 没有
+
+    /// ⚠ 这里和原版不一样，是有意改的。
+    /// 原版 b.V() 里呐喊(cd&0xF0==64)和火矢(==80)两处乘的都是 **1**——
+    /// 不是反编译丢了乘数，javap 看字节码就是 iconst_1; imul，等于没效果。
+    /// 按玩家的决定接成：呐喊 全军 ×1.5、火矢 弓兵 ×2。
+    /// 想回到原版行为，把这个函数的返回值全改回 1f 即可。
+    public const string HouseRuleNote = "呐喊×1.5 / 火矢×2 是我们加的，原版这两处乘的是 1";
+    public static float BuffMul(int cd, Arm arm)
+    {
+        switch (BuffId(cd))
+        {
+            case 4: return 1.5f;                                   // 呐喊：全军
+            case 5: return arm == Arm.Gong ? 2f : 1f;              // 火矢：只加弓兵
+            default: return 1f;
+        }
+    }
+    /// 连弩把射程从 4 格抬到 6 格 —— **这条是原版真有的**（o() 里 by2 由 5 变 7）
+    public static int ArrowRange(int cd) => BuffId(cd) == 3 ? 6 : 4;
+
     /// b.V()：一枚兵棋打一次造成多少伤害
-    public static int Damage(int atk, int def, int attackerTroops, System.Random rng)
+    public static int Damage(int atk, int def, int attackerTroops, System.Random rng,
+                             int cd = 0, Arm arm = Arm.None)
     {
         def = Mathf.Max(1, def);
+        atk = Mathf.RoundToInt(atk * BuffMul(cd, arm));     // ⚠ 见 BuffMul 的说明
         int n4 = atk * atk / def;
         int n3 = atk >= def ? Mathf.Min(n4, atk * 3 / 2) : Mathf.Max(n4, atk * 2 / 3);
         n3 = ISqrt(n3) * 5;

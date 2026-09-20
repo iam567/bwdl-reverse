@@ -1,6 +1,7 @@
 # 交接：给下一个会话
 
 > 新会话先读这份，再读 `docs/MAP_ASSETS.md` 与 `docs/GAME_LOGIC.md`。
+> 复刻里**有意偏离原版**的地方单独记在 `docs/HOUSE_RULES.md`。
 
 ## 项目是什么
 

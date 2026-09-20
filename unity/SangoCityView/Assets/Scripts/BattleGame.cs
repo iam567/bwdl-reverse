@@ -67,6 +67,9 @@ public class BattleGame : MonoBehaviour
         clash.PickForTest(1);                      // 选楔形
         yield return Shot(dir, "4_阵型战·野战");
 
+        clash.SkillPanelForTest();                 // 武将下「计策」，看六个能力
+        yield return Shot(dir, "4b_计策点能力");
+
         clash.AdvanceForTest();
         clash.AdvanceForTest();
         yield return Shot(dir, "5_推进两日");

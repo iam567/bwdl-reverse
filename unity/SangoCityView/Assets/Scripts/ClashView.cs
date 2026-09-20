@@ -30,7 +30,8 @@ public class ClashView
     static int OrderCount(int arm) => arm == 0 ? 5 : 4;
     static readonly string[] ARM = { "武将", "骑兵", "弓兵", "步兵" };
 
-    Text dayT, noteT;
+    Text dayT, noteT, buffT;
+    RectTransform skillRoot; readonly Text[] skillT = new Text[6];
     RectTransform gridRoot, orderRoot;
     Text[] armCount = new Text[4], foeCount = new Text[4], orderT = new Text[4];
 
@@ -136,6 +137,7 @@ public class ClashView
 
     // 自检模式用的三个口子，正常玩走的是按钮
     public void PickForTest(int f) { formation = f; StartClash(); }
+    public void SkillPanelForTest() { orders[0] = 4; Redraw(); }
     public void AdvanceForTest() { for (int i = 0; i < 120; i++) { tickAt = 0; Tick(); } }
     public void FinishForTest() { Finish(); }
 
@@ -143,6 +145,7 @@ public class ClashView
     void StartClash()
     {
         Object.Destroy(pick.gameObject);
+        plotPts = me.Plots;
         mine   = Formation.Build(me,  formation,      true,  siege, weAttack);
         theirs = Formation.Build(foe, rng.Next(4),     false, siege, weAttack);
         walls  = siege ? Formation.Walls(weAttack) : new Dictionary<Vector2Int, int>();
@@ -151,13 +154,16 @@ public class ClashView
     }
 
     const int C = 22;                      // 阵型格一格多大
-    const int ORDER_Y = 392;               // 指令栏位置。钉屏幕底会在中间留一大块黑
+    const int ORDER_Y = 428;               // 指令栏位置。钉屏幕底会在中间留一大块黑
+    const int SKILL_Y = 350;               // 计策点面板，别压住信息栏的「步」那一行
     void BuildField()
     {
         field = Node("field", Root); Fill(field);
 
         dayT = Label(field, "", 15, new Color32(0xF2,0xE8,0xD4,255));
-        Place(dayT.rectTransform, 14, 14, 300, 22);
+        Place(dayT.rectTransform, 14, 14, 240, 22);
+        buffT = Label(field, "", 12, new Color32(0xF0,0xC8,0x70,255), TextAnchor.MiddleRight);
+        Place(buffT.rectTransform, refW - 212, 16, 198, 20);
 
         var ground = Node("g", field).gameObject.AddComponent<Image>();
         var g98 = Tex("orig/lib98.png");
@@ -203,7 +209,22 @@ public class ClashView
             Fill(orderT[i].rectTransform);
         }
 
-        noteT = Label(field, "兵棋一秒动一枚。轮到谁才读它那一兵种当前的令——中途改令只影响还没动的", 11, new Color32(0xB0,0xA8,0x90,255));
+        skillRoot = Node("skills", field);
+        Place(skillRoot, 8, SKILL_Y, refW - 16, 70);
+        var sb = Panel(skillRoot, "bg", Plate()); Fill((RectTransform)sb.transform);
+        for (int i = 0; i < 6; i++)
+        {
+            int k = i;
+            var b = Node("s" + i, skillRoot);
+            Place(b, 8 + (i % 3) * 114, 6 + (i / 3) * 31, 108, 27);
+            var bi = b.gameObject.AddComponent<Image>(); bi.sprite = Frame(); bi.type = Image.Type.Sliced;
+            var bt = b.gameObject.AddComponent<Button>(); bt.transition = Selectable.Transition.None;
+            bt.onClick.AddListener(() => UseSkill(k));
+            skillT[i] = Label(b, "", 11, new Color32(0xF0,0xE0,0xB8,255), TextAnchor.MiddleCenter);
+            Fill(skillT[i].rectTransform);
+        }
+
+        noteT = Label(field, BattleRules.HouseRuleNote, 11, new Color32(0xC8,0xA0,0x60,255));
         Place(noteT.rectTransform, 14, ORDER_Y + 112, refW - 28, 18);
 
         var quit = Node("quit", field);
@@ -227,6 +248,9 @@ public class ClashView
     int turnSide;                          // 0 我方 1 敌方
     int turnIdx;
     int extra;                             // cF：这枚棋是不是已经用掉了第二次行动
+    int cd;                                // 生效中的增益：高 4 位能力号、低 4 位剩余回合
+    int plotPts;                           // 计策点 Q[]
+    int roundNo;
     public int ActingSide = -1, ActingIdx = -1;
     string over;
 
@@ -243,7 +267,16 @@ public class ClashView
         {
             var side  = turnSide == 0 ? mine : theirs;
             var other = turnSide == 0 ? theirs : mine;
-            if (turnIdx >= side.Count) { turnSide = 1 - turnSide; turnIdx = 0; extra = 0; continue; }
+            if (turnIdx >= side.Count)
+            {
+                turnSide = 1 - turnSide; turnIdx = 0; extra = 0;
+                if (turnSide == 0 && cd != 0)                 // 我方又轮了一整圈
+                {
+                    cd = (cd & 0xF0) | Mathf.Max(0, (cd & 0xF) - 1);
+                    if ((cd & 0xF) == 0) cd = 0;
+                }
+                continue;
+            }
 
             var p = side[turnIdx];
             int idx = turnIdx;
@@ -275,13 +308,15 @@ public class ClashView
 
         // b.m(by) 按兵种分派：武将/骑兵/步兵 走近战 m(by,by2)，弓兵走远射 o(by,by2)。
         // o() 沿上下左右四条直线各扫 by3 = 1..by2-1 格，默认 by2 = 5 → 射程 4 格。
-        int t = p.Arm == Arm.Gong ? FindInRange(other, p, ARROW_RANGE)
-                                  : FindAdjacent(other, p);
+        int t = p.Arm == Arm.Gong
+              ? FindInRange(other, p, BattleRules.ArrowRange(ours ? cd : 0))
+              : FindAdjacent(other, p);
         if (t >= 0 && cmd != 2)                                // 撤退的不恋战
         {
             var q = other[t];
             int dmg = BattleRules.Damage(BattleRules.Atk(self, p.Arm),
-                                         BattleRules.Def(enemy), p.Troops, rng);
+                                         BattleRules.Def(enemy), p.Troops, rng,
+                                         ours ? cd : 0, p.Arm);
             if (p.Arm == Arm.Gong)                             // 射出去的箭，画一下
                 shots.Add(new Shot { X0 = p.Col, Y0 = p.Row, X1 = q.Col, Y1 = q.Row, At = Time.time });
             if (q.Arm == Arm.None)
@@ -326,8 +361,6 @@ public class ClashView
         foreach (var p in ps) if (p.Alive && p.Col == x && p.Row == y) return true;
         return false;
     }
-    public const int ARROW_RANGE = 4;          // o() 里 by3 < by2(=5)，也就是 1..4 格
-
     /// o()：沿上下左右四条直线扫，碰到的第一个敌人就是目标
     static int FindInRange(List<Piece> other, Piece p, int range)
     {
@@ -363,8 +396,19 @@ public class ClashView
         return best;
     }
 
+    void UseSkill(int i)
+    {
+        if (i < 2 || i > 4) return;                       // 咒缚/挑战/爆炎还没接
+        if (BattleRules.SkillCost[i] > plotPts) return;
+        plotPts -= BattleRules.SkillCost[i];
+        cd = BattleRules.PackBuff(i, BattleRules.SkillRounds);
+        orders[0] = 0;                                    // 下完计策，武将回到前进
+        Redraw();
+    }
+
     void Finish()
     {
+        me.Plots = plotPts;
         me.Troops  = Formation.TotalTroops(mine   ?? new List<Piece>());
         foe.Troops = Formation.TotalTroops(theirs ?? new List<Piece>());
         OnDone?.Invoke(me.Troops, foe.Troops);
@@ -453,6 +497,19 @@ public class ClashView
         var b = Formation.ByArm(theirs, foe.Hp);
         for (int i = 0; i < 4; i++) { armCount[i].text = a[i].ToString(); foeCount[i].text = b[i].ToString(); }
         for (int i = 0; i < 4; i++) orderT[i].text = ORDER[orders[i]];
+        bool pick = orders[0] == 4;                       // 武将那行选了「计策」才让挑
+        skillRoot.gameObject.SetActive(pick);
+        for (int i = 0; i < 6; i++)
+        {
+            bool wired = i >= 2 && i <= 4;                 // 连弩/呐喊/火矢，其余还没接
+            bool ok = wired && BattleRules.SkillCost[i] <= plotPts;
+            skillT[i].text = BattleRules.SkillName[i] + " " + BattleRules.SkillCost[i]
+                           + (wired ? "" : " 未接");
+            skillT[i].color = ok ? new Color32(0xF0,0xE0,0xB8,255) : new Color32(0x86,0x7E,0x6C,255);
+        }
+        int bid = BattleRules.BuffId(cd);
+        buffT.text = "计策点 " + plotPts
+                   + (bid > 0 ? "   " + BattleRules.SkillName[bid - 1] + " 余 " + (cd & 0xF) : "");
         dayT.text = (over ?? "交战中") + (siege ? "   · 攻城战" : "   · 野战");
     }
 
