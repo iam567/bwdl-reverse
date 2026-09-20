@@ -1,5 +1,11 @@
 'use strict';
 const $ = id => document.getElementById(id);
+const metaLine = it => {
+  const m = it.meta;
+  if (!m) return CATS[it.category] || it.category;
+  if (m.武力 !== undefined) return `武 ${m.武力} · 智 ${m.智力} · 德 ${m.德}`;
+  return Object.entries(m).map(([k, v]) => `${k} ${v}`).join(' · ');
+};
 const NAMES = { idle:'未生成', queued:'排队中', running:'生成中', done:'已完成', failed:'失败' };
 const CATS  = { portrait:'武将立绘', cg:'全屏 CG', scene:'战斗场景' };
 
@@ -64,7 +70,9 @@ async function list() {
     else box.append(el('span','无预览'));
     const bd = el('div', undefined, 'bd');
     bd.append(el('h3', it.label),
-              el('div', it.meta ? `武 ${it.meta.武力} · 智 ${it.meta.智力} · 德 ${it.meta.德}` : (CATS[it.category]||it.category), 'meta'),
+              // meta 的字段各类素材不一样（武将卡是武智德，地块是主题地形，立绘是外观帧号），
+              // 原来写死成武智德，别的类目就满屏 undefined。改成有什么显示什么。
+              el('div', metaLine(it), 'meta'),
               el('span', NAMES[it.status]||it.status, 'badge ' + it.status));
     const pick = el('div','✓','pick');
     pick.onclick = e => { e.stopPropagation();

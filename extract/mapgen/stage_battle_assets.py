@@ -15,7 +15,7 @@ ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 PROJ = os.path.join(ROOT, sys.argv[1] if len(sys.argv) > 1 else 'unity/SangoCityView')
 DST  = os.path.join(PROJ, 'Assets/StreamingAssets/Art/battle')
 
-for sub in ('tiles', 'units', 'maps', 'orig', 'avatar', 'duel'):
+for sub in ('tiles', 'units', 'maps', 'orig', 'avatar', 'duel', 'duelskin'):
     os.makedirs(os.path.join(DST, sub), exist_ok=True)
 
 n = 0
@@ -50,6 +50,17 @@ n = 0
 for f in glob.glob(os.path.join(ROOT, 'assets/duel/px/*')):
     shutil.copy2(f, os.path.join(DST, 'duel', os.path.basename(f))); n += 1
 print('单挑  %d 张（新）' % n)
+
+# 62 套单挑立绘，一套一个目录
+n = 0
+for d in sorted(glob.glob(os.path.join(ROOT, 'assets/duelskin/px/*'))):
+    if not os.path.isdir(d): continue
+    dst = os.path.join(DST, 'duelskin', os.path.basename(d))
+    os.makedirs(dst, exist_ok=True)
+    for f in glob.glob(os.path.join(d, '*.png')):
+        shutil.copy2(f, os.path.join(dst, os.path.basename(f))); n += 1
+print('立绘  %d 张（新，%d 套）' % (n, len(glob.glob(os.path.join(DST, 'duelskin', '*')))))
+shutil.copy2(os.path.join(ROOT, 'extract/data/duel-skin.json'), os.path.join(DST, 'duel-skin.json'))
 
 shutil.copy2(os.path.join(ROOT, 'extract/data/city-theme.json'), os.path.join(DST, 'city-theme.json'))
 shutil.copy2(os.path.join(ROOT, 'extract/data/officers.csv'),    os.path.join(DST, 'officers.csv'))

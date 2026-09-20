@@ -24,7 +24,49 @@ public class DuelView
     Image figMe, figFoe, barMe, barFoe;
     Text hpMe, hpFoe, roundT, reportT;
     RectTransform menu;
-    static readonly Dictionary<int, Sprite> frames = new Dictionary<int, Sprite>();
+    // 一人一套立绘：48 名将各有专属，其余按 ID 散列进 9 个男池 / 5 个女池。
+    // 对照表是 extract/data/duel-skin.json 生成的，扁平的「武将ID: 套名」。
+    static Dictionary<int, string> skinMap;
+    static readonly Dictionary<string, Sprite> frames = new Dictionary<string, Sprite>();
+    readonly string mySkin, foeSkin;
+
+    static string SkinOf(int officerId)
+    {
+        if (skinMap == null)
+        {
+            skinMap = new Dictionary<int, string>();
+            var p = Path.Combine(ArtDir, "battle", "duel-skin.json");
+            if (File.Exists(p))
+                foreach (var seg in File.ReadAllText(p).Trim(' ', '{', '}').Split(','))
+                {
+                    var kv = seg.Split(':');
+                    if (kv.Length == 2 && int.TryParse(kv[0].Trim(' ', '"'), out var id))
+                        skinMap[id] = kv[1].Trim(' ', '"');
+                }
+        }
+        return skinMap.TryGetValue(officerId, out var k) ? k : "male_a";
+    }
+    float animUntil;                                    // 出招动作演到什么时候
+    float baseYMe, baseYFoe;
+
+    /// 每帧：动作演完回待机；待机时两边都轻微起伏，免得看着像定格
+    public void Tick()
+    {
+        if (over == null && animUntil > 0 && Time.time > animUntil)
+        {
+            animUntil = 0;
+            SetFrame(figMe, F_IDLE, false); SetFrame(figFoe, F_IDLE, true);
+        }
+        if (over != null) return;
+        float t = Time.time;
+        Bob(figMe,  baseYMe,  Mathf.Sin(t * 1.7f) * 2.2f);
+        Bob(figFoe, baseYFoe, Mathf.Sin(t * 1.7f + 1.1f) * 2.2f);   // 错开相位，不像双胞胎
+    }
+    static void Bob(Image im, float baseY, float dy)
+    {
+        var rt = im.rectTransform;
+        rt.anchoredPosition = new Vector2(rt.anchoredPosition.x, baseY + dy);
+    }
 
     // 原版 lib304 的帧号，这套新素材沿用同一套编号
     const int F_IDLE = 5, F_THRUST = 0, F_HIT = 4, F_CHARGE = 6, F_BURST = 7,
@@ -37,6 +79,7 @@ public class DuelView
                     float refW, float refH)
     {
         this.me = me; this.foe = foe; this.refW = refW; this.refH = refH;
+        mySkin = SkinOf(me.Id); foeSkin = SkinOf(foe.Id);
         BattleRules.DuelStats(me, foe, out myAtk, out myDef, out foeAtk, out foeDef);
         cc = BattleRules.Counter(me, foe);
 
@@ -55,6 +98,8 @@ public class DuelView
 
         figMe  = Fighter(28, false);
         figFoe = Fighter(refW - 28 - FIG, true);
+        baseYMe  = figMe.rectTransform.anchoredPosition.y;
+        baseYFoe = figFoe.rectTransform.anchoredPosition.y;
         SetFrame(figMe, F_IDLE, false); SetFrame(figFoe, F_IDLE, true);
 
         Menu();
@@ -70,10 +115,17 @@ public class DuelView
         var t = Load(Path.Combine("battle", "duel", f));
         t.filterMode = FilterMode.Point; return t;
     }
-    static Sprite Frame(int i)
+    static Sprite Frame(string skin, int i)
     {
-        if (!frames.TryGetValue(i, out var s)) { s = Whole(Tex("duel_f" + i + ".png")); frames[i] = s; }
-        return s;
+        var key = skin + "/" + i;
+        if (frames.TryGetValue(key, out var s)) return s;
+        var rel = Path.Combine("duelskin", skin, "duel_f" + i + ".png");
+        // 某一套还没跑全就退回通用的那张，别让画面开天窗
+        if (!File.Exists(Path.Combine(ArtDir, "battle", rel)))
+            rel = Path.Combine("duelskin", "male_a", "duel_f" + i + ".png");
+        if (!File.Exists(Path.Combine(ArtDir, "battle", rel)))
+            rel = "duel_f" + i + ".png";                    // 最后退回最早那一套
+        s = Whole(Tex(rel)); frames[key] = s; return s;
     }
 
     void Header()
@@ -115,6 +167,13 @@ public class DuelView
 
     Image Fighter(float x, bool mirror)
     {
+        // 两边长得一样时最难分敌我，脚下垫一个阵营色的椭圆当锚
+        var ring = Node("ring", Root).gameObject.AddComponent<Image>();
+        Place((RectTransform)ring.transform, x + 18, GROUND - 26, FIG - 36, 30);
+        ring.sprite = Ring(256, 96, .16f);
+        ring.color = mirror ? new Color(1f, .40f, .34f, .55f) : new Color(.40f, .68f, 1f, .55f);
+        ring.raycastTarget = false;
+
         var im = Node("f", Root).gameObject.AddComponent<Image>();
         Place((RectTransform)im.transform, x, GROUND - FIG, FIG, FIG);
         im.raycastTarget = false;
@@ -125,7 +184,7 @@ public class DuelView
         }
         return im;
     }
-    void SetFrame(Image im, int f, bool mirror) => im.sprite = Frame(f);
+    void SetFrame(Image im, int f, bool mirror) => im.sprite = Frame(mirror ? foeSkin : mySkin, f);
 
     void Menu()
     {
@@ -201,8 +260,10 @@ public class DuelView
         }
         var self  = mine ? figMe : figFoe;
         var other = mine ? figFoe : figMe;
-        SetFrame(self,  move == 2 ? F_BURST : F_THRUST, !mine);
-        SetFrame(other, F_IDLE, mine);
+        SetFrame(self, move == 2 ? F_BURST : F_THRUST, !mine);
+        // 挨打的那边要有反应。原来设成待机帧，看着就像「一方在打，一方傻站着」。
+        SetFrame(other, dmg > 0 ? F_RECOIL : F_IDLE, mine);
+        animUntil = Time.time + .75f;
 
         string name = o.Name, mv = BattleRules.DuelMove[move];
         if (dmg < 0)                       // 「全力」落空：L += 负数 = 自伤
@@ -210,10 +271,17 @@ public class DuelView
             o.Hp = Mathf.Max(0, o.Hp + dmg);
             report += name + " " + mv + "落空，反受 " + (-dmg) + " 点\n";
             SetFrame(self, F_RECOIL, !mine);
-            if (o.Hp == 0) { over = mine ? "我方武将阵亡!" : "击毙敌将!"; SetFrame(self, F_FALL, !mine); }
+            SetFrame(other, F_IDLE, mine);
+            animUntil = Time.time + .75f;
+            if (o.Hp == 0) { over = mine ? "我方武将阵亡!" : "击毙敌将!"; SetFrame(self, F_FALL, !mine); animUntil = 0; }
             return;
         }
-        if (dmg == 0) { report += name + " " + mv + "被闪开\n"; return; }
+        if (dmg == 0)
+        {
+            report += name + " " + mv + "被闪开\n";
+            SetFrame(other, F_RAISE, mine);            // 闪开的那边做个格挡动作
+            return;
+        }
 
         var tgt = mine ? foe : me;
         tgt.Hp = Mathf.Max(0, tgt.Hp - dmg);
@@ -223,6 +291,7 @@ public class DuelView
         {
             over = mine ? "击毙敌将!" : "我方武将阵亡!";
             SetFrame(other, F_FALL, mine);
+            animUntil = 0;                              // 倒下就别回待机了
         }
     }
 
