@@ -301,7 +301,9 @@ public static class BattleRules
     /// 这就是原版收将的正路——先把体力磨下去再劝。
     public static bool Persuade(Officer me, Officer foe, System.Random rng)
     {
-        if (foe.Loyal > 99) return false;
+        // 原版 b.k() 第一行 if (P > 99) return false：主公永远劝不动。
+        // 我们的设定是主公到最后也能被劝降/笼络/俘虏（见 HOUSE_RULES），这一行去掉。
+        // 忠诚 100 仍然进公式：L + 100 − n + rng < 100 ⇒ 只有体力打到个位数才可能，够苛刻。
         int n = (me.Virtue * 7 + me.Int * 3) * 10 / 99;
         n = (n - 70) / 5;
         if (n == 4) n = 6; else if (n == 5) n = 8;

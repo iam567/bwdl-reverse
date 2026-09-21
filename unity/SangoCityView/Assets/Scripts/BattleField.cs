@@ -565,7 +565,7 @@ public class BattleField
         string[][] rows = {
             new[] { "武", o.Might.ToString(), "智", o.Int.ToString() },
             new[] { "体", o.Hp.ToString(),    "德", o.Virtue.ToString() },
-            new[] { "兵", o.Troops.ToString(),"忠", o.Loyal > 99 ? "--" : o.Loyal.ToString() },   // 原版忠诚 >99 画 "--"
+            new[] { "兵", o.Troops.ToString(),"忠", o.Loyal.ToString() },   // 原版 >99 画「--」标主公；我们主公也能劝能俘，直接显示 100
             new[] { "武器", BattleRules.WeaponOf(o), "防具", BattleRules.ArmorOf(o) },
         };
         var lab = new Color32(0xC8,0xA8,0x60,255); var val = Color.white;
