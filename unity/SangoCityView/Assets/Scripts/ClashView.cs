@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using static UIKit;
 
 public class ClashView
@@ -34,8 +35,9 @@ public class ClashView
 
     Text dayT, noteT, buffT;
     RectTransform skillRoot; readonly Text[] skillT = new Text[6];
-    RectTransform gridRoot, orderRoot;
-    Text[] armCount = new Text[4], foeCount = new Text[4], orderT = new Text[4];
+    RectTransform gridRoot, cmdPop;        // cmdPop：点兵种弹出来的那一竖条
+    int cmdArm = -1;
+    Text[] armCount = new Text[4], foeCount = new Text[4];
 
     public ClashView(RectTransform parent, Officer me, Officer foe,
                      int terrain, bool weAttack, float refW, float refH)
@@ -140,7 +142,16 @@ public class ClashView
     // 自检模式用的三个口子，正常玩走的是按钮
     public void PickForTest(int f) { formation = f; StartClash(); }
     public void SkillPanelForTest() { orders[0] = 4; Redraw(); }
-    public void AdvanceForTest() { for (int i = 0; i < 120; i++) { tickAt = 0; Tick(); } }
+    /// 自检用：挑一枚指定兵种的我方棋子，把它滚进画面再弹出它的令菜单。
+    public void CmdPopForTest(Arm arm)
+    {
+        int i = mine.FindIndex(q => q.Alive && q.Arm == arm);
+        if (i < 0) return;
+        FocusOn(mine[i].Col);
+        gridRoot.anchoredPosition = camTarget;        // 自检不等镜头滑，直接到位
+        OpenCmd((int)arm, mine[i].Col, mine[i].Row);
+    }
+    public void AdvanceForTest(int n = 120) { CloseCmd(); for (int i = 0; i < n; i++) { tickAt = 0; Tick(); } }
     public void FinishForTest() { Finish(); }
 
     // ── 阵型战 ─────────────────────────────────────────────────────────
@@ -157,14 +168,21 @@ public class ClashView
     }
 
     // 场地是 16 列 × 7 行（bK = byte[7][16]）。原版屏宽 176，一次只显示 11 列，
-    // 靠 aa 左右滚；我们竖屏 500 宽，16 × 31 = 496 刚好整场一格不落地摆下，
-    // 不用滚也不会裁。31 就是「全场可见」的上限，再大只能改成横向滚动。
-    const int C = 31;                      // 阵型格一格多大
-    const int FIG = C + 6;                 // 棋子画多大：比格子略大一圈，和原版一样有点探出
+    // 靠 aa 左右滚；我们不再迁就「一屏看全」，改成放大到半屏、拖着看。
+    // 58 是按参考分辨率 375 × 812 算的：七行 × 58 = 406，正好占竖屏的一半。
+    // （再往上顶没意义——C=78 时七行吃掉 67% 屏高，横向只剩不到五列，
+    //   一屏大半是空地面，那不是放大是放过头。）
+    // 小兵图跟着按 FIG 重切（整图一格 512，分辨率够，重切不花钱），
+    // 贴上去是一比一，不是把 64 的图放大成糊块。
+    const int C = 58;                      // 阵型格一格多大
+    const int FIG = C + 12;                // 棋子画多大：比格子高出一截，脚仍落在格底
+    const int VIEW_Y = 44;
+    static int VIEW_H => BattleRules.GridH * C;   // 7 × 58 = 406，正好半屏
     // 下面三栏挨着场地往下排。写死绝对 Y 的话，C 一改就会撞在一起。
-    static int INFO_Y  => 44 + BattleRules.GridH * C + 26;
+    static int INFO_Y  => VIEW_Y + VIEW_H + 14;
     static int SKILL_Y => INFO_Y + 116 + 14;   // 计策点面板，别压住信息栏的「步」那一行
-    static int ORDER_Y => SKILL_Y + 84;        // 指令栏。钉屏幕底会在中间留一大块黑
+    static int MAP_Y   => SKILL_Y + 70 + 12;   // 小地图。底下原来是一横条指令栏，拆了就空在那
+    const int MM = 12;                         // 小地图一格多大（原版是 3 像素）
     void BuildField()
     {
         field = Node("field", Root); Fill(field);
@@ -174,13 +192,51 @@ public class ClashView
         buffT = Label(field, "", 12, new Color32(0xF0,0xC8,0x70,255), TextAnchor.MiddleRight);
         Place(buffT.rectTransform, refW - 212, 16, 198, 20);
 
-        var ground = Node("g", field).gameObject.AddComponent<Image>();
-        var g98 = Tex("orig/lib98.png");
-        ground.sprite = Sprite.Create(g98, new Rect(scene * 64, 0, 64, 64), new Vector2(.5f, .5f), 100);
-        Place((RectTransform)ground.transform, 0, 44, refW, BattleRules.GridH * C + 16);
+        // 场地比视窗宽（16 × 58 = 928 对 375），所以套一层遮罩，里面那层拖着走。
+        var clip = Node("clip", field);
+        Place(clip, 0, VIEW_Y, refW, VIEW_H);
+        var msk = clip.gameObject.AddComponent<Image>();
+        msk.color = new Color(.06f, .06f, .07f, 1);
+        clip.gameObject.AddComponent<Mask>().showMaskGraphic = true;
 
-        gridRoot = Node("grid", field);
-        Place(gridRoot, (refW - BattleRules.GridW * C) / 2, 52, BattleRules.GridW * C, BattleRules.GridH * C);
+        gridRoot = Node("grid", clip);
+        gridRoot.anchorMin = gridRoot.anchorMax = new Vector2(0, 1);
+        gridRoot.pivot = new Vector2(0, 1);
+        gridRoot.sizeDelta = new Vector2(BattleRules.GridW * C, BattleRules.GridH * C);
+
+        // 地面照原版 L() 那样按 64 铺开。一张 64 的图拉满近千像素只会糊成大色块。
+        var g98 = Tex("orig/lib98.png");
+        // 往里收半个像素：lib98 是四种地面并排的一张图，画布不是整数倍缩放时，
+        // 贴到边上会采到隔壁那一列，铺开后就是一条条竖缝。
+        var gsp = Sprite.Create(g98, new Rect(scene * 64 + .5f, .5f, 63f, 63f), new Vector2(.5f, .5f), 100);
+        for (int y = 0; y * 64 < BattleRules.GridH * C; y++)
+            for (int x = 0; x * 64 < BattleRules.GridW * C; x++)
+            {
+                var t = Node("gt", gridRoot).gameObject.AddComponent<Image>();
+                Place((RectTransform)t.transform, x * 64, y * 64, 64, 64);
+                t.sprite = gsp; t.raycastTarget = false;
+            }
+
+        // 按下拖动 = 滚场地。遮罩那张 Image 就当接触区，别再叠一个。
+        msk.raycastTarget = true;
+        var trig = clip.gameObject.AddComponent<EventTrigger>();
+        void Hook(EventTriggerType t, System.Action<PointerEventData> f)
+        {
+            var e = new EventTrigger.Entry { eventID = t };
+            e.callback.AddListener(d => f((PointerEventData)d));
+            trig.triggers.Add(e);
+        }
+        Hook(EventTriggerType.PointerDown, d => {
+            dragFrom = d.position; gridFrom = gridRoot.anchoredPosition; dragged = false;
+        });
+        Hook(EventTriggerType.Drag, d => {
+            if ((d.position - dragFrom).magnitude > 8) dragged = true;
+            if (!dragged) return;
+            ScrollTo(gridFrom + (d.position - dragFrom));
+            camTarget = gridRoot.anchoredPosition;   // 手动拖过就别再被镜头拽回去
+        });
+        Hook(EventTriggerType.PointerUp, d => { if (!dragged) TapField(d, clip); });
+        ScrollTo(Vector2.zero);   // 我方摆在左边（Formation：Col = ours ? 1 : GridW-2）
 
         // 信息栏：体 / 骑 / 弓 / 步，和原版底部那一栏一样
         var info = Panel(field, "info", Plate());
@@ -200,24 +256,6 @@ public class ClashView
             Place(foeCount[i].rectTransform, refW / 2 + 22, 30 + i * 21, 100, 20);
         }
 
-        // 逐日指令：武将 / 骑兵 / 弓兵 / 步兵 各下一道
-        orderRoot = Node("orders", field);
-        Place(orderRoot, 8, ORDER_Y, refW - 16, 100);
-        var ob = Panel(orderRoot, "bg", Plate()); Fill((RectTransform)ob.transform);
-        for (int i = 0; i < 4; i++)
-        {
-            int k = i;
-            var l = Label(orderRoot, ARM[i], 13, new Color32(0xD0,0xC0,0x98,255));
-            Place(l.rectTransform, 14 + i * 88, 8, 60, 20);
-            var b = Node("o" + i, orderRoot);
-            Place(b, 10 + i * 88, 30, 80, 32);
-            var bi = b.gameObject.AddComponent<Image>(); bi.sprite = Frame(); bi.type = Image.Type.Sliced;
-            var bt = b.gameObject.AddComponent<Button>(); bt.transition = Selectable.Transition.None;
-            bt.onClick.AddListener(() => { orders[k] = (orders[k] + 1) % OrderCount(k); Redraw(); });
-            orderT[i] = Label(b, "", 14, new Color32(0xF0,0xE0,0xB8,255), TextAnchor.MiddleCenter);
-            Fill(orderT[i].rectTransform);
-        }
-
         skillRoot = Node("skills", field);
         Place(skillRoot, 8, SKILL_Y, refW - 16, 70);
         var sb = Panel(skillRoot, "bg", Plate()); Fill((RectTransform)sb.transform);
@@ -233,11 +271,16 @@ public class ClashView
             Fill(skillT[i].rectTransform);
         }
 
-        noteT = Label(field, "计策点 = 智力×13/100，每战重算。" + BattleRules.HouseRuleNote, 11, new Color32(0xC8,0xA0,0x60,255));
-        Place(noteT.rectTransform, 14, ORDER_Y + 112, refW - 28, 18);
+        BuildMinimap();
+
+        int rx = 8 + 12 + BattleRules.GridW * MM + 12 + 10;      // 小地图右边那一竖列
+        noteT = Label(field, "呐喊×1.5 / 火矢×2\n是我们加的，原版×1",
+                      10, new Color32(0xC8,0xA0,0x60,255), TextAnchor.UpperLeft);
+        noteT.horizontalOverflow = HorizontalWrapMode.Wrap;
+        Place(noteT.rectTransform, rx, MAP_Y + 46, refW - rx - 8, 76);
 
         var quit = Node("quit", field);
-        Place(quit, 14, ORDER_Y + 136, 110, 26);
+        Place(quit, rx, MAP_Y + 8, refW - rx - 8, 30);
         var qi = quit.gameObject.AddComponent<Image>(); qi.sprite = Frame(); qi.type = Image.Type.Sliced;
         var qb = quit.gameObject.AddComponent<Button>(); qb.transition = Selectable.Transition.None;
         qb.onClick.AddListener(Finish);
@@ -265,6 +308,7 @@ public class ClashView
 
     public void Tick()
     {
+        Glide();                                  // 镜头每帧都动，别卡在下面的节拍判断后面
         if (mine == null) return;                 // 还在阵型选择那屏，兵还没摆
         if (over != null || Time.time < tickAt) return;
         tickAt = Time.time + TICK;
@@ -294,7 +338,7 @@ public class ClashView
                     cd = (cd & 0xF0) | Mathf.Max(0, (cd & 0xF) - 1);
                     if ((cd & 0xF) == 0) cd = 0;
                 }
-                if (did) { ActingSide = 1 - turnSide; ActingIdx = idx; break; }
+                if (did) { ActingSide = 1 - turnSide; ActingIdx = idx; FocusOn(p.Col); break; }
                 continue;
             }
 
@@ -304,7 +348,7 @@ public class ClashView
             if (!p.Alive || !twice || extra >= 1) { turnIdx++; extra = 0; }
             else extra++;
 
-            if (did) { ActingSide = turnSide; ActingIdx = idx; break; }
+            if (did) { ActingSide = turnSide; ActingIdx = idx; FocusOn(p.Col); break; }
         }
 
         if (Formation.TotalTroops(theirs) == 0 || foe.Hp <= 0) over = "敌军溃败";
@@ -567,7 +611,6 @@ public class ClashView
         var a = Formation.ByArm(mine,   me.Hp);
         var b = Formation.ByArm(theirs, foe.Hp);
         for (int i = 0; i < 4; i++) { armCount[i].text = a[i].ToString(); foeCount[i].text = b[i].ToString(); }
-        for (int i = 0; i < 4; i++) orderT[i].text = ORDER[orders[i]];
         bool pick = orders[0] == 4;                       // 武将那行选了「计策」才让挑
         skillRoot.gameObject.SetActive(pick);
         for (int i = 0; i < 6; i++)
@@ -580,6 +623,186 @@ public class ClashView
         buffT.text = "计策点 " + plotPts
                    + (bid > 0 ? "   " + BattleRules.SkillName[bid - 1] + " 余 " + (cd & 0xF) : "");
         dayT.text = (over ?? "交战中") + (siege ? "   · 攻城战" : "   · 野战");
+        DrawMinimap();
+    }
+
+    // ── 小地图 ─────────────────────────────────────────────────────────
+    // 原版 c.a(Graphics, byte, byte)：每枚棋子除了画小兵图，还往小地图点一个点——
+    //   我方 0xFFFFFF，敌方 0xF85A52；武将 fillRect 3×3 实心，其余 drawRect 2×2 空心。
+    // 原版一格 3 像素，我们放大到 14，顺带加两样原版没有的：
+    // 视窗框（原版整屏就是视窗，不需要）和点一下跳过去。
+    RectTransform mapRoot; RectTransform mapView;
+    readonly List<GameObject> mapTmp = new List<GameObject>();
+
+    void BuildMinimap()
+    {
+        var panel = Panel(field, "mm", Plate());
+        Place((RectTransform)panel.transform, 8, MAP_Y,
+              24 + BattleRules.GridW * MM, 24 + BattleRules.GridH * MM);
+
+        mapRoot = Node("mmg", panel.transform);
+        Place(mapRoot, 12, 12, BattleRules.GridW * MM, BattleRules.GridH * MM);
+        var bg = mapRoot.gameObject.AddComponent<Image>();
+        bg.color = new Color(.10f, .11f, .13f, 1f);
+
+        mapView = Node("vp", mapRoot);                       // 大图正看着哪一块
+        var vi = mapView.gameObject.AddComponent<Image>();
+        vi.sprite = Outline(); vi.type = Image.Type.Sliced;
+        vi.color = new Color(1f, .92f, .45f, .85f); vi.raycastTarget = false;
+
+        var trig = mapRoot.gameObject.AddComponent<EventTrigger>();
+        var e = new EventTrigger.Entry { eventID = EventTriggerType.PointerClick };
+        e.callback.AddListener(d => {                        // 点一下小地图，大图跳过去
+            var pd = (PointerEventData)d;
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    mapRoot, pd.position, null, out var lp)) return;
+            var clip = (RectTransform)gridRoot.parent;
+            ScrollTo(new Vector2(-(lp.x / MM * C - clip.rect.width / 2f),
+                                  -lp.y / MM * C - clip.rect.height / 2f));
+        });
+        trig.triggers.Add(e);
+    }
+
+    /// 1 像素描边的空心方框。空心棋子和视窗框都用它。
+    static Sprite outlineSp;
+    static Sprite Outline()
+    {
+        if (outlineSp != null) return outlineSp;
+        const int S = 8;
+        var t = new Texture2D(S, S, TextureFormat.RGBA32, false);
+        for (int y = 0; y < S; y++)
+            for (int x = 0; x < S; x++)
+                t.SetPixel(x, y, x == 0 || y == 0 || x == S - 1 || y == S - 1
+                                 ? Color.white : new Color(1, 1, 1, 0));
+        t.Apply(); t.filterMode = FilterMode.Point;
+        return outlineSp = Sprite.Create(t, new Rect(0, 0, S, S), new Vector2(.5f, .5f),
+                                         100, 0, SpriteMeshType.FullRect, new Vector4(2, 2, 2, 2));
+    }
+
+    void DrawMinimap()
+    {
+        foreach (var g in mapTmp) Object.Destroy(g);
+        mapTmp.Clear();
+        if (mapRoot == null) return;
+        MapSide(mine,   new Color32(0xFF, 0xFF, 0xFF, 255));
+        MapSide(theirs, new Color32(0xF8, 0x5A, 0x52, 255));
+        mapView.SetAsLastSibling();
+
+        var clip = (RectTransform)gridRoot.parent;
+        Place(mapView, -gridRoot.anchoredPosition.x / C * MM,
+                        gridRoot.anchoredPosition.y / C * MM,
+                        clip.rect.width / C * MM, clip.rect.height / C * MM);
+    }
+
+    void MapSide(List<Piece> ps, Color32 c)
+    {
+        foreach (var p in ps)
+        {
+            if (!p.Alive) continue;
+            var im = Node("d", mapRoot).gameObject.AddComponent<Image>();
+            Place((RectTransform)im.transform, p.Col * MM + 2, p.Row * MM + 2, MM - 4, MM - 4);
+            // 武将实心、其余空心 —— 原版就是靠这个在小地图上认武将
+            if (p.Arm != Arm.None) { im.sprite = Outline(); im.type = Image.Type.Sliced; }
+            im.color = c; im.raycastTarget = false;
+            mapTmp.Add(im.gameObject);
+        }
+    }
+
+    Vector2 dragFrom, gridFrom, camTarget; bool dragged;
+
+    // ── 点兵种下令 ─────────────────────────────────────────────────────
+    // 原版的令是**按兵种**下的（b.s 第一行 bY[0][by] = cj[bU[0][by]]），
+    // 底下摆一排四个兵种的按钮也对，但场地放大到半屏之后那一排离战况太远。
+    // 改成点场上任意一枚我方棋子，就地弹一竖条：标题是它的兵种，下面是那一兵种的令。
+    void TapField(PointerEventData d, RectTransform clip)
+    {
+        CloseCmd();
+        if (over != null || mine == null) return;
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                gridRoot, d.position, null, out var lp)) return;
+        int col = Mathf.FloorToInt(lp.x / C), row = Mathf.FloorToInt(-lp.y / C);
+        int i = mine.FindIndex(q => q.Alive && q.Col == col && q.Row == row);   // Piece 是结构体
+        if (i < 0) return;
+        OpenCmd((int)mine[i].Arm, col, row);
+    }
+
+    void CloseCmd()
+    {
+        if (cmdPop != null) Object.Destroy(cmdPop.gameObject);
+        cmdPop = null; cmdArm = -1;
+    }
+
+    void OpenCmd(int arm, int col, int row)
+    {
+        cmdArm = arm;
+        int n = OrderCount(arm), w = 92, rowH = 30, h = 26 + n * rowH + 6;
+
+        // 棋子在 field 坐标里的位置：视窗原点 + 场地当前的滚动量 + 格子偏移
+        float cx = gridRoot.anchoredPosition.x + col * C;
+        float cy = VIEW_Y + row * C - gridRoot.anchoredPosition.y;
+        // 贴在棋子右边；右边放不下就翻到左边。上下夹在视窗里，别飘到场外。
+        float x = cx + C + 6;
+        if (x + w > refW - 6) x = cx - 6 - w;
+        x = Mathf.Clamp(x, 6, refW - 6 - w);
+        float y = Mathf.Clamp(cy + C / 2f - h / 2f, VIEW_Y + 4, VIEW_Y + VIEW_H - 4 - h);
+
+        cmdPop = Node("cmd", field);
+        Place(cmdPop, x, y, w, h);
+        var bg = Panel(cmdPop, "bg", Plate()); Fill((RectTransform)bg.transform);
+        var t = Label(cmdPop, ARM[arm], 13, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleCenter);
+        Place(t.rectTransform, 0, 5, w, 20);
+
+        for (int i = 0; i < n; i++)
+        {
+            int k = i;
+            var b = Node("c" + i, cmdPop);
+            Place(b, 6, 26 + i * rowH, w - 12, rowH - 4);
+            var bi = b.gameObject.AddComponent<Image>(); bi.sprite = Frame(); bi.type = Image.Type.Sliced;
+            bi.color = orders[arm] == i ? new Color(1f, .92f, .60f, 1f) : Color.white;
+            var bt = b.gameObject.AddComponent<Button>(); bt.transition = Selectable.Transition.None;
+            bt.onClick.AddListener(() => { orders[arm] = k; CloseCmd(); Redraw(); });
+            var l = Label(b, ORDER[i], 13, new Color32(0xF0,0xE0,0xB8,255), TextAnchor.MiddleCenter);
+            Fill(l.rectTransform);
+        }
+    }
+
+    void ScrollTo(Vector2 p)
+    {
+        var clip = (RectTransform)gridRoot.parent;
+        gridRoot.anchoredPosition = new Vector2(
+            Mathf.Clamp(p.x, Mathf.Min(0, clip.rect.width  - BattleRules.GridW * C), 0),
+            Mathf.Clamp(p.y, 0, Mathf.Max(0, BattleRules.GridH * C - clip.rect.height)));
+        camTarget = gridRoot.anchoredPosition;
+    }
+
+    /// 只看得见半个战场，正在动的那枚要是在视窗外就等于没演。
+    /// 但**不能每次都居中**：我方在 1~4 列、敌方在 11~14 列，
+    /// 一枚一秒地轮流动，镜头会左右来回甩。留一格余量当死区，
+    /// 只在这枚棋滚出视窗时才动，而且只滚刚好够的那一点。
+    void FocusOn(int col)
+    {
+        if (gridRoot == null) return;
+        var clip = (RectTransform)gridRoot.parent;
+        float vw = clip.rect.width, total = BattleRules.GridW * C;
+        float x = col * C + C / 2f;              // 这枚棋在整场里的横坐标
+        float lo = -camTarget.x + C, hi = -camTarget.x + vw - C;
+        float want = camTarget.x;
+        if (x < lo) want = -(x - C);
+        else if (x > hi) want = -(x - vw + C);
+        camTarget = new Vector2(Mathf.Clamp(want, Mathf.Min(0, vw - total), 0), camTarget.y);
+    }
+
+    void Glide()
+    {
+        if (gridRoot == null) return;
+        var now = gridRoot.anchoredPosition;
+        if ((now - camTarget).sqrMagnitude <= .01f) return;
+        gridRoot.anchoredPosition = Vector2.Lerp(now, camTarget, Time.deltaTime * 6f);
+        if (mapView == null) return;                    // 镜头在滑，小地图那个框要跟着走
+        var clip = (RectTransform)gridRoot.parent;
+        Place(mapView, -gridRoot.anchoredPosition.x / C * MM,
+                        gridRoot.anchoredPosition.y / C * MM,
+                        clip.rect.width / C * MM, clip.rect.height / C * MM);
     }
 
     void DrawSide(List<Piece> ps, bool ours)
@@ -588,7 +811,8 @@ public class ClashView
         {
             if (!p.Alive) continue;
             var im = Node("p", gridRoot).gameObject.AddComponent<Image>();
-            Place((RectTransform)im.transform, p.Col * C - 3, p.Row * C - 6, FIG, FIG);
+            Place((RectTransform)im.transform,
+                  p.Col * C - (FIG - C) / 2, p.Row * C - (FIG - C), FIG, FIG);
             im.sprite = Soldier(p.Arm, p.Dir, ours);
             im.raycastTarget = false; tmp.Add(im.gameObject);
             if (p.Dir == 2)                            // 朝左＝把朝右那张水平镜像
@@ -605,7 +829,8 @@ public class ClashView
             if (ActingSide == (ours ? 0 : 1) && ps.IndexOf(p) == ActingIdx)
             {
                 var hl = Node("hl", gridRoot).gameObject.AddComponent<Image>();
-                Place((RectTransform)hl.transform, p.Col * C - 3, p.Row * C - 6, FIG, FIG);
+                Place((RectTransform)hl.transform,
+                      p.Col * C - (FIG - C) / 2, p.Row * C - (FIG - C), FIG, FIG);
                 hl.color = new Color(1f, .95f, .3f, .30f); hl.raycastTarget = false;
                 tmp.Add(hl.gameObject); hl.transform.SetSiblingIndex(im.transform.GetSiblingIndex());
             }

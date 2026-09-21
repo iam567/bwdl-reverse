@@ -71,8 +71,10 @@ public class BattleGame : MonoBehaviour
         clash.SkillPanelForTest();                 // 武将下「计策」，看六个能力
         yield return Shot(dir, "4b_计策点能力");
 
-        clash.AdvanceForTest();
-        clash.AdvanceForTest();
+        clash.CmdPopForTest(Arm.Qi);               // 点一枚骑兵，看它旁边弹出来的令菜单
+        yield return Shot(dir, "4c_点兵种下令");
+
+        clash.AdvanceForTest(45);                  // 120 拍会一路打到武将碰面进单挑，看不到阵型战
         yield return Shot(dir, "5_打了一阵");
 
         clash.OnDuel();                            // 双方武将碰上的那一屏
