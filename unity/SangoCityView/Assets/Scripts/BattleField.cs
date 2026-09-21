@@ -227,6 +227,7 @@ public class BattleField
         CenterOn(tgt.X, tgt.Y); curX = tgt.X; curY = tgt.Y; Refresh();
         DoPlot(tgt.X, tgt.Y); Refresh();
     }
+    public void InfoForTest(Unit u, Unit tgt) { sel = u; mode = "info"; ShowInfo(tgt); Refresh(); }
     public void CommandForTest(Unit u, int k) { sel = u; mode = ""; Command(k); CenterOn(u.X, u.Y); curX = u.X; curY = u.Y; Refresh(); }
 
     // ── 素材 ───────────────────────────────────────────────────────────
@@ -311,7 +312,7 @@ public class BattleField
                 hintText.text = HasFoeAdjacent(sel) ? "点相邻的敌将" : "邻近无敌将!";
                 if (!HasFoeAdjacent(sel)) mode = "";
                 break;
-            case 3: mode = "info"; hintText.text = "点一支部队看属性"; break;
+            case 3: mode = "info"; hintText.text = "请选择要侦察的武将"; break;   // 原版原话
             case 4:                                  // 撤退
                 sel.Alive = false; sel.Acted = true;
                 hintText.text = "撤退武将 " + sel.O.Name
@@ -512,12 +513,75 @@ public class BattleField
         OnClash?.Invoke(me, foe, true);
     }
 
+    // ── 情报（原版 c.F() + a(Graphics)）───────────────────────────────
+    // 光标点到哪一支（敌我都行）就弹「武将信息」：头像、名、LV、武/智、体/德、兵/忠、武器/防具。
+    // 不扣机动力、不算行动——原版 F() 里没有 bk 减法，也不置 Acted。
+    RectTransform infoPop;
+    void CloseInfo() { if (infoPop != null) Object.Destroy(infoPop.gameObject); infoPop = null; }
+    static Sprite AvatarOf(int id)
+    {
+        var p = Path.Combine(ArtDir, "battle", "avatar", id + ".jpg");
+        if (!File.Exists(p)) return null;
+        var t = new Texture2D(2, 2); t.LoadImage(File.ReadAllBytes(p)); t.Apply();
+        return Whole(t);
+    }
     void ShowInfo(Unit u)
     {
-        hintText.text = string.Format("{0} LV{1} 武力{2} 智力{3} 体力{4} 兵力{5} {6}",
-            u.O.Name, u.O.Lv, u.O.Might, u.O.Int, u.O.Hp, u.O.Troops,
-            u.O.Kind == Kind.Ping ? "平军" : u.O.Kind == Kind.Shui ? "水军" : "山军");
-        mode = "";
+        CloseInfo(); mode = "";
+        hintText.text = "武将信息";
+        var o = u.O;
+        float w = 300, h = 262;
+        infoPop = Node("info", Root);
+        Place(infoPop, (refW - w) / 2, (refH - h) / 2 - 40, w, h);
+        var bg = Panel(infoPop, "bg", BattleUi.PlateSp()); Fill((RectTransform)bg.transform);
+        bg.raycastTarget = true;
+        var bt = infoPop.gameObject.AddComponent<Button>(); bt.transition = Selectable.Transition.None;
+        bt.onClick.AddListener(() => { CloseInfo(); Refresh(); });
+
+        // 头像 + 錾金框（框中间那个洞的位置是量出来的）
+        const int PW = 96; float px = 16, py = 16;
+        var m = BattleUi.Metric("portrait"); var frame = BattleUi.Get("portrait");
+        int fw = m != null && m.Length >= 6 ? m[0] : 192, fh = m != null && m.Length >= 6 ? m[1] : 188;
+        float k = PW / (float)fw; int ph = Mathf.RoundToInt(fh * k);
+        var av = AvatarOf(o.Id);
+        if (av != null)
+        {
+            var im = Node("av", infoPop).gameObject.AddComponent<Image>();
+            float hx = m != null && m.Length >= 6 ? m[2] * k : PW * .18f, hy = m != null && m.Length >= 6 ? m[3] * k : ph * .2f;
+            float hw = m != null && m.Length >= 6 ? m[4] * k : PW * .64f, hh = m != null && m.Length >= 6 ? m[5] * k : ph * .6f;
+            Place((RectTransform)im.transform, px + hx, py + hy, hw, hh); im.sprite = av; im.raycastTarget = false;
+        }
+        if (frame != null)
+        {
+            var fi = Node("fr", infoPop).gameObject.AddComponent<Image>();
+            Place((RectTransform)fi.transform, px, py, PW, ph); fi.sprite = frame; fi.raycastTarget = false;
+        }
+        var nm = Label(infoPop, o.Name, 18, u.Ours ? new Color32(0x9C,0xC8,0xFF,255) : new Color32(0xFF,0x98,0x90,255));
+        Place(nm.rectTransform, px + PW + 16, py + 10, 160, 26);
+        var lv = Label(infoPop, "LV. " + o.Lv + "   " + (o.Kind == Kind.Ping ? "平军" : o.Kind == Kind.Shui ? "水军" : "山军"), 14, new Color32(0xE8,0xDC,0xC0,255));
+        Place(lv.rectTransform, px + PW + 16, py + 42, 160, 22);
+
+        // 原版 a(Graphics)：八格属性两列四行——武/智、体/德、兵/忠、武器/防具
+        string[][] rows = {
+            new[] { "武", o.Might.ToString(), "智", o.Int.ToString() },
+            new[] { "体", o.Hp.ToString(),    "德", o.Virtue.ToString() },
+            new[] { "兵", o.Troops.ToString(),"忠", o.Loyal > 99 ? "--" : o.Loyal.ToString() },   // 原版忠诚 >99 画 "--"
+            new[] { "武器", BattleRules.WeaponOf(o), "防具", BattleRules.ArmorOf(o) },
+        };
+        var lab = new Color32(0xC8,0xA8,0x60,255); var val = Color.white;
+        float y0 = py + ph + 14;
+        for (int r = 0; r < rows.Length; r++)
+        {
+            float yy = y0 + r * 26;
+            var tag = Node("tg", infoPop).gameObject.AddComponent<Image>();      // 标签垫一块小木牌，照原版那八个小方块
+            Place((RectTransform)tag.transform, 18, yy, 40, 22); tag.sprite = BattleUi.BtnSp(); tag.type = Image.Type.Sliced; tag.raycastTarget = false;
+            var l1 = Label(infoPop, rows[r][0], 13, lab, TextAnchor.MiddleCenter); Place(l1.rectTransform, 18, yy, 40, 22);
+            var v1 = Label(infoPop, rows[r][1], 15, val); Place(v1.rectTransform, 64, yy, 84, 22);
+            var tag2 = Node("tg", infoPop).gameObject.AddComponent<Image>();
+            Place((RectTransform)tag2.transform, 154, yy, 40, 22); tag2.sprite = BattleUi.BtnSp(); tag2.type = Image.Type.Sliced; tag2.raycastTarget = false;
+            var l2 = Label(infoPop, rows[r][2], 13, lab, TextAnchor.MiddleCenter); Place(l2.rectTransform, 154, yy, 40, 22);
+            var v2 = Label(infoPop, rows[r][3], 15, val); Place(v2.rectTransform, 200, yy, 90, 22);
+        }
     }
 
     void EndDay()

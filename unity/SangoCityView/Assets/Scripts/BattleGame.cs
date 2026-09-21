@@ -67,6 +67,8 @@ public class BattleGame : MonoBehaviour
         yield return Shot(dir, "2a2_计策16种");
         field.PlotForTest(me, 4, foe);             // 敌军站在水格上，用乱水（火计不许打水，原版 2330）
         yield return Shot(dir, "2b_乱水");
+        field.InfoForTest(me, foe);                // 情报：点敌将弹武将信息
+        yield return Shot(dir, "2c_情报");
         field.CommandForTest(me, 2);               // 选中我方、切到攻击模式，看目标标记
         yield return Shot(dir, "2_贴住敌军");
 
