@@ -183,13 +183,13 @@ public class BattleField
             // 标签只在两枚铺首之间的中段居中——铺满整枚按钮的话，字会往兽面底下钻
             var m = BattleUi.Metric("go");
             float inset = (m != null && m.Length > 0 ? m[0] : 0) / ppu + 4;
-            var l2 = Label(b, txt, 14, new Color32(0xF6,0xE8,0xC0,255), TextAnchor.MiddleCenter, FontStyle.Bold);
+            var l2 = Label(b, txt, w < 120 ? 13 : 14, new Color32(0xF6,0xE8,0xC0,255), TextAnchor.MiddleCenter, FontStyle.Bold);
             Place(l2.rectTransform, inset, 0, w - inset * 2, 38);
             var sh = l2.gameObject.AddComponent<Shadow>(); sh.effectColor = new Color(0, 0, 0, .8f); sh.effectDistance = new Vector2(1, -1);
         }
-        BigBtn("看我军", 12, 100, () => JumpTo(true), 3.4f);
-        BigBtn("回合结束", refW / 2 - 70, 140, EndDay, 2.2f);
-        BigBtn("看敌军", refW - 12 - 100, 100, () => JumpTo(false), 3.4f);
+        BigBtn("看我军", 10, 110, () => JumpTo(true), 3.4f);
+        BigBtn("回合结束", refW / 2 - 66, 132, EndDay, 2.2f);
+        BigBtn("看敌军", refW - 10 - 110, 110, () => JumpTo(false), 3.4f);
     }
 
     /// 自检：选中一支我方部队并下一道令（2 = 攻击），好截到目标标记
