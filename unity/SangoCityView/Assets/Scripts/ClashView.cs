@@ -33,10 +33,8 @@ public class ClashView
     static int OrderCount(int arm) => arm == 0 ? 5 : 4;
     static readonly string[] ARM = { "武将", "骑兵", "弓兵", "步兵" };
 
-    Text dayT, noteT, buffT;
-    RectTransform skillRoot; readonly Text[] skillT = new Text[6];
+    Text dayT, buffT;
     RectTransform gridRoot, cmdPop;        // cmdPop：点兵种弹出来的那一竖条
-    int cmdArm = -1;
     Text[] armCount = new Text[4], foeCount = new Text[4];
 
     public ClashView(RectTransform parent, Officer me, Officer foe,
@@ -141,7 +139,13 @@ public class ClashView
 
     // 自检模式用的三个口子，正常玩走的是按钮
     public void PickForTest(int f) { formation = f; StartClash(); }
-    public void SkillPanelForTest() { orders[0] = 4; Redraw(); }
+    public void SkillPanelForTest()
+    {
+        int i = mine.FindIndex(q => q.Alive && q.Arm == Arm.None);
+        if (i < 0) return;
+        FocusOn(mine[i].Col); gridRoot.anchoredPosition = camTarget;
+        OpenSkillCmd(mine[i].Col, mine[i].Row);
+    }
     /// 自检用：挑一枚指定兵种的我方棋子，把它滚进画面再弹出它的令菜单。
     public void CmdPopForTest(Arm arm)
     {
@@ -169,20 +173,21 @@ public class ClashView
 
     // 场地是 16 列 × 7 行（bK = byte[7][16]）。原版屏宽 176，一次只显示 11 列，
     // 靠 aa 左右滚；我们不再迁就「一屏看全」，改成放大到半屏、拖着看。
-    // 58 是按参考分辨率 375 × 812 算的：七行 × 58 = 406，正好占竖屏的一半。
-    // （再往上顶没意义——C=78 时七行吃掉 67% 屏高，横向只剩不到五列，
-    //   一屏大半是空地面，那不是放大是放过头。）
+    // 按参考分辨率 375 × 812 算。底下的兵种指令栏、计策栏、说明文字都拆了，
+    // 「收兵」挪进顶栏，小地图铺满整宽（一格 20，面板 344）：
+    // 44(顶栏) + 7C + 14 + 116(信息) + 12 + 164(小地图) + 28(下边距) = 812 → C = 64。
+    // 再往上顶就没意义了——C=78 时七行吃掉 67% 屏高，横向只剩不到五列，
+    // 一屏大半是空地面，那不是放大是放过头。
     // 小兵图跟着按 FIG 重切（整图一格 512，分辨率够，重切不花钱），
     // 贴上去是一比一，不是把 64 的图放大成糊块。
-    const int C = 58;                      // 阵型格一格多大
-    const int FIG = C + 12;                // 棋子画多大：比格子高出一截，脚仍落在格底
+    const int C = 64;                      // 阵型格一格多大
+    const int FIG = C + 14;                // 棋子画多大：比格子高出一截，脚仍落在格底
     const int VIEW_Y = 44;
-    static int VIEW_H => BattleRules.GridH * C;   // 7 × 58 = 406，正好半屏
+    static int VIEW_H => BattleRules.GridH * C;   // 7 × 64 = 448，占竖屏的五成五
     // 下面三栏挨着场地往下排。写死绝对 Y 的话，C 一改就会撞在一起。
     static int INFO_Y  => VIEW_Y + VIEW_H + 14;
-    static int SKILL_Y => INFO_Y + 116 + 14;   // 计策点面板，别压住信息栏的「步」那一行
-    static int MAP_Y   => SKILL_Y + 70 + 12;   // 小地图。底下原来是一横条指令栏，拆了就空在那
-    const int MM = 12;                         // 小地图一格多大（原版是 3 像素）
+    static int MAP_Y   => INFO_Y + 116 + 12;   // 小地图。底下原来是指令栏和计策栏，都拆了
+    const int MM = 20;                         // 小地图一格多大（原版是 3 像素）
     void BuildField()
     {
         field = Node("field", Root); Fill(field);
@@ -190,9 +195,9 @@ public class ClashView
         dayT = Label(field, "", 15, new Color32(0xF2,0xE8,0xD4,255));
         Place(dayT.rectTransform, 14, 14, 240, 22);
         buffT = Label(field, "", 12, new Color32(0xF0,0xC8,0x70,255), TextAnchor.MiddleRight);
-        Place(buffT.rectTransform, refW - 212, 16, 198, 20);
+        Place(buffT.rectTransform, refW - 8 - 58 - 8 - 170, 14, 170, 20);
 
-        // 场地比视窗宽（16 × 58 = 928 对 375），所以套一层遮罩，里面那层拖着走。
+        // 场地比视窗宽（16 × 64 = 1024 对 375），所以套一层遮罩，里面那层拖着走。
         var clip = Node("clip", field);
         Place(clip, 0, VIEW_Y, refW, VIEW_H);
         var msk = clip.gameObject.AddComponent<Image>();
@@ -256,35 +261,15 @@ public class ClashView
             Place(foeCount[i].rectTransform, refW / 2 + 22, 30 + i * 21, 100, 20);
         }
 
-        skillRoot = Node("skills", field);
-        Place(skillRoot, 8, SKILL_Y, refW - 16, 70);
-        var sb = Panel(skillRoot, "bg", Plate()); Fill((RectTransform)sb.transform);
-        for (int i = 0; i < 6; i++)
-        {
-            int k = i;
-            var b = Node("s" + i, skillRoot);
-            Place(b, 8 + (i % 3) * 114, 6 + (i / 3) * 31, 108, 27);
-            var bi = b.gameObject.AddComponent<Image>(); bi.sprite = Frame(); bi.type = Image.Type.Sliced;
-            var bt = b.gameObject.AddComponent<Button>(); bt.transition = Selectable.Transition.None;
-            bt.onClick.AddListener(() => UseSkill(k));
-            skillT[i] = Label(b, "", 11, new Color32(0xF0,0xE0,0xB8,255), TextAnchor.MiddleCenter);
-            Fill(skillT[i].rectTransform);
-        }
-
         BuildMinimap();
 
-        int rx = 8 + 12 + BattleRules.GridW * MM + 12 + 10;      // 小地图右边那一竖列
-        noteT = Label(field, "呐喊×1.5 / 火矢×2\n是我们加的，原版×1",
-                      10, new Color32(0xC8,0xA0,0x60,255), TextAnchor.UpperLeft);
-        noteT.horizontalOverflow = HorizontalWrapMode.Wrap;
-        Place(noteT.rectTransform, rx, MAP_Y + 46, refW - rx - 8, 76);
-
+        // 「收兵」是打到一半退出阵型战的唯一出口，不能删，挪进顶栏——那儿本来就空着
         var quit = Node("quit", field);
-        Place(quit, rx, MAP_Y + 8, refW - rx - 8, 30);
+        Place(quit, refW - 8 - 58, 10, 58, 24);
         var qi = quit.gameObject.AddComponent<Image>(); qi.sprite = Frame(); qi.type = Image.Type.Sliced;
         var qb = quit.gameObject.AddComponent<Button>(); qb.transition = Selectable.Transition.None;
         qb.onClick.AddListener(Finish);
-        var ql = Label(quit, "收兵回战场", 12, new Color32(0xE0,0xD0,0xA8,255), TextAnchor.MiddleCenter);
+        var ql = Label(quit, "收兵", 12, new Color32(0xE0,0xD0,0xA8,255), TextAnchor.MiddleCenter);
         Fill(ql.rectTransform);
     }
 
@@ -611,14 +596,6 @@ public class ClashView
         var a = Formation.ByArm(mine,   me.Hp);
         var b = Formation.ByArm(theirs, foe.Hp);
         for (int i = 0; i < 4; i++) { armCount[i].text = a[i].ToString(); foeCount[i].text = b[i].ToString(); }
-        bool pick = orders[0] == 4;                       // 武将那行选了「计策」才让挑
-        skillRoot.gameObject.SetActive(pick);
-        for (int i = 0; i < 6; i++)
-        {
-            bool ok = BattleRules.SkillCost[i] <= plotPts;
-            skillT[i].text = BattleRules.SkillName[i] + " " + BattleRules.SkillCost[i];
-            skillT[i].color = ok ? new Color32(0xF0,0xE0,0xB8,255) : new Color32(0x86,0x7E,0x6C,255);
-        }
         int bid = BattleRules.BuffId(cd);
         buffT.text = "计策点 " + plotPts
                    + (bid > 0 ? "   " + BattleRules.SkillName[bid - 1] + " 余 " + (cd & 0xF) : "");
@@ -637,8 +614,9 @@ public class ClashView
     void BuildMinimap()
     {
         var panel = Panel(field, "mm", Plate());
-        Place((RectTransform)panel.transform, 8, MAP_Y,
-              24 + BattleRules.GridW * MM, 24 + BattleRules.GridH * MM);
+        int pw = 24 + BattleRules.GridW * MM;
+        Place((RectTransform)panel.transform, (refW - pw) / 2, MAP_Y,
+              pw, 24 + BattleRules.GridH * MM);
 
         mapRoot = Node("mmg", panel.transform);
         Place(mapRoot, 12, 12, BattleRules.GridW * MM, BattleRules.GridH * MM);
@@ -661,6 +639,50 @@ public class ClashView
                                   -lp.y / MM * C - clip.rect.height / 2f));
         });
         trig.triggers.Add(e);
+    }
+
+    /// 点了「计策」之后的二级菜单：六个能力，点数不够的挑不动。
+    void OpenSkillCmd(int col, int row)
+    {
+        int w = 104, rowH = 30, h = 26 + 6 * rowH + 6;
+        PlacePop(col, row, w, h);
+        var t = Label(cmdPop, "计策 · 余 " + plotPts, 12,
+                      new Color32(0xF0,0xC8,0x70,255), TextAnchor.MiddleCenter);
+        Place(t.rectTransform, 0, 5, w, 20);
+
+        for (int i = 0; i < 6; i++)
+        {
+            int k = i;
+            bool ok = BattleRules.SkillCost[i] <= plotPts;
+            var b = Node("k" + i, cmdPop);
+            Place(b, 6, 26 + i * rowH, w - 12, rowH - 4);
+            var bi = b.gameObject.AddComponent<Image>(); bi.sprite = Frame(); bi.type = Image.Type.Sliced;
+            var bt = b.gameObject.AddComponent<Button>(); bt.transition = Selectable.Transition.None;
+            bt.interactable = ok;
+            bt.onClick.AddListener(() => { CloseCmd(); UseSkill(k); });
+            var l = Label(b, BattleRules.SkillName[i] + " " + BattleRules.SkillCost[i], 12,
+                          ok ? new Color32(0xF0,0xE0,0xB8,255) : new Color32(0x86,0x7E,0x6C,255),
+                          TextAnchor.MiddleCenter);
+            Fill(l.rectTransform);
+        }
+    }
+
+    /// 两级菜单共用的落位：贴在那枚棋子旁边，右边放不下就翻到左边，上下夹在视窗里。
+    void PlacePop(int col, int row, int w, int h)
+    {
+        // 关旧的放在这儿，两级菜单都走这一条路。
+        // 放在 OpenCmd 里的话，绕开它直接开菜单就会把 cmdPop 覆盖掉，
+        // 旧的那个成了没人管的孤儿，永远赖在画面上。
+        CloseCmd();
+        float cx = gridRoot.anchoredPosition.x + col * C;
+        float cy = VIEW_Y + row * C - gridRoot.anchoredPosition.y;
+        float x = cx + C + 6;
+        if (x + w > refW - 6) x = cx - 6 - w;
+        x = Mathf.Clamp(x, 6, refW - 6 - w);
+        float y = Mathf.Clamp(cy + C / 2f - h / 2f, VIEW_Y + 4, VIEW_Y + VIEW_H - 4 - h);
+        cmdPop = Node("cmd", field);
+        Place(cmdPop, x, y, w, h);
+        var bg = Panel(cmdPop, "bg", Plate()); Fill((RectTransform)bg.transform);
     }
 
     /// 1 像素描边的空心方框。空心棋子和视窗框都用它。
@@ -729,26 +751,13 @@ public class ClashView
     void CloseCmd()
     {
         if (cmdPop != null) Object.Destroy(cmdPop.gameObject);
-        cmdPop = null; cmdArm = -1;
+        cmdPop = null;
     }
 
     void OpenCmd(int arm, int col, int row)
     {
-        cmdArm = arm;
         int n = OrderCount(arm), w = 92, rowH = 30, h = 26 + n * rowH + 6;
-
-        // 棋子在 field 坐标里的位置：视窗原点 + 场地当前的滚动量 + 格子偏移
-        float cx = gridRoot.anchoredPosition.x + col * C;
-        float cy = VIEW_Y + row * C - gridRoot.anchoredPosition.y;
-        // 贴在棋子右边；右边放不下就翻到左边。上下夹在视窗里，别飘到场外。
-        float x = cx + C + 6;
-        if (x + w > refW - 6) x = cx - 6 - w;
-        x = Mathf.Clamp(x, 6, refW - 6 - w);
-        float y = Mathf.Clamp(cy + C / 2f - h / 2f, VIEW_Y + 4, VIEW_Y + VIEW_H - 4 - h);
-
-        cmdPop = Node("cmd", field);
-        Place(cmdPop, x, y, w, h);
-        var bg = Panel(cmdPop, "bg", Plate()); Fill((RectTransform)bg.transform);
+        PlacePop(col, row, w, h);
         var t = Label(cmdPop, ARM[arm], 13, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleCenter);
         Place(t.rectTransform, 0, 5, w, 20);
 
@@ -760,7 +769,11 @@ public class ClashView
             var bi = b.gameObject.AddComponent<Image>(); bi.sprite = Frame(); bi.type = Image.Type.Sliced;
             bi.color = orders[arm] == i ? new Color(1f, .92f, .60f, 1f) : Color.white;
             var bt = b.gameObject.AddComponent<Button>(); bt.transition = Selectable.Transition.None;
-            bt.onClick.AddListener(() => { orders[arm] = k; CloseCmd(); Redraw(); });
+            // 武将那条「计策」不是一道令，是开二级菜单挑具体哪一招
+            bt.onClick.AddListener(() => {
+                if (arm == 0 && k == 4) { OpenSkillCmd(col, row); return; }
+                orders[arm] = k; CloseCmd(); Redraw();
+            });
             var l = Label(b, ORDER[i], 13, new Color32(0xF0,0xE0,0xB8,255), TextAnchor.MiddleCenter);
             Fill(l.rectTransform);
         }
