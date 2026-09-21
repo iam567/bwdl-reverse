@@ -219,17 +219,50 @@ public class ClashView
         gridRoot.pivot = new Vector2(0, 1);
         gridRoot.sizeDelta = new Vector2(BattleRules.GridW * C, BattleRules.GridH * C);
 
-        // 地面照原版 L() 那样按 64 铺开。一张 64 的图拉满近千像素只会糊成大色块。
-        var g98 = Tex("orig/lib98.png");
-        // 往里收半个像素：lib98 是四种地面并排的一张图，画布不是整数倍缩放时，
-        // 贴到边上会采到隔壁那一列，铺开后就是一条条竖缝。
-        var gsp = Sprite.Create(g98, new Rect(scene * 64 + .5f, .5f, 63f, 63f), new Vector2(.5f, .5f), 100);
-        for (int y = 0; y * 64 < BattleRules.GridH * C; y++)
-            for (int x = 0; x * 64 < BattleRules.GridW * C; x++)
+        // 地面照原版 L() 那样一块块铺开，一张图拉满近千像素只会糊成大色块。
+        // 新素材是四张 256 的无缝贴图（草原 / 连环船 / 山地 / 城郭），铺到 128 一块；
+        // 没做出来就退回原版 lib98 那条 256×64 的四格图，按 64 铺。
+        string[] gk = { "ping", "shui", "shan", "gong" };
+        var grel = Path.Combine("clashground", "cg_" + gk[Mathf.Clamp(scene, 0, 3)] + ".png");
+        bool newGround = File.Exists(Path.Combine(ArtDir, "battle", grel));
+        int tile = newGround ? 128 : 64;
+        Sprite gsp;
+        if (newGround)
+        {
+            // 有四帧动图就读四帧：草在摆、船间的水在动。静态那张当第 0 帧的兜底。
+            var arel = Path.Combine("clashground", "cg_" + gk[Mathf.Clamp(scene, 0, 3)] + "_f0.png");
+            if (File.Exists(Path.Combine(ArtDir, "battle", arel)))
+            {
+                groundFrames = new Sprite[4];
+                for (int i = 0; i < 4; i++)
+                {
+                    var ft = Tex(Path.Combine("clashground",
+                        "cg_" + gk[Mathf.Clamp(scene, 0, 3)] + "_f" + i + ".png"));
+                    groundFrames[i] = Sprite.Create(ft, new Rect(0, 0, ft.width, ft.height),
+                                                    new Vector2(.5f, .5f), 100);
+                }
+                gsp = groundFrames[0];
+            }
+            else
+            {
+                var gt0 = Tex(grel);
+                gsp = Sprite.Create(gt0, new Rect(0, 0, gt0.width, gt0.height), new Vector2(.5f, .5f), 100);
+            }
+        }
+        else
+        {
+            // lib98 是四种地面并排的一张图，画布不是整数倍缩放时贴到边上会采到隔壁那一列，
+            // 铺开后就是一条条竖缝——所以往里收半个像素。
+            var g98 = Tex("orig/lib98.png");
+            gsp = Sprite.Create(g98, new Rect(scene * 64 + .5f, .5f, 63f, 63f), new Vector2(.5f, .5f), 100);
+        }
+        for (int y = 0; y * tile < BattleRules.GridH * C; y++)
+            for (int x = 0; x * tile < BattleRules.GridW * C; x++)
             {
                 var t = Node("gt", gridRoot).gameObject.AddComponent<Image>();
-                Place((RectTransform)t.transform, x * 64, y * 64, 64, 64);
+                Place((RectTransform)t.transform, x * tile, y * tile, tile, tile);
                 t.sprite = gsp; t.raycastTarget = false;
+                if (groundFrames != null) groundTiles.Add(t);
             }
 
         // 按下拖动 = 滚场地。遮罩那张 Image 就当接触区，别再叠一个。
@@ -319,6 +352,7 @@ public class ClashView
     public void Tick()
     {
         Glide();                                  // 镜头每帧都动，别卡在下面的节拍判断后面
+        GroundTick();
         if (mine == null) return;                 // 还在阵型选择那屏，兵还没摆
         if (over != null)
         {
@@ -796,6 +830,21 @@ public class ClashView
             im.color = c; im.raycastTarget = false;
             mapTmp.Add(im.gameObject);
         }
+    }
+
+    // 地面动画：四帧来回播。直接 0123 循环的话第 3 帧接回第 0 帧会跳一下。
+    Sprite[] groundFrames; readonly List<Image> groundTiles = new List<Image>();
+    static readonly int[] G_SEQ = { 0, 1, 2, 3, 2, 1 };
+    const float G_FRAME = 0.28f;
+    int gFrame = -1;
+
+    void GroundTick()
+    {
+        if (groundFrames == null) return;
+        int i = G_SEQ[(int)(Time.time / G_FRAME) % G_SEQ.Length];
+        if (i == gFrame) return;
+        gFrame = i;
+        foreach (var im in groundTiles) im.sprite = groundFrames[i];
     }
 
     Vector2 dragFrom, gridFrom, camTarget; bool dragged;
