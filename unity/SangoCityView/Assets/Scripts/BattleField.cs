@@ -212,7 +212,7 @@ public class BattleField
 
     /// 自检：选中一支我方部队并下一道令（2 = 攻击），好截到目标标记
     /// 自检：选中 u、打开计策菜单（截菜单），再直接对 tgt 放第 plot 种（截结果）
-    public void PlotMenuForTest(Unit u) { sel = u; mode = ""; OpenPlotMenu(); Refresh(); }
+    public void PlotMenuForTest(Unit u) { sel = u; mode = ""; OpenPlotMenu(); PlotHover(6); Refresh(); }   // 顺带选中共杀看说明
     public void PlotForTest(Unit u, int plot, Unit tgt)
     {
         ClosePlotMenu(); sel = u; plotSel = plot; mode = "plot";
@@ -328,37 +328,62 @@ public class BattleField
     }
 
     // ── 计策 ───────────────────────────────────────────────────────────
-    RectTransform plotMenu; int plotSel = -1;
+    RectTransform plotMenu; int plotSel = -1, plotHover = -1;
     readonly HashSet<int> ambush = new HashSet<int>();          // 十面埋伏埋下的格（y*W+x）
-    void ClosePlotMenu() { if (plotMenu != null) Object.Destroy(plotMenu.gameObject); plotMenu = null; }
+    Text plotDescT, plotDescTitle; readonly List<Image> plotBtnImgs = new List<Image>();
+    void ClosePlotMenu() { if (plotMenu != null) Object.Destroy(plotMenu.gameObject); plotMenu = null; plotHover = -1; plotBtnImgs.Clear(); }
+
+    /// 原版 c.P()：一次一条的走马灯——上半是说明 d.q、下面黄字是当前计策名、确认才施。
+    /// 触屏改成 4×4 全列出来，但两段式保留：第一下选中并显示说明，再点同一条才进选落点。
     void OpenPlotMenu()
     {
         ClosePlotMenu();
         int n = BattleRules.PlotCount(sel.O);
-        const int ROW = 30, COLS = 2; int rows = (n + COLS - 1) / COLS;
-        float w = 300, h = 34 + rows * ROW + 10;
+        const int COLS = 4, ROW = 34, DESC = 74; int rows = (n + COLS - 1) / COLS;
+        float w = refW - 20, h = 34 + rows * ROW + 6 + DESC + 8;
         plotMenu = Node("plot", Root);
-        Place(plotMenu, (refW - w) / 2, refH - 100 - h - 8, w, h);
+        Place(plotMenu, 10, refH - 100 - h - 8, w, h);
         var bg = Panel(plotMenu, "bg", BattleUi.PlateSp()); Fill((RectTransform)bg.transform);
-        var t = Label(plotMenu, "计策 · 机动力 " + mp, 14, new Color32(0xF0,0xC8,0x70,255), TextAnchor.MiddleCenter);
+        var t = Label(plotMenu, "计策 · 机动力 " + mp + " · " + n + " 种可用", 14, new Color32(0xF0,0xC8,0x70,255), TextAnchor.MiddleCenter);
         Place(t.rectTransform, 0, 7, w, 22);
+        float bw = (w - 16) / COLS;
         for (int i = 0; i < n; i++)
         {
             int k = i, cost = BattleRules.CostOfPlot(i);
             bool ok = cost <= mp && k != 14;                                  // 劫火原版永远用不出去
             var b = Node("p" + i, plotMenu);
-            Place(b, 8 + (i % COLS) * (w / COLS), 34 + (i / COLS) * ROW, w / COLS - 16, ROW - 4);
+            Place(b, 8 + (i % COLS) * bw + 2, 34 + (i / COLS) * ROW, bw - 4, ROW - 4);
             var bi = b.gameObject.AddComponent<Image>(); bi.sprite = BattleUi.BtnSp(); bi.type = Image.Type.Sliced;
             bi.color = ok ? Color.white : new Color(.55f, .52f, .48f, 1f);
+            plotBtnImgs.Add(bi);
             var bt = b.gameObject.AddComponent<Button>(); bt.transition = Selectable.Transition.None; bt.interactable = ok;
             bt.onClick.AddListener(() => {
-                plotSel = k; ClosePlotMenu();
+                if (plotHover != k) { PlotHover(k); return; }                 // 第一下：看说明
+                plotSel = k; ClosePlotMenu();                                  // 第二下：施
                 mode = "plot"; hintText.text = "选择计策实施地点 · " + BattleRules.PlotName[k]; Refresh();
             });
             var l = Label(b, BattleRules.PlotName[i] + " " + cost, 13,
                           ok ? new Color32(0xF0,0xE0,0xB8,255) : new Color32(0x86,0x7E,0x6C,255), TextAnchor.MiddleCenter);
             Fill(l.rectTransform);
         }
+        // 说明区：原版 d.q 原话 + 按代码扣的机动力
+        float dy = 34 + rows * ROW + 6;
+        var line = Node("ln", plotMenu).gameObject.AddComponent<Image>();
+        Place((RectTransform)line.transform, 12, dy, w - 24, 1); line.color = new Color(.60f, .47f, .24f, .8f); line.raycastTarget = false;
+        plotDescTitle = Label(plotMenu, "点一条看说明，再点一次施展", 13, new Color32(0xF0,0xE0,0x60,255), TextAnchor.MiddleCenter);
+        Place(plotDescTitle.rectTransform, 0, dy + 6, w, 20);
+        plotDescT = Label(plotMenu, "", 12, new Color32(0xE8,0xDC,0xC0,255), TextAnchor.UpperCenter);
+        plotDescT.horizontalOverflow = HorizontalWrapMode.Wrap;
+        Place(plotDescT.rectTransform, 14, dy + 28, w - 28, DESC - 30);
+    }
+    void PlotHover(int k)
+    {
+        plotHover = k;
+        for (int i = 0; i < plotBtnImgs.Count; i++)
+            if (plotBtnImgs[i] != null && plotBtnImgs[i].color != new Color(.55f, .52f, .48f, 1f))
+                plotBtnImgs[i].color = i == k ? new Color(1f, .92f, .55f, 1f) : Color.white;
+        plotDescTitle.text = BattleRules.PlotName[k] + " · 需机动力 " + BattleRules.CostOfPlot(k) + " · 再点一次施展";
+        plotDescT.text = BattleRules.PlotDesc[k];
     }
 
     // ── 计策效果弹框（原版 c.java 3194：图在上、结果句在下、按键才收）──
