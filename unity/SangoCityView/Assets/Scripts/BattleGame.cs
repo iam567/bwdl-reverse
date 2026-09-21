@@ -102,6 +102,8 @@ public class BattleGame : MonoBehaviour
         yield return Shot(dir, "6_攻城·阵型选择");
         clash.PickForTest(1);
         yield return Shot(dir, "7_攻城·守方贴墙");
+        clash.AdvanceForTest(100);                 // 看攻方是不是沿着走廊从门里挤进去
+        yield return Shot(dir, "7b_攻城·打了一阵");
 
         Application.Quit();
     }

@@ -174,6 +174,9 @@ public class ClashView
         mine   = Formation.Build(me,  formation,      true,  siege, weAttack);
         theirs = Formation.Build(foe, rng.Next(4),     false, siege, weAttack);
         walls  = siege ? Formation.Walls(weAttack) : new Dictionary<Vector2Int, int>();
+        // b.S() 守城那一支末尾：for (n=0;n<4;n++) cj[n] = 1；
+        // 守方四个兵种开局全是「待机」——守城本来就该守在原位，不是冲出去。
+        if (siege && !weAttack) for (int i = 0; i < 4; i++) orders[i] = 1;
         BuildField();
         Redraw();
     }
@@ -457,22 +460,52 @@ public class ClashView
         var tgt = Nearest(other, p);
         if (tgt.x < 0) return false;
         int dir = cmd == 2 ? -1 : 1;                           // 撤退就反着走
+        int dx = dir * System.Math.Sign(tgt.x - p.Col);
+        int dy = dir * System.Math.Sign(tgt.y - p.Row);
+
+        // 原版 b.l(byte) 的选向：先横后纵，**首选被挡住或已经对齐时往垂直方向侧移**，
+        // 两边都通就掷一次。侧移这一步才是部队会沿走廊绕行、从门挤进去的原因；
+        // 我原先写的是「主轴迈一格，撞墙就原地不动」，攻城时全堵在墙外。
         int nx = p.Col, ny = p.Row;
         if (cmd == 3)                                          // 包围：先拉开纵向再压上
+        {
             ny += tgt.y >= p.Row ? -1 : 1;
-        else if (Mathf.Abs(tgt.x - p.Col) >= Mathf.Abs(tgt.y - p.Row))
-            nx += dir * System.Math.Sign(tgt.x - p.Col);
-        else
-            ny += dir * System.Math.Sign(tgt.y - p.Row);
+            if (!Free(nx, ny)) { ny = p.Row; nx = p.Col + dx; }
+        }
+        else if (dx != 0 && Free(p.Col + dx, p.Row)) nx += dx;
+        else if (dy != 0 && Free(p.Col, p.Row + dy)) ny += dy;
+        else if (dx == 0)                                      // 同列：左右绕
+        {
+            bool l = Free(p.Col - 1, p.Row), r = Free(p.Col + 1, p.Row);
+            if (l && r) nx += rng.Next(2) == 0 ? -1 : 1;
+            else if (r) nx += 1;
+            else if (l) nx -= 1;
+        }
+        else if (dy == 0)                                      // 同行：上下绕
+        {
+            bool u = Free(p.Col, p.Row - 1), d = Free(p.Col, p.Row + 1);
+            if (u && d) ny += rng.Next(2) == 0 ? -1 : 1;
+            else if (d) ny += 1;
+            else if (u) ny -= 1;
+        }
 
-        if (nx < 0 || ny < 0 || nx >= BattleRules.GridW || ny >= BattleRules.GridH) return false;
-        if (walls.ContainsKey(new Vector2Int(nx, ny))) return false;
-        if (Occupied(mine, nx, ny) || Occupied(theirs, nx, ny)) return false;
+        if (nx == p.Col && ny == p.Row) return false;
+        if (!Free(nx, ny)) return false;
         // bX 跟着走向更新：b.c/d/e/f 分别置 0 上 / 1 下 / 2 左 / 3 右
         if (nx != p.Col) p.Dir = nx > p.Col ? 3 : 2;
         else if (ny != p.Row) p.Dir = ny > p.Row ? 1 : 0;
         p.Col = nx; p.Row = ny; side[i] = p;
         return true;
+    }
+
+    /// 这一格能不能站人。原版判的是 (bK[r][c] & 0x60) == 0 —— 0x60 = 0x20|0x40，
+    /// 也就是**只有 32（墙体）挡路**，2（竖栅门）和 16（横栅）是能走过去的。
+    /// 我原先把整张 walls 表都当成墙，门也封死，部队根本进不了城。
+    bool Free(int x, int y)
+    {
+        if (x < 0 || y < 0 || x >= BattleRules.GridW || y >= BattleRules.GridH) return false;
+        if (walls.TryGetValue(new Vector2Int(x, y), out int v) && v == 32) return false;
+        return !Occupied(mine, x, y) && !Occupied(theirs, x, y);
     }
 
     static bool Occupied(List<Piece> ps, int x, int y)
@@ -572,7 +605,9 @@ public class ClashView
     {
         if (wallCache.TryGetValue(v, out var sp)) return sp;
         if (wallTex == null) wallTex = Tex("orig/lib306.png");
-        int i = v == 32 ? 0 : v == 16 ? 1 : 2;
+        // 原版 c.g(byte)：32→0(墙体) 2→1(竖栅) 16→2(横栅)。
+        // 我原先把 2 和 16 写反了。
+        int i = v == 32 ? 0 : v == 2 ? 1 : 2;
         sp = Sprite.Create(wallTex, new Rect(i * 16, 0, 16, 16), new Vector2(.5f, .5f), 100);
         wallCache[v] = sp; return sp;
     }
