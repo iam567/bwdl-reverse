@@ -49,7 +49,10 @@ print('原版  %d 张' % len(ORIG))
 n = 0
 for f in glob.glob(os.path.join(ROOT, 'assets/duel/px/*')):
     shutil.copy2(f, os.path.join(DST, 'duel', os.path.basename(f))); n += 1
-print('单挑  %d 张（新）' % n)
+# 一城一张的攻城背景动画，四帧一组，和别的单挑背景放一起
+for f in glob.glob(os.path.join(ROOT, 'assets/duelanim/px/*.jpg')):
+    shutil.copy2(f, os.path.join(DST, 'duel', os.path.basename(f))); n += 1
+print('单挑  %d 张（新，含攻城背景动画）' % n)
 
 # 阵型战小兵：4 兵种 × 2 阵营 × 3 向（朝左是朝右镜像，绘制时翻）
 n = 0

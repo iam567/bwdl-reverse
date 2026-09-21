@@ -13,7 +13,9 @@ from PIL import Image
 
 SRC, OUT = sys.argv[1], sys.argv[2]
 os.makedirs(OUT, exist_ok=True)
-TARGET = {'plate': 192, 'btn': 96, 'portrait': 192, 'mapbg': 192}
+TARGET = {'plate': 192, 'btn': 96, 'portrait': 192, 'mapbg': 192,
+          'bar': 40, 'barfill': 24}
+WIDE = ('btn', 'bar', 'barfill')       # 横条按高度缩，别按最长边
 meta = {}
 
 
@@ -75,7 +77,7 @@ for k, target in TARGET.items():
         im = trim(im)
 
     # 等比缩到目标边长（btn 是横条，按高度缩）
-    if k == 'btn':
+    if k in WIDE:
         s = target / im.height
     else:
         s = target / max(im.width, im.height)
@@ -87,6 +89,9 @@ for k, target in TARGET.items():
                    'hole': [hx, hy, hw, hh]}
     elif k == 'mapbg':
         meta[k] = {'w': im.width, 'h': im.height}
+    elif k == 'barfill':
+        # 填充条整条都是亮的，没有「亮转暗」可量。给 2 像素让两头保住自己的边缘。
+        meta[k] = {'w': im.width, 'h': im.height, 'border': 2}
     else:
         e = edge_thickness(im)
         meta[k] = {'w': im.width, 'h': im.height, 'border': e}

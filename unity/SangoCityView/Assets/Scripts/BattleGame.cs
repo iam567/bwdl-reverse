@@ -115,7 +115,8 @@ public class BattleGame : MonoBehaviour
         // 吕布忠诚 100，而 b.k() 第一行就是 if (忠诚 > 99) return false —— 他永远招不动。
         // 演示时压低忠诚，才看得到归顺那一段。
         if (foeLoyal > 0) b.Loyal = foeLoyal;
-        duel = new DuelView(root, a, b, 1, REF_W, REF_H);
+        // 演招式这几屏改用攻城场景：那一档才有一城一套的动态背景，顺带一起看了
+        duel = new DuelView(root, a, b, 3, REF_W, REF_H, ThemeOf(CITY), CITY);
         yield return new WaitForSeconds(.4f);
         duel.PickForTest(move);
         for (int i = 0; i < shots; i++)
@@ -176,7 +177,7 @@ public class BattleGame : MonoBehaviour
             clash.OnDuel = () =>
             {
                 clash.Root.gameObject.SetActive(false);
-                duel = new DuelView(root, me.O, foe.O, clash.Scene, REF_W, REF_H);
+                duel = new DuelView(root, me.O, foe.O, clash.Scene, REF_W, REF_H, ThemeOf(CITY), CITY);
                 duel.OnDone = () =>
                 {
                     Object.Destroy(duel.Root.gameObject); duel = null;

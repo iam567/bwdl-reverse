@@ -1,3 +1,5 @@
 plate 3
 btn 2
 portrait 192 191 6 6 180 179
+bar 4
+barfill 2

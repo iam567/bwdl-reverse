@@ -22,7 +22,7 @@ public class DuelView
     string report = "", over;
 
     Image figMe, figFoe, barMe, barFoe;
-    Text hpMe, hpFoe, roundT, reportT;
+    Text hpMe, hpFoe, roundT;
     RectTransform menu;
     // 一人一套立绘：48 名将各有专属，其余按 ID 散列进 9 个男池 / 5 个女池。
     // 对照表是 extract/data/duel-skin.json 生成的，扁平的「武将ID: 套名」。
@@ -61,7 +61,10 @@ public class DuelView
     // 奔驰的两帧：马腿姿势不同，交替播才有步频。
     // 原版冲锋段就是 `300 + ao%2 * 540`，在第 5 帧和第 14 帧之间来回切。
     const int F_RUN_A = 11, F_RUN_B = 14;
-    const float GROUND = 470f;                 // 地面线，两员的脚都落在这儿
+    // 背景现在铺满整屏（812 高），它的「下三分之一空地」在 541 往下。
+    // 脚落在 600：既踩在空地上，又还在底部菜单（640 起）之上。
+    const float GROUND = 600f;                 // 地面线，两员的脚都落在这儿
+    const float MENU_Y = 640f;                 // 招式面板顶边
     // 站位全部照原版按比例换算（原版屏宽 176，这里 375）：
     //   立绘 60 → 128；我方 5 → 81 折合 11 → 173；敌方 115 → 47 折合 245 → 100
     // 之前我把冲锋落点写成 refW/2 - FIG + 14 = 33，离本阵 28 只差 5 像素，等于没冲；
@@ -70,7 +73,7 @@ public class DuelView
 
 
     public DuelView(RectTransform parent, Officer me, Officer foe, int scene,
-                    float refW, float refH)
+                    float refW, float refH, string theme = null, int city = 0)
     {
         this.me = me; this.foe = foe; this.refW = refW; this.refH = refH;
         mySkin = SkinOf(me.Id); foeSkin = SkinOf(foe.Id);
@@ -81,11 +84,36 @@ public class DuelView
         var black = Node("bk", Root).gameObject.AddComponent<Image>();
         Fill((RectTransform)black.transform); black.color = new Color(.04f, .04f, .05f, 1);
 
-        // 背景按地形选，和阵型战同一个 c.e(地形码)
+        // 背景按地形选，和阵型战同一个 c.e(地形码)。攻城那一档再按地域细分——
+        // 打成都和打襄平是同一面墙，不对味。没出对应地域的就退回通用那张。
         string[] key = { "plain", "water", "forest", "siege" };
-        var bg = Node("bg", Root).gameObject.AddComponent<Image>();
-        bg.sprite = Whole(Tex("duel_bg_" + key[Mathf.Clamp(scene, 0, 3)] + ".jpg"));  // 背景不透明，存的 JPEG
-        Place((RectTransform)bg.transform, 0, 74, refW, 400);
+        int sc = Mathf.Clamp(scene, 0, 3);
+        string bgf = "duel_bg_" + key[sc] + ".jpg";
+        // 攻城按城细分，一城一套四帧的动图；没有动图就退回该城的静态图、
+        // 再退回该地域的、最后退回通用那张。
+        if (sc == 3)
+        {
+            if (city > 0 && Has("duel_bg_siege_c" + city + "_f0.jpg"))
+            {
+                bgFrames = new Sprite[4];
+                for (int i = 0; i < 4; i++)
+                    bgFrames[i] = Whole(Tex("duel_bg_siege_c" + city + "_f" + i + ".jpg"));
+                bgf = "duel_bg_siege_c" + city + "_f0.jpg";
+            }
+            else if (city > 0 && Has("duel_bg_siege_c" + city + ".jpg"))
+                bgf = "duel_bg_siege_c" + city + ".jpg";
+            else if (!string.IsNullOrEmpty(theme) && Has("duel_bg_siege_" + theme + ".jpg"))
+                bgf = "duel_bg_siege_" + theme + ".jpg";
+        }
+        var bgt = Tex(bgf);                                  // 背景不透明，存的 JPEG
+        bgImg = Node("bg", Root).gameObject.AddComponent<Image>();
+        var bg = bgImg;
+        bg.sprite = Whole(bgt);
+        // 铺满整屏，按 cover 裁：1024×1536 的图贴到 375×812 上，
+        // 直接拉伸会把人压扁，所以按高度铺满、左右各裁掉一截（提示词里已经交代过要往中间收构图）。
+        float k = Mathf.Max(refW / bgt.width, refH / bgt.height);
+        float bw = bgt.width * k, bh = bgt.height * k;
+        Place((RectTransform)bg.transform, (refW - bw) / 2f, (refH - bh) / 2f, bw, bh);
         bg.preserveAspect = false;
 
         Header();
@@ -104,10 +132,6 @@ public class DuelView
         SetFrame(figMe, F_IDLE, false); SetFrame(figFoe, F_IDLE, true);
 
         Menu();
-
-        reportT = Label(Root, "", 14, new Color32(0xE8,0xDC,0xB8,255), TextAnchor.UpperLeft);
-        Place(reportT.rectTransform, 20, 660, refW - 40, 130);
-
         Refresh();
     }
 
@@ -120,6 +144,7 @@ public class DuelView
         var t = Load(Path.Combine("battle", rel));
         t.filterMode = FilterMode.Point; return t;
     }
+    static bool Has(string f) => HasB(Path.Combine("duel", f));
     static bool HasB(string rel) => File.Exists(Path.Combine(ArtDir, "battle", rel));
     static Sprite Frame(string skin, int i)
     {
@@ -145,40 +170,67 @@ public class DuelView
         s = Whole(TexB(rel)); frames[key] = s; return s;
     }
 
+    // 背景动画：四帧来回播（0123 再 21）。直接 0123 循环的话，
+    // 第 3 帧接回第 0 帧会跳一下——旗子从「半卷」瞬间弹回「左展」。
+    Image bgImg; Sprite[] bgFrames;
+    static readonly int[] BG_SEQ = { 0, 1, 2, 3, 2, 1 };
+    const float BG_FRAME = 0.22f;
+
+    void BgTick()
+    {
+        if (bgFrames == null || bgImg == null) return;
+        int i = (int)(Time.time / BG_FRAME) % BG_SEQ.Length;
+        var sp = bgFrames[BG_SEQ[i]];
+        if (bgImg.sprite != sp) bgImg.sprite = sp;
+    }
+
+    const float BAR_W = 148f, BAR_H = 20f;
+
     void Header()
     {
-        var plate = Panel(Root, "hd", Plate());
-        Place((RectTransform)plate.transform, 8, 8, refW - 16, 68);
+        var plate = Panel(Root, "hd", BattleUi.PlateSp());
+        Place((RectTransform)plate.transform, 8, 8, refW - 16, 76);
 
         var n1 = Label(plate.transform, me.Name, 16, new Color32(0x9C,0xC8,0xFF,255));
         Place(n1.rectTransform, 14, 6, 130, 22);
         var n2 = Label(plate.transform, foe.Name, 16, new Color32(0xFF,0x98,0x90,255), TextAnchor.MiddleRight);
-        Place(n2.rectTransform, refW - 160, 6, 130, 22);
+        Place(n2.rectTransform, refW - 16 - 144, 6, 130, 22);
 
-        barMe  = Bar(out hpMe, 14, 34, false);
-        barFoe = Bar(out hpFoe, refW - 16 - 14 - 140, 34, true);
+        barMe  = Bar(out hpMe, 14, 30, false);
+        barFoe = Bar(out hpFoe, refW - 16 - 14 - BAR_W, 30, true);
 
         roundT = Label(Root, "", 12, new Color32(0xC8,0xC0,0xA8,255), TextAnchor.MiddleCenter);
-        Place(roundT.rectTransform, 0, 52, refW, 18);
+        Place(roundT.rectTransform, 0, 58, refW, 18);
     }
 
-    /// 原版那两条是 100 格竖线拼的，这里用一个条代替，右侧那条从右往左长
+    /// 原版那两条是 100 格竖线拼的，这里用一个条代替，右侧那条从右往左长。
+    /// 数字原来摆在槽外侧——375 宽的屏上要么顶到边框上，要么整个跑出框去。
+    /// 改成压在槽里面，条再短也不会越界。
     Image Bar(out Text label, float x, float y, bool rightToLeft)
     {
+        var groove = BattleUi.Get("bar");
         var back = Node("bb", Root).gameObject.AddComponent<Image>();
-        Place((RectTransform)back.transform, x, y, 140, 12); back.color = new Color(0, 0, 0, .65f);
+        Place((RectTransform)back.transform, x, y, BAR_W, BAR_H);
+        if (groove != null) { back.sprite = groove; back.type = Image.Type.Sliced; }
+        else back.color = new Color(0, 0, 0, .65f);
+
+        // 填充条在槽里再内缩一圈，露出槽的边
+        var gm = BattleUi.Metric("bar");
+        float pad = gm != null && gm.Length > 0 ? Mathf.Max(2, gm[0] * .6f) : 3f;
         var fill = Node("bf", Root).gameObject.AddComponent<Image>();
-        Place((RectTransform)fill.transform, x, y, 140, 12);
+        var fs = BattleUi.Get("barfill");
+        if (fs != null) { fill.sprite = fs; fill.type = Image.Type.Sliced; }
+        Place((RectTransform)fill.transform, x + pad, y + pad, BAR_W - pad * 2, BAR_H - pad * 2);
         fill.color = rightToLeft ? new Color(1f, .42f, .36f) : new Color(.38f, .68f, 1f);
         if (rightToLeft)
         {
             var rt = fill.rectTransform;
             rt.anchorMin = rt.anchorMax = new Vector2(0, 1); rt.pivot = new Vector2(1, 1);
-            rt.anchoredPosition = new Vector2(x + 140, -y);
+            rt.anchoredPosition = new Vector2(x + BAR_W - pad, -(y + pad));
         }
-        // 两个数字原来都摆在条的内侧，375 宽的屏上会叠在一起。各自挪到外侧。
-        label = Label(Root, "", 13, Color.white, rightToLeft ? TextAnchor.MiddleLeft : TextAnchor.MiddleRight);
-        Place(label.rectTransform, rightToLeft ? x + 146 : x - 50, y - 4, 46, 20);
+        label = Label(Root, "", 13, Color.white,
+                      rightToLeft ? TextAnchor.MiddleLeft : TextAnchor.MiddleRight);
+        Place(label.rectTransform, x + (rightToLeft ? 8 : BAR_W - 8 - 44), y + 1, 44, BAR_H - 2);
         return fill;
     }
 
@@ -206,7 +258,7 @@ public class DuelView
     void Menu()
     {
         menu = Node("menu", Root);
-        Place(menu, 12, 500, refW - 24, 146);
+        Place(menu, 12, MENU_Y, refW - 24, 146);
         var bg = Node("p", menu).gameObject.AddComponent<Image>();
         bg.sprite = Whole(Tex("duel_panel.png")); Fill((RectTransform)bg.transform);
         bg.type = Image.Type.Sliced;
@@ -336,6 +388,7 @@ public class DuelView
     /// 每帧推进：冲锋 → 命中 → 退回，双方各一遍
     public void Tick()
     {
+        BgTick();
         float t = Time.time;
         if (joining)                               // 归顺：骑过来，停在我方身侧
         {
@@ -468,12 +521,16 @@ public class DuelView
 
     void Refresh()
     {
-        barMe.rectTransform.sizeDelta  = new Vector2(140f * me.Hp  / Mathf.Max(1, me.HpMax), 12);
-        barFoe.rectTransform.sizeDelta = new Vector2(140f * foe.Hp / Mathf.Max(1, foe.HpMax), 12);
+        var gm = BattleUi.Metric("bar");
+        float pad = gm != null && gm.Length > 0 ? Mathf.Max(2, gm[0] * .6f) : 3f;
+        float w = BAR_W - pad * 2, h = BAR_H - pad * 2;
+        barMe.rectTransform.sizeDelta  = new Vector2(w * me.Hp  / Mathf.Max(1, me.HpMax), h);
+        barFoe.rectTransform.sizeDelta = new Vector2(w * foe.Hp / Mathf.Max(1, foe.HpMax), h);
         hpMe.text = me.Hp.ToString(); hpFoe.text = foe.Hp.ToString();
-        roundT.text = over ?? ("第 " + round + " 合 · 兵种"
-                    + (cc > 0 ? "占优" : cc < 0 ? "吃亏" : "持平"));
-        reportT.text = over != null ? report + "\n" + over + "\n（点任意一招收场）" : report;
+        // 底下那条实况播报去掉了，收场提示挪到这一行来，别让人不知道该点哪
+        roundT.text = over != null ? over + "　（点任意一招收场）"
+                    : "第 " + round + " 合 · 兵种"
+                      + (cc > 0 ? "占优" : cc < 0 ? "吃亏" : "持平");
         menu.gameObject.SetActive(true);
     }
 
