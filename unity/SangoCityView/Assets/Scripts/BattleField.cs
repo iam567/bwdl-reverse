@@ -525,62 +525,90 @@ public class BattleField
         var t = new Texture2D(2, 2); t.LoadImage(File.ReadAllBytes(p)); t.Apply();
         return Whole(t);
     }
+    static Sprite CardOf(int id)
+    {
+        var p = Path.Combine(ArtDir, "battle", "card", id + ".jpg");
+        if (!File.Exists(p)) return null;
+        var t = new Texture2D(2, 2); t.LoadImage(File.ReadAllBytes(p)); t.Apply();
+        return Whole(t);
+    }
     void ShowInfo(Unit u)
     {
         CloseInfo(); mode = "";
         hintText.text = "武将信息";
         var o = u.O;
-        float w = 300, h = 262;
+        float w = 340, h = 482;                       // 卡牌整张立在左上，属性条在下
         infoPop = Node("info", Root);
-        Place(infoPop, (refW - w) / 2, (refH - h) / 2 - 40, w, h);
+        Place(infoPop, (refW - w) / 2, (refH - h) / 2 - 36, w, h);
         var bg = Panel(infoPop, "bg", BattleUi.PlateSp()); Fill((RectTransform)bg.transform);
         bg.raycastTarget = true;
         var bt = infoPop.gameObject.AddComponent<Button>(); bt.transition = Selectable.Transition.None;
         bt.onClick.AddListener(() => { CloseInfo(); Refresh(); });
 
-        // 头像 + 錾金框（框中间那个洞的位置是量出来的）
-        const int PW = 96; float px = 16, py = 16;
-        var m = BattleUi.Metric("portrait"); var frame = BattleUi.Get("portrait");
-        int fw = m != null && m.Length >= 6 ? m[0] : 192, fh = m != null && m.Length >= 6 ? m[1] : 188;
-        float k = PW / (float)fw; int ph = Mathf.RoundToInt(fh * k);
-        var av = AvatarOf(o.Id);
-        if (av != null)
+        // 上半：整张卡牌不裁，立在左边（150×225，1024×1536 的比例），錾金框套在卡外；
+        // 右边是名、LV、兵种、兵力。原来 cover 裁上半身，看不全。
+        float ax = 16, ay = 16, cwid = 150, chei = 225;
+        var card = CardOf(o.Id);
+        if (card != null)
         {
-            var im = Node("av", infoPop).gameObject.AddComponent<Image>();
-            float hx = m != null && m.Length >= 6 ? m[2] * k : PW * .18f, hy = m != null && m.Length >= 6 ? m[3] * k : ph * .2f;
-            float hw = m != null && m.Length >= 6 ? m[4] * k : PW * .64f, hh = m != null && m.Length >= 6 ? m[5] * k : ph * .6f;
-            Place((RectTransform)im.transform, px + hx, py + hy, hw, hh); im.sprite = av; im.raycastTarget = false;
+            var ci = Node("card", infoPop).gameObject.AddComponent<Image>();
+            Place((RectTransform)ci.transform, ax, ay, cwid, chei); ci.sprite = card; ci.raycastTarget = false;
         }
-        if (frame != null)
+        // 卡外一圈细金边：头像框那张没有九宫格 border（量的是洞不是边），拉伸会拼成十字纹；
+        // 用木牌底图（border 3，四边是金线脚）垫在卡下面、比卡大一圈，露出的就是那圈金线。
+        var cf = Node("cf", infoPop).gameObject.AddComponent<Image>();
+        Place((RectTransform)cf.transform, ax - 4, ay - 4, cwid + 8, chei + 8);
+        cf.sprite = BattleUi.PlateSp(); cf.type = Image.Type.Sliced; cf.color = new Color(1.4f, 1.25f, .9f, 1); cf.raycastTarget = false;
+        cf.transform.SetSiblingIndex(1);                                              // 压在面板底之上、卡之下
+        float ah = chei;
+        float tx = ax + cwid + 16;
+        var nm = Label(infoPop, o.Name, 24, u.Ours ? new Color32(0x9C,0xC8,0xFF,255) : new Color32(0xFF,0x98,0x90,255), TextAnchor.MiddleLeft, FontStyle.Bold);
+        Place(nm.rectTransform, tx, ay + 8, 150, 34);
+        var ns = nm.gameObject.AddComponent<Shadow>(); ns.effectColor = new Color(0, 0, 0, .9f); ns.effectDistance = new Vector2(1.5f, -1.5f);
+        string[] side = { "LV. " + o.Lv, (o.Kind == Kind.Ping ? "平军" : o.Kind == Kind.Shui ? "水军" : "山军"), "兵力 " + o.Troops };
+        for (int i = 0; i < side.Length; i++)
         {
-            var fi = Node("fr", infoPop).gameObject.AddComponent<Image>();
-            Place((RectTransform)fi.transform, px, py, PW, ph); fi.sprite = frame; fi.raycastTarget = false;
+            var lv = Label(infoPop, side[i], 15, new Color32(0xF0,0xE0,0xC0,255));
+            Place(lv.rectTransform, tx, ay + 54 + i * 28, 150, 24);
         }
-        var nm = Label(infoPop, o.Name, 18, u.Ours ? new Color32(0x9C,0xC8,0xFF,255) : new Color32(0xFF,0x98,0x90,255));
-        Place(nm.rectTransform, px + PW + 16, py + 10, 160, 26);
-        var lv = Label(infoPop, "LV. " + o.Lv + "   " + (o.Kind == Kind.Ping ? "平军" : o.Kind == Kind.Shui ? "水军" : "山军"), 14, new Color32(0xE8,0xDC,0xC0,255));
-        Place(lv.rectTransform, px + PW + 16, py + 42, 160, 22);
 
-        // 原版 a(Graphics)：八格属性两列四行——武/智、体/德、兵/忠、武器/防具
-        string[][] rows = {
-            new[] { "武", o.Might.ToString(), "智", o.Int.ToString() },
-            new[] { "体", o.Hp.ToString(),    "德", o.Virtue.ToString() },
-            new[] { "兵", o.Troops.ToString(),"忠", o.Loyal.ToString() },   // 原版 >99 画「--」标主公；我们主公也能劝能俘，直接显示 100
-            new[] { "武器", BattleRules.WeaponOf(o), "防具", BattleRules.ArmorOf(o) },
-        };
-        var lab = new Color32(0xC8,0xA8,0x60,255); var val = Color.white;
-        float y0 = py + ph + 14;
-        for (int r = 0; r < rows.Length; r++)
+        // 下半：五项属性做成条——槽 + 染色填充，数字压在槽里右端
+        string[] tags = { "武", "智", "体", "德", "忠" };
+        int[] vals = { o.Might, o.Int, o.Hp, o.Virtue, o.Loyal };
+        int[] maxs = { 100, 100, Mathf.Max(o.HpMax, 1), 100, 100 };
+        Color[] cols = { new Color(1f, .45f, .35f), new Color(.45f, .7f, 1f), new Color(.5f, .9f, .5f), new Color(1f, .85f, .45f), new Color(.85f, .6f, 1f) };
+        float y0 = ay + ah + 20; const float BW = 206f, BH = 20f, ROW = 32f;
+        var gm = BattleUi.Metric("bar"); float pad = gm != null && gm.Length > 0 ? Mathf.Max(2, gm[0] * .6f) : 3f;
+        for (int r = 0; r < 5; r++)
         {
-            float yy = y0 + r * 26;
-            var tag = Node("tg", infoPop).gameObject.AddComponent<Image>();      // 标签垫一块小木牌，照原版那八个小方块
-            Place((RectTransform)tag.transform, 18, yy, 40, 22); tag.sprite = BattleUi.BtnSp(); tag.type = Image.Type.Sliced; tag.raycastTarget = false;
-            var l1 = Label(infoPop, rows[r][0], 13, lab, TextAnchor.MiddleCenter); Place(l1.rectTransform, 18, yy, 40, 22);
-            var v1 = Label(infoPop, rows[r][1], 15, val); Place(v1.rectTransform, 64, yy, 84, 22);
-            var tag2 = Node("tg", infoPop).gameObject.AddComponent<Image>();
-            Place((RectTransform)tag2.transform, 154, yy, 40, 22); tag2.sprite = BattleUi.BtnSp(); tag2.type = Image.Type.Sliced; tag2.raycastTarget = false;
-            var l2 = Label(infoPop, rows[r][2], 13, lab, TextAnchor.MiddleCenter); Place(l2.rectTransform, 154, yy, 40, 22);
-            var v2 = Label(infoPop, rows[r][3], 15, val); Place(v2.rectTransform, 200, yy, 90, 22);
+            float yy = y0 + r * ROW;
+            var tag = Node("tg", infoPop).gameObject.AddComponent<Image>();
+            Place((RectTransform)tag.transform, 18, yy - 2, 36, BH + 4); tag.sprite = BattleUi.BtnSp(); tag.type = Image.Type.Sliced; tag.raycastTarget = false;
+            var tl = Label(infoPop, tags[r], 14, new Color32(0xF0,0xC8,0x70,255), TextAnchor.MiddleCenter); Place(tl.rectTransform, 18, yy - 2, 36, BH + 4);
+            float bx = 64;
+            var groove = Node("gv", infoPop).gameObject.AddComponent<Image>();
+            Place((RectTransform)groove.transform, bx, yy, BW, BH);
+            var gs = BattleUi.Get("bar"); if (gs != null) { groove.sprite = gs; groove.type = Image.Type.Sliced; } else groove.color = new Color(0, 0, 0, .6f);
+            groove.raycastTarget = false;
+            var fill = Node("fl", infoPop).gameObject.AddComponent<Image>();
+            float frac = Mathf.Clamp01(vals[r] / (float)maxs[r]);
+            Place((RectTransform)fill.transform, bx + pad, yy + pad, (BW - pad * 2) * frac, BH - pad * 2);
+            var fs = BattleUi.Get("barfill"); if (fs != null) { fill.sprite = fs; fill.type = Image.Type.Sliced; }
+            fill.color = cols[r]; fill.raycastTarget = false;
+            var vt = Label(infoPop, vals[r].ToString() + (r == 2 ? "/" + o.HpMax : ""), 14, Color.white, TextAnchor.MiddleRight);
+            Place(vt.rectTransform, bx, yy, BW - 8, BH);
+            var vs = vt.gameObject.AddComponent<Shadow>(); vs.effectColor = new Color(0, 0, 0, .9f); vs.effectDistance = new Vector2(1, -1);
+        }
+        // 武器 / 防具
+        float ey = y0 + 5 * ROW + 6;
+        string[][] eq = { new[] { "武器", BattleRules.WeaponOf(o) }, new[] { "防具", BattleRules.ArmorOf(o) } };
+        for (int i = 0; i < 2; i++)
+        {
+            float ex = 18 + i * 154;
+            var tag = Node("eq", infoPop).gameObject.AddComponent<Image>();
+            Place((RectTransform)tag.transform, ex, ey, 44, 24); tag.sprite = BattleUi.BtnSp(); tag.type = Image.Type.Sliced; tag.raycastTarget = false;
+            var tl = Label(infoPop, eq[i][0], 13, new Color32(0xF0,0xC8,0x70,255), TextAnchor.MiddleCenter); Place(tl.rectTransform, ex, ey, 44, 24);
+            var vt = Label(infoPop, eq[i][1], 15, Color.white); Place(vt.rectTransform, ex + 52, ey, 100, 24);
         }
     }
 

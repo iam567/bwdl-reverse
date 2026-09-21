@@ -15,7 +15,7 @@ ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 PROJ = os.path.join(ROOT, sys.argv[1] if len(sys.argv) > 1 else 'unity/SangoCityView')
 DST  = os.path.join(PROJ, 'Assets/StreamingAssets/Art/battle')
 
-for sub in ('tiles', 'units', 'maps', 'orig', 'avatar', 'duel', 'duelskin', 'clash', 'battleui', 'clashground', 'plotcg'):
+for sub in ('tiles', 'units', 'maps', 'orig', 'avatar', 'duel', 'duelskin', 'clash', 'battleui', 'clashground', 'plotcg', 'card'):
     os.makedirs(os.path.join(DST, sub), exist_ok=True)
 
 n = 0
@@ -59,6 +59,14 @@ n = 0
 for f in glob.glob(os.path.join(ROOT, 'assets/clash/px/*.png')):
     shutil.copy2(f, os.path.join(DST, 'clash', os.path.basename(f))); n += 1
 print('小兵  %d 张（新）' % n)
+
+# 武将卡牌立绘，给情报面板当底。1024×1536 一张 365KB，228 张太重，缩到 192×288 q80（约 30KB）
+n = 0; seen = {}
+for f in sorted(glob.glob(os.path.join(ROOT, 'assets/card/card_*.jpg')), key=os.path.getmtime):
+    oid = os.path.basename(f).split('_')[1]; seen[oid] = f            # 同一人多版取最新
+for oid, f in seen.items():
+    Image.open(f).convert('RGB').resize((192, 288), Image.LANCZOS).save(os.path.join(DST, 'card', oid + '.jpg'), quality=80); n += 1
+print('卡牌  %d 张（缩版）' % n)
 
 # 战棋层用计策时弹的效果动图：一计八帧
 n = 0
