@@ -79,6 +79,21 @@ public class BattleGame : MonoBehaviour
         clash.AdvanceForTest(45);                  // 120 拍会一路打到武将碰面进单挑，看不到阵型战
         yield return Shot(dir, "5_打了一阵");
         // 火矢：点了之后再推几拍，趁箭还在飞连抓几帧——Shot() 要等 0.35 秒，箭早到了
+        // 特效四组：呐喊圈 / 咒缚绳 / 爆炎 / 命中（推一拍后连抓，命中特效只活 0.46 秒）
+        clash.BuffForTest(3);
+        for (int i = 0; i < 3; i++) { ScreenCapture.CaptureScreenshot(Path.Combine(dir, "5d_呐喊_" + i + ".png")); yield return new WaitForSeconds(.18f); }
+        clash.BuffForTest(0);
+        for (int i = 0; i < 3; i++) { ScreenCapture.CaptureScreenshot(Path.Combine(dir, "5e_咒缚_" + i + ".png")); yield return new WaitForSeconds(.18f); }
+        clash.BuffForTest(-1);
+        clash.BlazeForTest();
+        for (int i = 0; i < 5; i++) { ScreenCapture.CaptureScreenshot(Path.Combine(dir, "5f_爆炎_" + i + ".png")); yield return new WaitForSeconds(.1f); }
+        // 命中三种：骑劈 / 箭着 / 突刺，各标一次、连抓四帧
+        for (int a = 1; a <= 3; a++)
+        {
+            clash.HitForTest(a);
+            for (int i = 0; i < 4; i++) { ScreenCapture.CaptureScreenshot(Path.Combine(dir, "5g_命中" + a + "_" + i + ".png")); yield return new WaitForSeconds(.1f); }
+            yield return new WaitForSeconds(.3f);
+        }
         clash.FireForTest();
         clash.ShotForTest();                       // 注入一支火矢，逐帧抓，不靠 AI 轮到弓兵
         for (int i = 0; i < 10; i++)

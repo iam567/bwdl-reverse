@@ -12,6 +12,7 @@
      动画  build_clashground.py --anim <动画表目录> <输出目录>
      城墙  build_clashground.py --walls <城墙表.png> <输出目录>
      箭矢  build_clashground.py --arrows <箭矢表.png> <输出目录>
+     特效  build_clashground.py --fx <特效表目录> <输出目录>
 
    城墙那支**不做**半格位移混合——那一步会把垛口和栅门的结构糊成一团，
    墙块本来就是一块块摆的，边缘对不对得上靠提示词里「四边平直、能拼接」。
@@ -27,7 +28,8 @@ ARGS = sys.argv[1:]
 ANIM = ARGS and ARGS[0] == '--anim'
 WALLS = ARGS and ARGS[0] == '--walls'
 ARROWS = ARGS and ARGS[0] == '--arrows'
-if ANIM or WALLS or ARROWS: ARGS = ARGS[1:]
+FXS = ARGS and ARGS[0] == '--fx'
+if ANIM or WALLS or ARROWS or FXS: ARGS = ARGS[1:]
 SHEET, OUT = ARGS[0], ARGS[1]
 SHUI = ARGS[2] if len(ARGS) > 2 else None
 N, COLORS = 256, 16
@@ -42,6 +44,32 @@ def seamless(img, dst):
                     raw, dst, str(N), str(COLORS)], check=True)
     os.remove(raw)
 
+
+if FXS:
+    # 特效：每张 2×2 四帧，透明底。四帧**共用同一个缩放与同一个中心**——
+    # 各帧按自己的包围盒居中的话，火球一大一小之间中心会跳。
+    import glob
+    F = 128
+    for f in sorted(glob.glob(os.path.join(SHEET, 'cfx_*.png'))):
+        k = os.path.basename(f)[4:].split('.')[0]
+        k = k.rsplit('_', 1)[0] if k.count('_') >= 2 and k.split('_')[-1][:2] == 'mu' else k
+        sh = Image.open(f).convert('RGBA')
+        if sh.size != (1024, 1024): sh = sh.resize((1024, 1024), Image.LANCZOS)
+        fr = [sh.crop((i % 2 * 512, i // 2 * 512, i % 2 * 512 + 512, i // 2 * 512 + 512)) for i in range(4)]
+        boxes = [c.split()[3].point(lambda v: 255 if v > 24 else 0).getbbox() for c in fr]
+        boxes = [b for b in boxes if b]
+        if not boxes: print('空表', k); continue
+        # 四帧包围盒的并集决定缩放，居中点用整格中心（提示词要求四帧中心一致）
+        w = max(b[2] - b[0] for b in boxes); h = max(b[3] - b[1] for b in boxes)
+        sc = min((F - 2) / max(w, 1), (F - 2) / max(h, 1), F / 512 * 1.6)
+        for i, c in enumerate(fr):
+            small = c.resize((round(512 * sc), round(512 * sc)), Image.BOX)
+            small.putalpha(small.split()[3].point(lambda v: 255 if v >= 90 else 0))
+            cv = Image.new('RGBA', (F, F), (0, 0, 0, 0))
+            cv.paste(small, ((F - small.width) // 2, (F - small.height) // 2), small)
+            cv.save(os.path.join(OUT, 'cg_fx_%s_f%d.png' % (k, i)))
+        print('%-9s 四帧  缩放 %.3f' % (k, sc))
+    raise SystemExit
 
 if ARROWS:
     # 四格共用一个缩放比、按包围盒居中——火矢三帧只有火焰不同，

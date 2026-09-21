@@ -257,6 +257,22 @@ public class ClashView
     public void AdvanceForTest(int n = 120) { CloseCmd(); for (int i = 0; i < n; i++) { tickAt = 0; Tick(); } }
     public void FinishForTest() { Finish(); }
     public void FireForTest() { UseSkill(4); }        // 自检：点火矢，看箭带不带火
+    /// 自检：直接挂上咒缚/呐喊。咒缚的绳子在敌将脚下，镜头得滚过去才截得到。
+    public void BuffForTest(int skill)
+    {
+        cd = BattleRules.CdOf(skill);
+        if (skill == 0 && theirs.Count > 0) { FocusOn(theirs[0].Col); gridRoot.anchoredPosition = camTarget; }
+        Redraw();
+    }
+    /// 自检：不等两军接上，直接给第一枚敌军标一次「被 arm 打中」，看命中特效。
+    public void HitForTest(int arm)
+    {
+        int i = theirs.FindIndex(q => q.Alive && q.Arm != Arm.None);
+        if (i < 0) return;
+        var q = theirs[i]; q.HitAt = Time.time; q.HitArm = arm; theirs[i] = q;
+        FocusOn(q.Col); gridRoot.anchoredPosition = camTarget; Redraw();
+    }
+    public void BlazeForTest() { plotPts = 99; UseSkill(5); }                        // 自检：不管点数够不够，放爆炎
     /// 自检：不等 AI 轮到弓兵，直接从第一个弓兵向右射一支（火矢），看渲染。
     public void ShotForTest()
     {
@@ -460,6 +476,7 @@ public class ClashView
         Glide();                                  // 镜头每帧都动，别卡在下面的节拍判断后面
         GroundTick();
         ShotTick();
+        FxTick();
         if (mine == null) return;                 // 还在阵型选择那屏，兵还没摆
         if (over != null)
         {
@@ -549,12 +566,12 @@ public class ClashView
             {
                 if (ours) foe.Hp = Mathf.Max(0, foe.Hp - BattleRules.HpHit(dmg));
                 else      me.Hp  = Mathf.Max(0, me.Hp  - BattleRules.HpHit(dmg));
-                q.HitAt = Time.time; other[t] = q;
+                q.HitAt = Time.time; q.HitArm = (int)p.Arm; other[t] = q;
             }
             else
             {
                 q.Troops -= dmg;
-                q.HitAt = Time.time;
+                q.HitAt = Time.time; q.HitArm = (int)p.Arm;
                 if (q.Troops <= 0) { q.Troops = 0; q.Alive = false; }
                 other[t] = q;
             }
@@ -673,14 +690,18 @@ public class ClashView
     }
 
     /// b.W()：以我方武将为中心，向前 3 列 × 上下各 1 行
+    float blazeAt = -1e9f; readonly List<Vector2Int> blazeCells = new List<Vector2Int>();
     void Blaze()
     {
         Piece g = mine.Find(p => p.Arm == Arm.None && p.Alive);
         if (g.Troops == 0 && !g.Alive) return;
+        blazeAt = Time.time; blazeCells.Clear();
         for (int dx = 1; dx <= BattleRules.BlazeCols; dx++)
             for (int dy = -BattleRules.BlazeRows; dy <= BattleRules.BlazeRows; dy++)
             {
                 int x = g.Col + dx, y = g.Row + dy;
+                if (x >= 0 && x < BattleRules.GridW && y >= 0 && y < BattleRules.GridH)
+                    blazeCells.Add(new Vector2Int(x, y));           // 整片范围都起火，不只有站人的格
                 for (int k = 0; k < theirs.Count; k++)
                 {
                     var q = theirs[k];
@@ -692,7 +713,7 @@ public class ClashView
                         q.Troops -= BattleRules.BlazeTroopDamage(rng);
                         if (q.Troops <= 0) { q.Troops = 0; q.Alive = false; }
                     }
-                    q.HitAt = Time.time; theirs[k] = q;
+                    q.HitAt = Time.time; q.HitArm = 4; theirs[k] = q;
                 }
             }
     }
@@ -770,6 +791,52 @@ public class ClashView
     }
 
     // 被击中的爆点
+    // ── 特效 ───────────────────────────────────────────────────────────
+    // 一种特效四帧，文件 clashground/cg_fx_<key>_f<n>.png。
+    // 命中 / 爆炎是一次性的（0.11 秒一帧、播完消失），咒缚 / 呐喊是循环的、
+    // 效果持续期间一直在脚下转。Redraw 一秒一次会把它们重建，帧序按全局时间算，重建也不跳。
+    const float FX_FRAME = 0.11f, FX_HIT_LIFE = 0.46f;
+    static readonly Dictionary<string, Sprite> fxCache = new Dictionary<string, Sprite>();
+    static Sprite FxSprite(string key, int f)
+    {
+        string k = key + "_" + f;
+        if (fxCache.TryGetValue(k, out var sp)) return sp;
+        var rel = Path.Combine("clashground", "cg_fx_" + key + "_f" + f + ".png");
+        if (!File.Exists(Path.Combine(ArtDir, "battle", rel))) return fxCache[k] = null;
+        var t = Tex(rel);
+        return fxCache[k] = Sprite.Create(t, new Rect(0, 0, t.width, t.height), new Vector2(.5f, .5f), 100);
+    }
+    class Fx { public Image Im; public string Key; public float T0; public bool Loop; }
+    readonly List<Fx> fxList = new List<Fx>();
+    /// 在 (col,row) 那格压一个特效；scale 是相对格子的倍数。没素材返回 false。
+    bool AddFx(string key, int col, int row, float scale, bool loop, float t0, float dy = 0)
+    {
+        if (FxSprite(key, 0) == null) return false;
+        var im = Node("fx", gridRoot).gameObject.AddComponent<Image>();
+        float sz = C * scale, off = (sz - C) / 2f;
+        Place((RectTransform)im.transform, col * C - off, row * C - off + dy, sz, sz);
+        im.raycastTarget = false; tmp.Add(im.gameObject);
+        var fx = new Fx { Im = im, Key = key, T0 = t0, Loop = loop };
+        fxList.Add(fx); ApplyFx(fx);
+        return true;
+    }
+    void ApplyFx(Fx fx)
+    {
+        float t = Time.time - fx.T0;
+        int f = fx.Loop ? (int)(t / (FX_FRAME * 1.6f)) % 4 : Mathf.Min(3, (int)(t / FX_FRAME));
+        var sp = FxSprite(fx.Key, f);
+        if (sp != null && fx.Im.sprite != sp) fx.Im.sprite = sp;
+        if (!fx.Loop && t > FX_HIT_LIFE) fx.Im.enabled = false;
+    }
+    void FxTick()
+    {
+        for (int i = fxList.Count - 1; i >= 0; i--)
+        {
+            if (fxList[i].Im == null) { fxList.RemoveAt(i); continue; }
+            ApplyFx(fxList[i]);
+        }
+    }
+
     static Texture2D hitTex; static Sprite hitSp;
     static Sprite Hit()
     {
@@ -782,7 +849,7 @@ public class ClashView
     void Redraw()
     {
         foreach (var g in tmp) Object.Destroy(g);
-        tmp.Clear();
+        tmp.Clear(); fxList.Clear();
 
         foreach (var kv in walls)                            // 城墙
         {
@@ -791,8 +858,17 @@ public class ClashView
             im.sprite = WallTile(kv.Value, kv.Key.x, kv.Key.y);
             im.raycastTarget = false; tmp.Add(im.gameObject);
         }
+        // 呐喊：我方全军脚下一圈仙气（压在兵底下），效果持续期间一直转
+        if (BattleRules.BuffId(cd) == 4)
+            foreach (var p in mine) if (p.Alive) AddFx("shout", p.Col, p.Row, 1.5f, true, 0f, C * .18f);
         DrawSide(mine,   true);
         DrawSide(theirs, false);
+        // 咒缚：敌将脚下钻出绳索（压在兵上面），效果持续期间一直在
+        if (BattleRules.BuffId(cd) == 1 && theirs.Count > 0 && theirs[0].Alive)
+            AddFx("bind", theirs[0].Col, theirs[0].Row, 1.3f, true, 0f, C * .12f);
+        // 爆炎：整片范围腾起火柱，一次性
+        if (Time.time - blazeAt < FX_HIT_LIFE)
+            foreach (var c in blazeCells) AddFx("blaze", c.x, c.y, 1.5f, false, blazeAt);
 
         // 箭不在这儿画了——Redraw 一秒一次，箭要一格一格地飞，走 ShotTick 每帧摆位置
 
@@ -1147,11 +1223,16 @@ public class ClashView
                 im.rectTransform.localScale = new Vector3(-1, 1, 1);
                 im.rectTransform.anchoredPosition += new Vector2(FIG, 0);
             }
-            if (Time.time - p.HitAt < .45f)            // 刚挨打，闪一下爆点
+            if (Time.time - p.HitAt < FX_HIT_LIFE)     // 刚挨打：按打它的兵种放命中特效
             {
-                var hx = Node("hit", gridRoot).gameObject.AddComponent<Image>();
-                Place((RectTransform)hx.transform, p.Col * C, p.Row * C - 2, C, C);
-                hx.sprite = Hit(); hx.raycastTarget = false; tmp.Add(hx.gameObject);
+                // 0 武将 / 1 骑兵 都是骑马劈砍；2 弓兵箭着；3 步兵突刺；4 爆炎
+                string key = p.HitArm == 2 ? "hit_gong" : p.HitArm == 3 ? "hit_bu" : p.HitArm == 4 ? "blaze" : "hit_qi";
+                if (!AddFx(key, p.Col, p.Row, 1.4f, false, p.HitAt))
+                {
+                    var hx = Node("hit", gridRoot).gameObject.AddComponent<Image>();   // 没特效素材就用原版爆点
+                    Place((RectTransform)hx.transform, p.Col * C, p.Row * C - 2, C, C);
+                    hx.sprite = Hit(); hx.raycastTarget = false; tmp.Add(hx.gameObject);
+                }
             }
             if (ActingSide == (ours ? 0 : 1) && ps.IndexOf(p) == ActingIdx)
             {

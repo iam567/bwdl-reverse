@@ -13,7 +13,11 @@
       缩得比侧面小；一张张各自缩到满格，则步兵会长得和骑将一样高。
       所以一次把四张整图全读进来，取二十四格里最大的宽和高算一个公共比例。
 
-   用法: cut_unitsheet.py <输出目录> <兵种key>=<整图.png> ... [--size 64]
+   用法: cut_unitsheet.py <输出目录> <兵种key>=<整图.png> ... [--size 64] [--outline 2]
+
+   --outline：给每个小兵加一圈深色描边。船板、夯土、雪地上小兵和底色顺色，
+   描边之后在任何地面上都跳得出来——不用重出图。
+   做法：透明通道往外膨胀 N 像素、填近黑，再把原图压回去。
 """
 import sys, os
 from collections import deque
@@ -23,6 +27,9 @@ args = sys.argv[1:]
 T = 64
 if '--size' in args:
     i = args.index('--size'); T = int(args[i + 1]); del args[i:i + 2]
+OUTLINE = 0
+if '--outline' in args:
+    i = args.index('--outline'); OUTLINE = int(args[i + 1]); del args[i:i + 2]
 OUT, SHEETS = args[0], [a.split('=', 1) for a in args[1:]]
 CELL, ALPHA = 512, 40
 SIDES = ['red', 'blue']
@@ -87,7 +94,7 @@ for arm, src in SHEETS:
 
 wmax = max(b[2] - b[0] for _, b in cells.values())
 hmax = max(b[3] - b[1] for _, b in cells.values())
-s = min((T - 2) / wmax, (T - 2) / hmax)
+s = min((T - 2 - OUTLINE * 2) / wmax, (T - 2 - OUTLINE * 2) / hmax)
 
 for (arm, side, d), (img, box) in sorted(cells.items()):
     fig = img.crop(box)
@@ -98,6 +105,15 @@ for (arm, side, d), (img, box) in sorted(cells.items()):
     a = fig.split()[3].point(lambda v: 255 if v >= 110 else 0)
     fig.putalpha(a)
     canvas = Image.new('RGBA', (T, T), (0, 0, 0, 0))
+    if OUTLINE > 0:
+        from PIL import ImageFilter
+        a0 = fig.split()[3]
+        big = a0.filter(ImageFilter.MaxFilter(OUTLINE * 2 + 1))          # 透明通道往外膨胀
+        edge = Image.new('RGBA', fig.size, (14, 10, 8, 255)); edge.putalpha(big)
+        edge = ImageChops_composite = edge
+        outl = Image.new('RGBA', (T, T), (0, 0, 0, 0))
+        outl.paste(edge, ((T - w) // 2, T - 1 - h), edge)
+        canvas.alpha_composite(outl)
     canvas.paste(fig, ((T - w) // 2, T - 1 - h), fig)
     f = os.path.join(OUT, 'c_%s_%s_%s.png' % (side, arm, d))
     canvas.save(f)
