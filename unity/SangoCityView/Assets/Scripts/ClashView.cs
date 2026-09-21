@@ -51,6 +51,45 @@ public class ClashView
         BuildPick();
     }
 
+    // ── 界面底图 ───────────────────────────────────────────────────────
+    // battleui.txt 是 build_battleui.py 量出来的：铜边多厚、头像框中间那个洞在哪。
+    // 这些数不在这儿另抄一份——重出一次图，两边就对不上了。
+    static Dictionary<string, int[]> uiMetric;
+    static int[] Metric(string k)
+    {
+        if (uiMetric == null)
+        {
+            uiMetric = new Dictionary<string, int[]>();
+            var f = Path.Combine(ArtDir, "battle", "battleui", "battleui.txt");
+            if (File.Exists(f))
+                foreach (var line in File.ReadAllLines(f))
+                {
+                    var a = line.Split(' ');
+                    if (a.Length < 2) continue;
+                    var v = new int[a.Length - 1];
+                    for (int i = 1; i < a.Length; i++) int.TryParse(a[i], out v[i - 1]);
+                    uiMetric[a[0]] = v;
+                }
+        }
+        return uiMetric.TryGetValue(k, out var r) ? r : null;
+    }
+
+    static readonly Dictionary<string, Sprite> uiCache = new Dictionary<string, Sprite>();
+    /// 九宫格底图。没做出来的话回落到 UIKit 里那个程序画的框，界面不至于开天窗。
+    static Sprite Ui(string k)
+    {
+        if (uiCache.TryGetValue(k, out var sp)) return sp;
+        var rel = Path.Combine("battleui", "ui_" + k + ".png");
+        if (!File.Exists(Path.Combine(ArtDir, "battle", rel))) return uiCache[k] = null;
+        var t = Tex(rel);
+        int b = Metric(k) is int[] m && m.Length > 0 ? m[0] : 0;
+        sp = Sprite.Create(t, new Rect(0, 0, t.width, t.height), new Vector2(.5f, .5f), 100, 0,
+                           SpriteMeshType.FullRect, new Vector4(b, b, b, b));
+        return uiCache[k] = sp;
+    }
+    static Sprite UiPlate() => Ui("plate") ?? Plate();
+    static Sprite UiBtn()   => Ui("btn")   ?? Frame();
+
     static Texture2D Tex(string rel)
     {
         var t = Load(Path.Combine("battle", rel));
@@ -192,10 +231,13 @@ public class ClashView
     {
         field = Node("field", Root); Fill(field);
 
+        var topBar = Panel(field, "top", UiPlate());
+        Place((RectTransform)topBar.transform, 4, 3, refW - 8, 38);
+
         dayT = Label(field, "", 15, new Color32(0xF2,0xE8,0xD4,255));
-        Place(dayT.rectTransform, 14, 14, 240, 22);
+        Place(dayT.rectTransform, 20, 13, 200, 20);   // 20 是让开左边那道铜边
         buffT = Label(field, "", 12, new Color32(0xF0,0xC8,0x70,255), TextAnchor.MiddleRight);
-        Place(buffT.rectTransform, refW - 8 - 58 - 8 - 170, 14, 170, 20);
+        Place(buffT.rectTransform, refW - 8 - 58 - 10 - 150, 13, 150, 20);
 
         // 场地比视窗宽（16 × 64 = 1024 对 375），所以套一层遮罩，里面那层拖着走。
         var clip = Node("clip", field);
@@ -244,29 +286,30 @@ public class ClashView
         ScrollTo(Vector2.zero);   // 我方摆在左边（Formation：Col = ours ? 1 : GridW-2）
 
         // 信息栏：体 / 骑 / 弓 / 步，和原版底部那一栏一样
-        var info = Panel(field, "info", Plate());
+        var info = Panel(field, "info", UiPlate());
         Place((RectTransform)info.transform, 8, INFO_Y, refW - 16, 116);
-        var an1 = Label(info.transform, me.Name, 14, new Color32(0x8C,0xC0,0xFF,255));
-        Place(an1.rectTransform, 14, 8, 110, 20);
-        var an2 = Label(info.transform, foe.Name, 14, new Color32(0xFF,0x90,0x88,255), TextAnchor.MiddleRight);
-        Place(an2.rectTransform, refW - 140, 8, 110, 20);
+        // 两侧各摆一个头像：先贴头像，再把錾金框压在上面。
+        // 框中间那个洞的位置是量出来的，写在 battleui.txt 里。
+        float pw = refW - 16;                                // 信息栏自己的宽
+        PortraitAt(info.transform, 12,          me.Id,  me.Name,  new Color32(0x8C,0xC0,0xFF,255));
+        PortraitAt(info.transform, pw - 12 - 68, foe.Id, foe.Name, new Color32(0xFF,0x90,0x88,255));
         string[] lab = { "体", "骑", "弓", "步" };
         for (int i = 0; i < 4; i++)
         {
             var l = Label(info.transform, lab[i], 13, new Color32(0xD0,0xC0,0x98,255), TextAnchor.MiddleCenter);
-            Place(l.rectTransform, refW / 2 - 24, 30 + i * 21, 32, 20);
+            Place(l.rectTransform, refW / 2 - 24, 24 + i * 20, 32, 20);
             armCount[i] = Label(info.transform, "", 14, Color.white, TextAnchor.MiddleRight);
-            Place(armCount[i].rectTransform, refW / 2 - 130, 30 + i * 21, 100, 20);
+            Place(armCount[i].rectTransform, refW / 2 - 130, 24 + i * 20, 100, 20);
             foeCount[i] = Label(info.transform, "", 14, Color.white);
-            Place(foeCount[i].rectTransform, refW / 2 + 22, 30 + i * 21, 100, 20);
+            Place(foeCount[i].rectTransform, refW / 2 + 22, 24 + i * 20, 100, 20);
         }
 
         BuildMinimap();
 
         // 「收兵」是打到一半退出阵型战的唯一出口，不能删，挪进顶栏——那儿本来就空着
         var quit = Node("quit", field);
-        Place(quit, refW - 8 - 58, 10, 58, 24);
-        var qi = quit.gameObject.AddComponent<Image>(); qi.sprite = Frame(); qi.type = Image.Type.Sliced;
+        Place(quit, refW - 10 - 58, 9, 58, 26);
+        var qi = quit.gameObject.AddComponent<Image>(); qi.sprite = UiBtn(); qi.type = Image.Type.Sliced;
         var qb = quit.gameObject.AddComponent<Button>(); qb.transition = Selectable.Transition.None;
         qb.onClick.AddListener(Finish);
         var ql = Label(quit, "收兵", 12, new Color32(0xE0,0xD0,0xA8,255), TextAnchor.MiddleCenter);
@@ -611,9 +654,41 @@ public class ClashView
     RectTransform mapRoot; RectTransform mapView;
     readonly List<GameObject> mapTmp = new List<GameObject>();
 
+    /// 一个头像：洞里放脸，框压在上面，底下写名字。
+    void PortraitAt(Transform p, float x, int id, string name, Color32 c)
+    {
+        const int W = 68;                                    // 框画多大
+        var m = Metric("portrait");
+        var frame = Ui("portrait");
+        int fw = m != null && m.Length >= 6 ? m[0] : 192, fh = m != null && m.Length >= 6 ? m[1] : 188;
+        float k = W / (float)fw;
+        int h = Mathf.RoundToInt(fh * k);
+
+        var av = Avatar(id);
+        if (av != null)
+        {
+            var im = Node("av", p).gameObject.AddComponent<Image>();
+            // 没量到洞就退回「整框内缩一圈」，别让脸糊到框外面去
+            float hx = m != null && m.Length >= 6 ? m[2] * k : W * .18f;
+            float hy = m != null && m.Length >= 6 ? m[3] * k : h * .20f;
+            float hw = m != null && m.Length >= 6 ? m[4] * k : W * .64f;
+            float hh = m != null && m.Length >= 6 ? m[5] * k : h * .60f;
+            Place((RectTransform)im.transform, x + hx, 6 + hy, hw, hh);
+            im.sprite = av; im.preserveAspect = true; im.raycastTarget = false;
+        }
+        if (frame != null)
+        {
+            var fi = Node("fr", p).gameObject.AddComponent<Image>();
+            Place((RectTransform)fi.transform, x, 6, W, h);
+            fi.sprite = frame; fi.raycastTarget = false;      // 整框贴，不拉伸
+        }
+        var n = Label(p, name, 13, c, TextAnchor.MiddleCenter);
+        Place(n.rectTransform, x - 6, 6 + h + 2, W + 12, 18);
+    }
+
     void BuildMinimap()
     {
-        var panel = Panel(field, "mm", Plate());
+        var panel = Panel(field, "mm", UiPlate());
         int pw = 24 + BattleRules.GridW * MM;
         Place((RectTransform)panel.transform, (refW - pw) / 2, MAP_Y,
               pw, 24 + BattleRules.GridH * MM);
@@ -621,7 +696,9 @@ public class ClashView
         mapRoot = Node("mmg", panel.transform);
         Place(mapRoot, 12, 12, BattleRules.GridW * MM, BattleRules.GridH * MM);
         var bg = mapRoot.gameObject.AddComponent<Image>();
-        bg.color = new Color(.10f, .11f, .13f, 1f);
+        var lea = Ui("mapbg");
+        if (lea != null) { bg.sprite = lea; bg.color = new Color(.62f, .62f, .66f, 1f); }
+        else bg.color = new Color(.10f, .11f, .13f, 1f);
 
         mapView = Node("vp", mapRoot);                       // 大图正看着哪一块
         var vi = mapView.gameObject.AddComponent<Image>();
@@ -656,7 +733,8 @@ public class ClashView
             bool ok = BattleRules.SkillCost[i] <= plotPts;
             var b = Node("k" + i, cmdPop);
             Place(b, 6, 26 + i * rowH, w - 12, rowH - 4);
-            var bi = b.gameObject.AddComponent<Image>(); bi.sprite = Frame(); bi.type = Image.Type.Sliced;
+            var bi = b.gameObject.AddComponent<Image>(); bi.sprite = UiBtn(); bi.type = Image.Type.Sliced;
+            bi.color = ok ? Color.white : new Color(.55f, .52f, .48f, 1f);
             var bt = b.gameObject.AddComponent<Button>(); bt.transition = Selectable.Transition.None;
             bt.interactable = ok;
             bt.onClick.AddListener(() => { CloseCmd(); UseSkill(k); });
@@ -682,7 +760,7 @@ public class ClashView
         float y = Mathf.Clamp(cy + C / 2f - h / 2f, VIEW_Y + 4, VIEW_Y + VIEW_H - 4 - h);
         cmdPop = Node("cmd", field);
         Place(cmdPop, x, y, w, h);
-        var bg = Panel(cmdPop, "bg", Plate()); Fill((RectTransform)bg.transform);
+        var bg = Panel(cmdPop, "bg", UiPlate()); Fill((RectTransform)bg.transform);
     }
 
     /// 1 像素描边的空心方框。空心棋子和视窗框都用它。
@@ -766,7 +844,7 @@ public class ClashView
             int k = i;
             var b = Node("c" + i, cmdPop);
             Place(b, 6, 26 + i * rowH, w - 12, rowH - 4);
-            var bi = b.gameObject.AddComponent<Image>(); bi.sprite = Frame(); bi.type = Image.Type.Sliced;
+            var bi = b.gameObject.AddComponent<Image>(); bi.sprite = UiBtn(); bi.type = Image.Type.Sliced;
             bi.color = orders[arm] == i ? new Color(1f, .92f, .60f, 1f) : Color.white;
             var bt = b.gameObject.AddComponent<Button>(); bt.transition = Selectable.Transition.None;
             // 武将那条「计策」不是一道令，是开二级菜单挑具体哪一招

@@ -1,0 +1,3 @@
+plate 11
+btn 8
+portrait 192 188 32 42 128 116

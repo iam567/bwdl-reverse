@@ -15,7 +15,7 @@ ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 PROJ = os.path.join(ROOT, sys.argv[1] if len(sys.argv) > 1 else 'unity/SangoCityView')
 DST  = os.path.join(PROJ, 'Assets/StreamingAssets/Art/battle')
 
-for sub in ('tiles', 'units', 'maps', 'orig', 'avatar', 'duel', 'duelskin', 'clash'):
+for sub in ('tiles', 'units', 'maps', 'orig', 'avatar', 'duel', 'duelskin', 'clash', 'battleui'):
     os.makedirs(os.path.join(DST, sub), exist_ok=True)
 
 n = 0
@@ -56,6 +56,12 @@ n = 0
 for f in glob.glob(os.path.join(ROOT, 'assets/clash/px/*.png')):
     shutil.copy2(f, os.path.join(DST, 'clash', os.path.basename(f))); n += 1
 print('小兵  %d 张（新）' % n)
+
+# 战斗界面的底图：九宫格面板 / 按钮 / 头像框 / 小地图内衬
+n = 0
+for f in glob.glob(os.path.join(ROOT, 'assets/battleui/px/*')):
+    shutil.copy2(f, os.path.join(DST, 'battleui', os.path.basename(f))); n += 1
+print('界面  %d 张（新）' % n)
 
 # 62 套单挑立绘，一套一个目录
 n = 0
