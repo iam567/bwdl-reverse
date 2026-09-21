@@ -180,8 +180,11 @@ public class BattleField
             }
             else t2.transition = Selectable.Transition.None;
             t2.onClick.AddListener(() => act());
+            // 标签只在两枚铺首之间的中段居中——铺满整枚按钮的话，字会往兽面底下钻
+            var m = BattleUi.Metric("go");
+            float inset = (m != null && m.Length > 0 ? m[0] : 0) / ppu + 4;
             var l2 = Label(b, txt, 14, new Color32(0xF6,0xE8,0xC0,255), TextAnchor.MiddleCenter, FontStyle.Bold);
-            Fill(l2.rectTransform);
+            Place(l2.rectTransform, inset, 0, w - inset * 2, 38);
             var sh = l2.gameObject.AddComponent<Shadow>(); sh.effectColor = new Color(0, 0, 0, .8f); sh.effectDistance = new Vector2(1, -1);
         }
         BigBtn("看我军", 12, 100, () => JumpTo(true), 3.4f);
