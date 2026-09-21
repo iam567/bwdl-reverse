@@ -601,8 +601,19 @@ public class ClashView
 
     // lib306 是 48×16 的三块，拿来当墙体 / 门 / 角楼
     static Texture2D wallTex; static readonly Dictionary<int, Sprite> wallCache = new Dictionary<int, Sprite>();
-    static Sprite WallTile(int v)
+    /// 城墙一格。新素材在 battle/clashground/cg_wall_a|wall_b|gate_v|gate_h.png：
+    /// 墙体按 (x+y) 奇偶两式交替铺，免得一整条墙像复制粘贴。没有就退回 lib306。
+    static Sprite WallTile(int v, int x, int y)
     {
+        string k = v == 32 ? ((x + y) % 2 == 0 ? "wall_a" : "wall_b") : v == 2 ? "gate_v" : "gate_h";
+        var rel = Path.Combine("clashground", "cg_" + k + ".png");
+        if (File.Exists(Path.Combine(ArtDir, "battle", rel)))
+        {
+            if (wallCache.TryGetValue(k.GetHashCode(), out var ns)) return ns;
+            var t = Tex(rel);
+            ns = Sprite.Create(t, new Rect(0, 0, t.width, t.height), new Vector2(.5f, .5f), 100);
+            wallCache[k.GetHashCode()] = ns; return ns;
+        }
         if (wallCache.TryGetValue(v, out var sp)) return sp;
         if (wallTex == null) wallTex = Tex("orig/lib306.png");
         // 原版 c.g(byte)：32→0(墙体) 2→1(竖栅) 16→2(横栅)。
@@ -672,7 +683,7 @@ public class ClashView
         {
             var im = Node("w", gridRoot).gameObject.AddComponent<Image>();
             Place((RectTransform)im.transform, kv.Key.x * C, kv.Key.y * C, C, C);
-            im.sprite = WallTile(kv.Value);     // lib306 的三段：墙体 / 门 / 角
+            im.sprite = WallTile(kv.Value, kv.Key.x, kv.Key.y);
             im.raycastTarget = false; tmp.Add(im.gameObject);
         }
         DrawSide(mine,   true);

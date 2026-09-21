@@ -10,6 +10,10 @@
    用法:
      静态  build_clashground.py <表.png> <输出目录> [水战单图.png]
      动画  build_clashground.py --anim <动画表目录> <输出目录>
+     城墙  build_clashground.py --walls <城墙表.png> <输出目录>
+
+   城墙那支**不做**半格位移混合——那一步会把垛口和栅门的结构糊成一团，
+   墙块本来就是一块块摆的，边缘对不对得上靠提示词里「四边平直、能拼接」。
 
    动画那支：一种地形一张 1024（2×2 = 四帧），切出来每一帧**各自**过一遍
    无缝处理。半格位移+混合是确定性的，四帧本来就近乎一样，处理完还是近乎一样，
@@ -20,7 +24,8 @@ from PIL import Image
 
 ARGS = sys.argv[1:]
 ANIM = ARGS and ARGS[0] == '--anim'
-if ANIM: ARGS = ARGS[1:]
+WALLS = ARGS and ARGS[0] == '--walls'
+if ANIM or WALLS: ARGS = ARGS[1:]
 SHEET, OUT = ARGS[0], ARGS[1]
 SHUI = ARGS[2] if len(ARGS) > 2 else None
 N, COLORS = 256, 16
@@ -35,6 +40,18 @@ def seamless(img, dst):
                     raw, dst, str(N), str(COLORS)], check=True)
     os.remove(raw)
 
+
+if WALLS:
+    W = 128
+    sh = Image.open(SHEET).convert('RGB')
+    if sh.size != (1024, 1024): sh = sh.resize((1024, 1024), Image.LANCZOS)
+    for i, k in enumerate(['wall_a', 'gate_v', 'gate_h', 'wall_b']):
+        c = sh.crop((i % 2 * 512, i // 2 * 512, i % 2 * 512 + 512, i // 2 * 512 + 512))
+        c = c.resize((W, W), Image.BOX).quantize(colors=COLORS, method=Image.MAXCOVERAGE,
+                                                  dither=Image.Dither.NONE).convert('RGB')
+        c.save(os.path.join(OUT, 'cg_%s.png' % k))
+        print('%-7s → cg_%s.png  %d×%d' % (k, k, W, W))
+    raise SystemExit
 
 if ANIM:
     import glob, itertools
