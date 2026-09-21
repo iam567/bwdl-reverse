@@ -214,7 +214,7 @@ public class ClashView
     // 场地是 16 列 × 7 行（bK = byte[7][16]）。原版屏宽 176，一次只显示 11 列，
     // 靠 aa 左右滚；我们不再迁就「一屏看全」，改成放大到半屏、拖着看。
     // 按参考分辨率 375 × 812 算。底下的兵种指令栏、计策栏、说明文字都拆了，
-    // 「收兵」挪进顶栏，小地图铺满整宽（一格 20，面板 344）：
+    // 小地图铺满整宽（一格 20，面板 344）：
     // 44(顶栏) + 7C + 14 + 124(信息) + 10 + 164(小地图) = 804，下边还剩 8 → C = 64。
     // 再往上顶就没意义了——C=78 时七行吃掉 67% 屏高，横向只剩不到五列，
     // 一屏大半是空地面，那不是放大是放过头。
@@ -238,7 +238,7 @@ public class ClashView
         dayT = Label(field, "", 17, new Color32(0xF2,0xE8,0xD4,255));
         Place(dayT.rectTransform, 20, 13, 200, 20);   // 20 是让开左边那道铜边
         buffT = Label(field, "", 13, new Color32(0xF0,0xC8,0x70,255), TextAnchor.MiddleRight);
-        Place(buffT.rectTransform, refW - 8 - 58 - 10 - 150, 13, 150, 20);
+        Place(buffT.rectTransform, refW - 22 - 200, 13, 200, 20);
 
         // 场地比视窗宽（16 × 64 = 1024 对 375），所以套一层遮罩，里面那层拖着走。
         var clip = Node("clip", field);
@@ -324,15 +324,10 @@ public class ClashView
         }
 
         BuildMinimap();
-
-        // 「收兵」是打到一半退出阵型战的唯一出口，不能删，挪进顶栏——那儿本来就空着
-        var quit = Node("quit", field);
-        Place(quit, refW - 10 - 58, 9, 58, 26);
-        var qi = quit.gameObject.AddComponent<Image>(); qi.sprite = UiBtn(); qi.type = Image.Type.Sliced;
-        var qb = quit.gameObject.AddComponent<Button>(); qb.transition = Selectable.Transition.None;
-        qb.onClick.AddListener(Finish);
-        var ql = Label(quit, "收兵", 14, new Color32(0xE0,0xD0,0xA8,255), TextAnchor.MiddleCenter);
-        Fill(ql.rectTransform);
+        // 这儿原来有个「收兵」按钮，是我加的。原版 b.ah() 的循环只有两个出口：
+        // c(boolean) 里双方武将相邻置 aq=1 跳去单挑，和 Z() 判出的溃败；
+        // 没有任何一处是玩家按键触发的。想脱离交战走的是兵种令里的「撤退」。
+        // 所以去掉，分出胜负后自己收场（见 Tick）。
     }
 
     // ── 实时自动战 ─────────────────────────────────────────────────────
@@ -350,6 +345,7 @@ public class ClashView
     int cd;                                // 生效中的增益：高 4 位能力号、低 4 位剩余回合
     int plotPts;                           // 计策点 Q[]
     int roundNo;
+    float overAt;                          // 分出胜负那一刻，用来延一小会儿再收场
     public int ActingSide = -1, ActingIdx = -1;
     string over;
 
@@ -357,7 +353,15 @@ public class ClashView
     {
         Glide();                                  // 镜头每帧都动，别卡在下面的节拍判断后面
         if (mine == null) return;                 // 还在阵型选择那屏，兵还没摆
-        if (over != null || Time.time < tickAt) return;
+        if (over != null)
+        {
+            // 原版 b.ah()：ac() 的循环一 break 就直接 ab() 结算回战棋层，
+            // 没有「收兵」这种玩家按键。留一小会儿让人看清结果，然后自己收场。
+            if (overAt == 0f) overAt = Time.time;
+            else if (Time.time - overAt > 2.5f) { overAt = -1e9f; Finish(); }
+            return;
+        }
+        if (Time.time < tickAt) return;
         tickAt = Time.time + TICK;
 
         // 原版的 do { cH = s(cD); ... } while (!cH)：
