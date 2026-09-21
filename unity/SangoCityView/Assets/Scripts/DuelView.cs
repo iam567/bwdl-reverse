@@ -396,9 +396,18 @@ public class DuelView
     }
 
     /// 每帧推进：冲锋 → 命中 → 退回，双方各一遍
+    float overAt;                              // 分出结果那一刻；离场/归顺/落马演完再等一拍自己收场
+
     public void Tick()
     {
         BgTick();
+        // 原版 z()：case 1/2/3 置 b.aq = 1 直接回阵型战，不等按键。
+        // 这里等离场 / 归顺的动画跑完，再停 1.8 秒让人看清结果句，然后 OnDone。
+        if (over != null && !exiting && !joining && overAt > -1e8f)
+        {
+            if (overAt == 0f) overAt = Time.time;
+            else if (Time.time - overAt > 1.8f) { overAt = -1e9f; OnDone?.Invoke(); return; }
+        }
         float t = Time.time;
         if (joining)                               // 归顺：骑过来，停在我方身侧
         {
@@ -539,7 +548,9 @@ public class DuelView
         barFoe.rectTransform.sizeDelta = new Vector2(w * foe.Hp / Mathf.Max(1, foe.HpMax), h);
         hpMe.text = me.Hp.ToString(); hpFoe.text = foe.Hp.ToString();
         // 原版 ay 的用词：等你下令时是「请选择执行命令」，分出结果就是那句结果
-        msgT.text = over != null ? over + "　（点任意一招收场）" : "请选择执行命令";
+        // 「（点任意一招收场）」是我加的提示，原版没有：原版 z() 出了结果就置 aq=1 自己回阵型战。
+        // 现在也改成自动收场（见 Tick），这行只显示结果本身。
+        msgT.text = over ?? "请选择执行命令";
         msgT.transform.SetAsLastSibling();
         menu.gameObject.SetActive(true);
     }

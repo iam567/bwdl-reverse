@@ -248,7 +248,7 @@ public class BattleField
                 mode = "move"; ComputeReach(); break;
             case 1:                                  // 计策
                 hintText.text = "计策：" + BattleRules.PlotName[0] + " 等 "
-                              + BattleRules.PlotCount(sel.O) + " 种可用（试玩版未接效果）";
+                              + BattleRules.PlotCount(sel.O) + " 种可用";
                 mode = ""; break;
             case 2:                                  // 攻击
                 mode = "attack";
@@ -259,7 +259,7 @@ public class BattleField
             case 4:                                  // 撤退
                 sel.Alive = false; sel.Acted = true;
                 hintText.text = "撤退武将 " + sel.O.Name
-                              + "（损失 " + BattleRules.RoutLoss(sel.O.Troops, rng) + " 兵）";
+                              + "，损失 " + BattleRules.RoutLoss(sel.O.Troops, rng) + " 兵";
                 sel = null; mode = ""; break;
             case 5: sel.Acted = true; hintText.text = "我军待机中..."; sel = null; mode = ""; break;
         }
@@ -440,7 +440,7 @@ public class BattleField
             }
         }
         reach.Remove(s);
-        hintText.text = "武将移动 · 亮格可达（剩 " + mp + " 点）";
+        hintText.text = "武将移动 · 亮格可达 · 剩 " + mp + " 点";
     }
 
     bool Adjacent(Unit u, int x, int y) => Mathf.Abs(u.X - x) + Mathf.Abs(u.Y - y) == 1;
