@@ -15,7 +15,7 @@ ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 PROJ = os.path.join(ROOT, sys.argv[1] if len(sys.argv) > 1 else 'unity/SangoCityView')
 DST  = os.path.join(PROJ, 'Assets/StreamingAssets/Art/battle')
 
-for sub in ('tiles', 'units', 'maps', 'orig', 'avatar', 'duel', 'duelskin'):
+for sub in ('tiles', 'units', 'maps', 'orig', 'avatar', 'duel', 'duelskin', 'clash'):
     os.makedirs(os.path.join(DST, sub), exist_ok=True)
 
 n = 0
@@ -50,6 +50,12 @@ n = 0
 for f in glob.glob(os.path.join(ROOT, 'assets/duel/px/*')):
     shutil.copy2(f, os.path.join(DST, 'duel', os.path.basename(f))); n += 1
 print('单挑  %d 张（新）' % n)
+
+# 阵型战小兵：4 兵种 × 2 阵营 × 3 向（朝左是朝右镜像，绘制时翻）
+n = 0
+for f in glob.glob(os.path.join(ROOT, 'assets/clash/px/*.png')):
+    shutil.copy2(f, os.path.join(DST, 'clash', os.path.basename(f))); n += 1
+print('小兵  %d 张（新）' % n)
 
 # 62 套单挑立绘，一套一个目录
 n = 0

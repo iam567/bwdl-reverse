@@ -480,14 +480,29 @@ public class ClashView
     //   朝右 → 列 = 兵种         朝左 → 同一列水平镜像
     // 兵种编号就是 bU：0 武将 1 骑兵 2 弓兵 3 步兵；
     // 行 = 阵营，**上排(红)是我方、下排(蓝)是敌方**——和战棋层反过来，原版就这样。
+    // 新素材在 battle/clash/：c_{red|blue}_{jiang|qi|gong|bu}_{e|n|s}.png，64×64。
+    // 红＝我方、蓝＝敌方，和上面 lib56 的排法对齐；朝左仍旧是朝右那张镜像，没单独出图。
+    static readonly string[] ArmKey = { "jiang", "qi", "gong", "bu" };
     static Texture2D fig; static readonly Dictionary<string, Sprite> figCache = new Dictionary<string, Sprite>();
     static Sprite Soldier(Arm a, int dir, bool ours)
     {
-        int col = (int)a + (dir == 0 ? 4 : dir == 1 ? 8 : 0);
-        var key = col + (ours ? "o" : "e");
+        var key = (int)a + "_" + dir + (ours ? "o" : "e");
         if (figCache.TryGetValue(key, out var sp)) return sp;
-        if (fig == null) fig = Tex("orig/lib56.png");
-        sp = Sprite.Create(fig, new Rect(col * 16, ours ? 16 : 0, 16, 16), new Vector2(.5f, .5f), 100);
+
+        var rel = Path.Combine("clash",
+            "c_" + (ours ? "red" : "blue") + "_" + ArmKey[(int)a] + "_"
+            + (dir == 0 ? "n" : dir == 1 ? "s" : "e") + ".png");
+        if (File.Exists(Path.Combine(ArtDir, "battle", rel)))
+        {
+            var t = Tex(rel);
+            sp = Sprite.Create(t, new Rect(0, 0, t.width, t.height), new Vector2(.5f, .5f), 100);
+        }
+        else                                    // 还没做新素材的，退回原版 lib56
+        {
+            int col = (int)a + (dir == 0 ? 4 : dir == 1 ? 8 : 0);
+            if (fig == null) fig = Tex("orig/lib56.png");
+            sp = Sprite.Create(fig, new Rect(col * 16, ours ? 16 : 0, 16, 16), new Vector2(.5f, .5f), 100);
+        }
         figCache[key] = sp; return sp;
     }
     struct Shot { public int X0, Y0, X1, Y1; public float At; }
@@ -568,7 +583,7 @@ public class ClashView
             if (!p.Alive) continue;
             var im = Node("p", gridRoot).gameObject.AddComponent<Image>();
             Place((RectTransform)im.transform, p.Col * C - 2, p.Row * C - 4, C + 4, C + 4);
-            im.sprite = Soldier(p.Arm, p.Dir, ours);   // 原版小兵图，这屏还没做新素材
+            im.sprite = Soldier(p.Arm, p.Dir, ours);
             im.raycastTarget = false; tmp.Add(im.gameObject);
             if (p.Dir == 2)                            // 朝左＝把朝右那张水平镜像
             {
