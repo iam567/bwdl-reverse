@@ -62,11 +62,23 @@ for slot in SEAMLESS + OBJECTS:
             side = min(im.size)
             l, t = (im.width - side)//2, (im.height - side)//2
             im = im.crop((l, t, l+side, t+side))
-        px = im.resize((N, N), Image.BOX)
-        # RGBA 不支持 MAXCOVERAGE，只能走 FASTOCTREE
-        px = px.quantize(colors=COLORS, method=Image.FASTOCTREE)
+        # 建筑图标在游戏里放大到 1.3 格压在地面上，出 96px；
+        # 透明底先按包围盒裁掉四周空白，居中摆进正方形，再把缩放留下的半透明边切硬。
+        if rgba:
+            b = im.split()[3].point(lambda v: 255 if v > 24 else 0).getbbox()
+            if b: im = im.crop(b)
+            side = max(im.size)
+            sq = Image.new('RGBA', (side, side), (0, 0, 0, 0))
+            sq.paste(im, ((side - im.width) // 2, (side - im.height) // 2))
+            im = sq
+        OB = 96
+        px = im.resize((OB, OB), Image.BOX)
+        if rgba:
+            px.putalpha(px.split()[3].point(lambda v: 255 if v >= 110 else 0))
+        # RGBA 不支持 MAXCOVERAGE，只能走 FASTOCTREE；建筑要保住饱和的屋顶色，给 20 色
+        px = px.quantize(colors=20 if rgba else COLORS, method=Image.FASTOCTREE)
         px.convert('RGBA' if rgba else 'RGB').save(dst)
-        print('%s → %s  %dx%d  %d 色' % (os.path.basename(src), os.path.basename(dst), N, N, COLORS))
+        print('%s → %s  %dx%d' % (os.path.basename(src), os.path.basename(dst), OB, OB))
 
 if missing:
     raise SystemExit('缺原图，先去生成：%s' % '、'.join(missing))

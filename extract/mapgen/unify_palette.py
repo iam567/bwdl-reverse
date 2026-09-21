@@ -13,7 +13,11 @@ from PIL import Image
 DIR, THEME = sys.argv[1], sys.argv[2]
 COLORS = int(sys.argv[3]) if len(sys.argv) > 3 else 40
 
-fs = sorted(glob.glob(os.path.join(DIR, 'bt_%s_*.png' % THEME)))
+# 建筑四格是透明底的图标，不进统一色板：一进就被拉进泥土草地的色板里，
+# 屋顶的朱红明黄没了，而且 convert('RGB') 会把透明通道抹掉。
+OBJECTS = ('castle', 'wuku', 'cang', 'yao')
+fs = sorted(f for f in glob.glob(os.path.join(DIR, 'bt_%s_*.png' % THEME))
+            if not os.path.basename(f)[:-4].endswith(OBJECTS))
 if not fs: raise SystemExit('没找到 %s 的地块' % THEME)
 ims = [(f, Image.open(f).convert('RGB')) for f in fs]
 N = ims[0][1].width

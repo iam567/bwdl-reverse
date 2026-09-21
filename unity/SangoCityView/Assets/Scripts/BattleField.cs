@@ -85,12 +85,28 @@ public class BattleField
         board.pivot = new Vector2(0, 1);
         board.sizeDelta = new Vector2(W * CELL, H * CELL);
 
+        // 地形先铺一遍。建筑格（码 1 武库 / 2 城 / 3 粮仓 / 4 药铺）底下铺平地，
+        // 建筑本身是透明底的图标，第二遍再放大到 1.3 格压上去——原版的房子图标就是略超出格子的。
         for (int y = 0; y < H; y++)
             for (int x = 0; x < W; x++)
             {
+                int code = grid[y, x] & 0xF;
+                bool bld = code >= 1 && code <= 4;
                 var im = Node("c", board).gameObject.AddComponent<Image>();
                 Place((RectTransform)im.transform, x * CELL, y * CELL, CELL, CELL);
-                im.sprite = Tile(grid[y, x] & 0xF);
+                im.sprite = Tile(bld ? 0 : code);
+                im.raycastTarget = false;
+            }
+        const float BLD = 1.3f;
+        for (int y = 0; y < H; y++)
+            for (int x = 0; x < W; x++)
+            {
+                int code = grid[y, x] & 0xF;
+                if (code < 1 || code > 4) continue;
+                var im = Node("b", board).gameObject.AddComponent<Image>();
+                float sz = CELL * BLD, off = (sz - CELL) / 2f;
+                Place((RectTransform)im.transform, x * CELL - off, y * CELL - off - 4, sz, sz);   // 往上提一点，脚站在格子里
+                im.sprite = Tile(code); im.preserveAspect = true;
                 im.raycastTarget = false;
             }
 
@@ -196,8 +212,10 @@ public class BattleField
     public void CommandForTest(Unit u, int k) { sel = u; mode = ""; Command(k); CenterOn(u.X, u.Y); curX = u.X; curY = u.Y; Refresh(); }
 
     // ── 素材 ───────────────────────────────────────────────────────────
+    // 码 0 平地原本有自己的一格「ground」，和草地（码 12）摆在一起多余，
+    // 平地也铺草——只是视觉上合并，行为上 0 和 12 的机动力消耗照旧各算各的。
     static readonly Dictionary<int, string> SLOT = new Dictionary<int, string> {
-        {0,"ground"},{1,"wuku"},{2,"castle"},{3,"cang"},{4,"yao"},{5,"ambush"},{6,"water"},
+        {0,"grass"},{1,"wuku"},{2,"castle"},{3,"cang"},{4,"yao"},{5,"ambush"},{6,"water"},
         {7,"rock"},{8,"forest"},{9,"rock"},{10,"forest"},{11,"forest"},{12,"grass"},
     };
     Sprite Tile(int code)
