@@ -15,7 +15,7 @@ ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 PROJ = os.path.join(ROOT, sys.argv[1] if len(sys.argv) > 1 else 'unity/SangoCityView')
 DST  = os.path.join(PROJ, 'Assets/StreamingAssets/Art/battle')
 
-for sub in ('tiles', 'units', 'maps', 'orig', 'avatar', 'duel', 'duelskin', 'clash', 'battleui', 'clashground'):
+for sub in ('tiles', 'units', 'maps', 'orig', 'avatar', 'duel', 'duelskin', 'clash', 'battleui', 'clashground', 'plotcg'):
     os.makedirs(os.path.join(DST, sub), exist_ok=True)
 
 n = 0
@@ -59,6 +59,12 @@ n = 0
 for f in glob.glob(os.path.join(ROOT, 'assets/clash/px/*.png')):
     shutil.copy2(f, os.path.join(DST, 'clash', os.path.basename(f))); n += 1
 print('小兵  %d 张（新）' % n)
+
+# 战棋层用计策时弹的效果动图：一计八帧
+n = 0
+for f in glob.glob(os.path.join(ROOT, 'assets/plotcg/px/plot_*.jpg')):
+    shutil.copy2(f, os.path.join(DST, 'plotcg', os.path.basename(f))); n += 1
+print('计策图 %d 张（新）' % n)
 
 # 阵型战的四种地面（无缝贴图）
 n = 0

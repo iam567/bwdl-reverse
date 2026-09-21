@@ -361,6 +361,51 @@ public class BattleField
         }
     }
 
+    // ── 计策效果弹框（原版 c.java 3194：图在上、结果句在下、按键才收）──
+    RectTransform plotPop; Image plotPic; Sprite[] plotFrames; float plotT0;
+    const float PLOT_FRAME = 0.14f;
+    static readonly Dictionary<string, Sprite> plotCache = new Dictionary<string, Sprite>();
+    static Sprite PlotFrame(int plot, int f)
+    {
+        string k = plot + "_" + f;
+        if (plotCache.TryGetValue(k, out var sp)) return sp;
+        var p = Path.Combine(ArtDir, "battle", "plotcg", "plot_" + plot + "_f" + f + ".jpg");
+        if (!File.Exists(p)) return plotCache[k] = null;
+        var t = new Texture2D(2, 2); t.LoadImage(File.ReadAllBytes(p)); t.Apply(); t.filterMode = FilterMode.Point;
+        return plotCache[k] = Whole(t);
+    }
+    void ShowPlotPop(int plot, string result)
+    {
+        ClosePlotPop();
+        plotFrames = new Sprite[8]; int have = 0;
+        for (int f = 0; f < 8; f++) { plotFrames[f] = PlotFrame(plot, f); if (plotFrames[f] != null) have++; }
+        if (have == 0) plotFrames = null;
+        float w = refW - 28, ph = (w - 16) * 384f / 512f, h = 34 + ph + 40;
+        plotPop = Node("ppop", Root);
+        Place(plotPop, 14, (refH - h) / 2 - 30, w, h);
+        var bg = Panel(plotPop, "bg", BattleUi.PlateSp()); Fill((RectTransform)bg.transform);
+        bg.raycastTarget = true;                                   // 点一下收，原版是按键
+        var bt = plotPop.gameObject.AddComponent<Button>(); bt.transition = Selectable.Transition.None;
+        bt.onClick.AddListener(() => { ClosePlotPop(); Refresh(); });
+        var t = Label(plotPop, "使用计策: " + BattleRules.PlotName[plot], 15, new Color32(0xF0,0xC8,0x70,255), TextAnchor.MiddleCenter);
+        Place(t.rectTransform, 0, 8, w, 22);
+        plotPic = Node("pic", plotPop).gameObject.AddComponent<Image>();
+        Place((RectTransform)plotPic.transform, 8, 34, w - 16, ph);
+        plotPic.raycastTarget = false;
+        if (plotFrames != null) plotPic.sprite = plotFrames[0]; else plotPic.color = new Color(.1f, .08f, .06f, 1);
+        var r = Label(plotPop, result, 15, Color.white, TextAnchor.MiddleCenter);
+        Place(r.rectTransform, 0, 34 + ph + 8, w, 24);
+        plotT0 = Time.time;
+    }
+    void ClosePlotPop() { if (plotPop != null) Object.Destroy(plotPop.gameObject); plotPop = null; plotFrames = null; }
+    /// 每帧：弹框里的图循环播（第八帧接回第一帧）
+    public void PlotPopTick()
+    {
+        if (plotPop == null || plotFrames == null) return;
+        var sp = plotFrames[(int)((Time.time - plotT0) / PLOT_FRAME) % 8];
+        if (sp != null && plotPic.sprite != sp) plotPic.sprite = sp;
+    }
+
     int TerrainAt(int x, int y) => grid[y, x] & 0x1F;
     bool HasAllyAdjacent(Unit u)
     {
@@ -378,7 +423,8 @@ public class BattleField
             if (TerrainAt(sel.X, sel.Y) == 5 && sel.O.Troops >= 100)
             {
                 ambush.Add(sel.Y * W + sel.X); sel.O.Troops -= 100; mp -= cost;
-                hintText.text = "埋伏完毕"; sel.Acted = true; sel = null;
+                hintText.text = "使用计策: 十面埋伏"; ShowPlotPop(11, "埋伏完毕");
+                sel.Acted = true; sel = null;
             }
             else hintText.text = "此地无法使用该计策";
             return;
@@ -389,9 +435,10 @@ public class BattleField
         { hintText.text = "此地无法使用该计策"; return; }
         var r = BattleRules.PlotRoll(plot, sel.O, tgt.O, supply[3], rng);
         mp -= cost;                                                            // 成不成都扣（原版 4939）
-        if (!r.Ok) { hintText.text = "计策实施失败!"; sel.Acted = true; sel = null; return; }
-        ApplyPlot(plot, r, tgt);
-        hintText.text = BattleRules.PlotMessage(plot, r);
+        string msg = r.Ok ? BattleRules.PlotMessage(plot, r) : "计策实施失败!";
+        if (r.Ok) ApplyPlot(plot, r, tgt);
+        hintText.text = "使用计策: " + BattleRules.PlotName[plot];
+        ShowPlotPop(plot, msg);                                                // 原版 P 在 roll 之前就置 true：失败也弹图
         sel.Acted = true; sel = null;
     }
 

@@ -35,7 +35,7 @@ public class BattleGame : MonoBehaviour
         return null;
     }
 
-    void Update() { duel?.Tick(); if (duel == null) clash?.Tick(); if (clash == null && duel == null) field?.Tick(); }
+    void Update() { duel?.Tick(); if (duel == null) clash?.Tick(); if (clash == null && duel == null) { field?.Tick(); field?.PlotPopTick(); } }
 
     void Start()
     {
