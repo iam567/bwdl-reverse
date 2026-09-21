@@ -22,7 +22,7 @@ public class DuelView
     string report = "", over;
 
     Image figMe, figFoe, barMe, barFoe;
-    Text hpMe, hpFoe, roundT;
+    Text hpMe, hpFoe, msgT;
     RectTransform menu;
     // 一人一套立绘：48 名将各有专属，其余按 ID 散列进 9 个男池 / 5 个女池。
     // 对照表是 extract/data/duel-skin.json 生成的，扁平的「武将ID: 套名」。
@@ -188,19 +188,29 @@ public class DuelView
 
     void Header()
     {
+        // 原版 c.C()：名字白色、各自居本半屏中央（x = bk/4 和 3bk/4，y = 1），
+        // 下面一行是两条 100 格竖线拼的血条（红=余、白=损，从两侧往中间长），
+        // 血量数字红色贴在最左最右。顶上**没有**回合数、没有兵种优劣——
+        // 「第 N 合 · 兵种吃亏」是我自己编的，删掉。数字按你要的压进槽里。
         var plate = Panel(Root, "hd", BattleUi.PlateSp());
-        Place((RectTransform)plate.transform, 8, 8, refW - 16, 76);
+        Place((RectTransform)plate.transform, 8, 8, refW - 16, 62);
 
-        var n1 = Label(plate.transform, me.Name, 16, new Color32(0x9C,0xC8,0xFF,255));
-        Place(n1.rectTransform, 14, 6, 130, 22);
-        var n2 = Label(plate.transform, foe.Name, 16, new Color32(0xFF,0x98,0x90,255), TextAnchor.MiddleRight);
-        Place(n2.rectTransform, refW - 16 - 144, 6, 130, 22);
+        var n1 = Label(plate.transform, me.Name, 16, Color.white, TextAnchor.MiddleCenter);
+        Place(n1.rectTransform, 0, 6, (refW - 16) / 2, 22);
+        var n2 = Label(plate.transform, foe.Name, 16, Color.white, TextAnchor.MiddleCenter);
+        Place(n2.rectTransform, (refW - 16) / 2, 6, (refW - 16) / 2, 22);
 
-        barMe  = Bar(out hpMe, 14, 30, false);
-        barFoe = Bar(out hpFoe, refW - 16 - 14 - BAR_W, 30, true);
+        barMe  = Bar(out hpMe, 14, 34, false);
+        barFoe = Bar(out hpFoe, refW - 16 - 14 - BAR_W, 34, true);
 
-        roundT = Label(Root, "", 12, new Color32(0xC8,0xC0,0xA8,255), TextAnchor.MiddleCenter);
-        Place(roundT.rectTransform, 0, 58, refW, 18);
+        // 原版 d()：状态那一行画在**屏幕最底下**居中（bk/2, bl-2, 锚 HCENTER|BOTTOM），
+        // 内容是 ay——「请选择执行命令 / 攻击敌方中... / 成功招降!」这一套，不在顶上。
+        // 原版屏幕最底下就是这一行；我们底下是招式面板，放到面板正上方、人马脚下这一条。
+        // 面板在 Menu() 里后建，层级在上面，所以这行还得在 Refresh 里 SetAsLastSibling 压回顶层。
+        msgT = Label(Root, "", 14, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleCenter);
+        Place(msgT.rectTransform, 0, MENU_Y - 26, refW, 22);
+        var sh = msgT.gameObject.AddComponent<UnityEngine.UI.Shadow>();
+        sh.effectColor = new Color(0, 0, 0, .9f); sh.effectDistance = new Vector2(1, -1);
     }
 
     /// 原版那两条是 100 格竖线拼的，这里用一个条代替，右侧那条从右往左长。
@@ -341,7 +351,7 @@ public class DuelView
         if (over == null)
         {
             int m = BattleRules.DuelDecide(foe, me, rng);
-            if (m == 4) { over = "敌将逃窜!"; StartExit(false); }
+            if (m == 4) { over = "敌方武将逃窜!"; StartExit(false); }
             else queue.Add(Plan(false, Mathf.Clamp(m, 0, 2)));
         }
         if (queue.Count > 0) { step = 0; stepT = 0; menu.gameObject.SetActive(false); }
@@ -376,13 +386,13 @@ public class DuelView
         if (b.SelfHurt)                            // 「全力」落空：自伤
         {
             o.Hp = Mathf.Max(0, o.Hp + b.Dmg);
-            if (o.Hp == 0) over = b.Mine ? "我方武将阵亡!" : "击毙敌将!";
+            if (o.Hp == 0) over = (b.Mine ? me.Name : foe.Name) + "战亡沙场.";
             return;
         }
         if (b.Dmg == 0) return;
         var tgt = b.Mine ? foe : me;
         tgt.Hp = Mathf.Max(0, tgt.Hp - b.Dmg);
-        if (tgt.Hp == 0) over = b.Mine ? "击毙敌将!" : "我方武将阵亡!";
+        if (tgt.Hp == 0) over = (b.Mine ? foe.Name : me.Name) + "战亡沙场.";
     }
 
     /// 每帧推进：冲锋 → 命中 → 退回，双方各一遍
@@ -439,6 +449,7 @@ public class DuelView
 
         var b = queue[step / 3];
         int ph = step % 3;                          // 0 冲锋 1 命中 2 退回
+        if (over == null) msgT.text = b.Mine ? "攻击敌方中..." : "敌方武将攻击中....";
         float dur = ph == 0 ? T_CHARGE : ph == 1 ? T_HIT[Mathf.Clamp(b.Move, 0, 2)] : T_BACK;
         stepT += Time.deltaTime;
         float k = Mathf.Clamp01(stepT / dur);
@@ -527,10 +538,9 @@ public class DuelView
         barMe.rectTransform.sizeDelta  = new Vector2(w * me.Hp  / Mathf.Max(1, me.HpMax), h);
         barFoe.rectTransform.sizeDelta = new Vector2(w * foe.Hp / Mathf.Max(1, foe.HpMax), h);
         hpMe.text = me.Hp.ToString(); hpFoe.text = foe.Hp.ToString();
-        // 底下那条实况播报去掉了，收场提示挪到这一行来，别让人不知道该点哪
-        roundT.text = over != null ? over + "　（点任意一招收场）"
-                    : "第 " + round + " 合 · 兵种"
-                      + (cc > 0 ? "占优" : cc < 0 ? "吃亏" : "持平");
+        // 原版 ay 的用词：等你下令时是「请选择执行命令」，分出结果就是那句结果
+        msgT.text = over != null ? over + "　（点任意一招收场）" : "请选择执行命令";
+        msgT.transform.SetAsLastSibling();
         menu.gameObject.SetActive(true);
     }
 
