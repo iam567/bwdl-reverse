@@ -223,7 +223,7 @@ public class BattleGame : MonoBehaviour
         int atkCity = adj.Length > 0 ? adj[0] : CITY;
         supply.TryGetValue(atkCity, out var mine); supply.TryGetValue(CITY, out var theirs);
         field = new BattleField(root, CITY, ThemeOf(CITY), roster, REF_W, REF_H,
-                                new[] { mine.gold, mine.food, theirs.gold, theirs.food });
+                                new[] { mine.gold, mine.food, theirs.gold, theirs.food }, 3);   // 我方君主刘备
         field.OnClash = (me, foe, weAttack) =>
         {
             field.Root.gameObject.SetActive(false);

@@ -55,10 +55,11 @@ public class BattleField
     static readonly string[] CMD = { "移动", "计策", "攻击", "情报", "撤退", "待机" };
 
     readonly int[] supply;                                  // 我金 我粮 敌金 敌粮
+    readonly int rulerId;                                   // 我方君主（原版 aZ），和他有没有城无关
     public BattleField(RectTransform parent, int cityId, string themeKey,
-                       List<Unit> roster, float refW, float refH, int[] supply = null)
+                       List<Unit> roster, float refW, float refH, int[] supply = null, int rulerId = -1)
     {
-        this.refW = refW; this.refH = refH; this.supply = supply ?? new int[4]; this.cityId = cityId;
+        this.refW = refW; this.refH = refH; this.supply = supply ?? new int[4]; this.cityId = cityId; this.rulerId = rulerId;
         theme = themeKey;
         grid = BattleRules.LoadMap(Path.Combine(BattleGame.BattleDir, "maps", cityId + ".map"));
         H = grid.GetLength(0); W = grid.GetLength(1);
@@ -531,7 +532,7 @@ public class BattleField
     int OurRuler()
     {
         LoadCityData();
-        foreach (var u in units) if (u.Ours && u.Alive && rulerIds.Contains(u.O.Id)) return u.O.Id;
+        if (rulerId > 0) return rulerId;                    // 明传的优先：189 年刘备一座城都没有，靠城主表推不出来
         foreach (var u in units) if (u.Ours && rulerIds.Contains(u.O.Id)) return u.O.Id;
         return -1;
     }
