@@ -107,8 +107,8 @@ public class ClashView
         var dim = Node("dim", pick).gameObject.AddComponent<Image>();
         Fill((RectTransform)dim.transform); dim.color = new Color(0, 0, 0, .52f); dim.raycastTarget = false;
 
-        // 整块内容垂直居中：顶栏 46 + 16 + 面板 300 + 16 + 卡 104 + 24 + 按钮 56 + 14 + 提示 20 = 596
-        float oy = (refH - 596) / 2f;
+        // 整块内容垂直居中：顶栏 46 + 16 + 面板 300 + 16 + 卡 104 + 24 + 按钮 56 = 562
+        float oy = (refH - 562) / 2f;
 
         // 顶栏
         var top = Panel(pick, "top", Ui("pick_banner") ?? UiPlate());
@@ -175,17 +175,8 @@ public class ClashView
         var gsh = gl.gameObject.AddComponent<UnityEngine.UI.Shadow>();
         gsh.effectColor = new Color(0, 0, 0, .8f); gsh.effectDistance = new Vector2(1, -1);
 
-        var hint = Label(pick, siege ? "守方在城中——攻城的布阵和野战不一样" :
-                                       "我方阵型你选，敌方每战随机取一种", 13,
-                         new Color32(0xD8,0xCC,0xB0,255), TextAnchor.MiddleCenter);
-        Place(hint.rectTransform, 0, oy + 576, refW, 20);
-        var dv = Ui("divider");
-        if (dv != null)
-        {
-            var di = Node("dv", pick).gameObject.AddComponent<Image>();
-            Place((RectTransform)di.transform, refW / 2 - 110, oy + 552, 220, 26);
-            di.sprite = dv; di.preserveAspect = true; di.raycastTarget = false;
-        }
+        // 底下原来有一行「我方阵型你选，敌方每战随机取一种」和一根分隔条——
+        // 那行字是我自己写的说明，原版没有，对玩的人也没有信息量，去掉。
         MarkPick();
     }
 
