@@ -127,6 +127,52 @@ if os.path.exists(ico):
             print('icon %-5s %2dx%-2d' % (k, w, h))
         meta['icon'] = {'w': ICO, 'h': ICO}
 
+# 阵型选择构件：一张 1024 切 2×2 → 横幅 / 朱砂印 / 卡片 / 卡片·选中。
+# 横幅和两张卡片要量 border（九宫格），印记整张贴不量。
+pk = os.path.join(SRC, 'bui_pick.png')
+if os.path.exists(pk):
+    sh = Image.open(pk).convert('RGBA')
+    if sh.size != (1024, 1024): sh = sh.resize((1024, 1024), Image.LANCZOS)
+    for i, k in enumerate(['pick_banner', 'pick_seal', 'pick_card', 'pick_card_on']):
+        c = trim(sh.crop((i % 2 * 512, i // 2 * 512, i % 2 * 512 + 512, i // 2 * 512 + 512)))
+        tgt = 96 if k == 'pick_banner' else 160
+        sc = tgt / (c.height if k == 'pick_banner' else max(c.width, c.height))
+        c = c.resize((max(1, round(c.width * sc)), max(1, round(c.height * sc))), Image.LANCZOS)
+        if k == 'pick_seal':
+            meta[k] = {'w': c.width, 'h': c.height}
+        else:
+            meta[k] = {'w': c.width, 'h': c.height, 'border': edge_thickness(c)}
+        c.save(os.path.join(OUT, 'ui_%s.png' % k))
+        print('%-13s %dx%-4d %s' % (k, c.width, c.height, meta[k]))
+
+def bronze_extent(im):
+    """两端的青铜铺首占多宽：中线从左往右扫，最后一个「铜色」(g >= r*0.85 且不透明) 像素的 x。
+       横向九宫格的 border 必须盖住整个铺首，不然拉伸时兽面会被抻长。"""
+    px = im.convert('RGB').load(); a = im.split()[3].load()
+    w, h = im.size; y = h // 2; last = 0
+    for x in range(int(w * .35)):
+        r, g, b = px[x, y]
+        if a[x, y] > 128 and g >= r * .85 and r < 200: last = x
+    # 灰态整张都低饱和，铜色判定会把木面也算进去——铺首再宽也不会超过两成
+    return max(6, min(last + 2, int(w * .2)))
+
+
+# 出阵按钮：2×2 → 常态 / 按下 / 不可用 / 铜纹分隔条。三态按钮横向九宫格，
+# 横向 border 量到铺首外沿、竖向按铜边量。
+gp = os.path.join(SRC, 'bui_go.png')
+if os.path.exists(gp):
+    sh = Image.open(gp).convert('RGBA')
+    if sh.size != (1024, 1024): sh = sh.resize((1024, 1024), Image.LANCZOS)
+    for i, k in enumerate(['go', 'go_on', 'go_off', 'divider']):
+        c = trim(sh.crop((i % 2 * 512, i // 2 * 512, i % 2 * 512 + 512, i // 2 * 512 + 512)))
+        tgt = 112 if k != 'divider' else 24
+        sc = tgt / c.height
+        c = c.resize((max(1, round(c.width * sc)), max(1, round(c.height * sc))), Image.LANCZOS)
+        meta[k] = {'w': c.width, 'h': c.height} if k == 'divider' else \
+                  {'w': c.width, 'h': c.height, 'border': bronze_extent(c), 'border_y': edge_thickness(c)}
+        c.save(os.path.join(OUT, 'ui_%s.png' % k))
+        print('%-8s %dx%-4d %s' % (k, c.width, c.height, meta[k]))
+
 with open(os.path.join(OUT, 'battleui.json'), 'w', encoding='utf-8') as fp:
     json.dump(meta, fp, ensure_ascii=False)
 
@@ -134,7 +180,8 @@ with open(os.path.join(OUT, 'battleui.json'), 'w', encoding='utf-8') as fp:
 # 不要在 C# 里另抄一份魔数——重出一次图两边就对不上了。
 with open(os.path.join(OUT, 'battleui.txt'), 'w', encoding='utf-8') as fp:
     for k, v in meta.items():
-        if 'border' in v: fp.write('%s %d\n' % (k, v['border']))
+        if 'border_y' in v: fp.write('%s %d %d\n' % (k, v['border'], v['border_y']))
+        elif 'border' in v: fp.write('%s %d\n' % (k, v['border']))
         elif 'hole' in v: fp.write('%s %d %d %d %d %d %d\n'
                                    % (k, v['w'], v['h'], *v['hole']))
 print('→', os.path.join(OUT, 'battleui.txt'))

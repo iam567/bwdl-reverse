@@ -3,3 +3,9 @@ btn 2
 portrait 192 191 6 6 180 179
 bar 4
 barfill 2
+pick_banner 28
+pick_card 6
+pick_card_on 13
+go 63 8
+go_on 63 9
+go_off 80 2

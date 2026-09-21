@@ -194,7 +194,7 @@ public class BattleGame : MonoBehaviour
         {
             field.Root.gameObject.SetActive(false);
             int terrain = TerrainUnder(weAttack ? foe : me);   // 场景看守方脚下那格
-            clash = new ClashView(root, me.O, foe.O, terrain, weAttack, REF_W, REF_H);
+            clash = new ClashView(root, me.O, foe.O, terrain, weAttack, REF_W, REF_H, ThemeOf(CITY), CITY);
             clash.OnDuel = () =>
             {
                 clash.Root.gameObject.SetActive(false);

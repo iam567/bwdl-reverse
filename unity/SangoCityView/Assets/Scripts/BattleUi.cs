@@ -38,9 +38,12 @@ public static class BattleUi
         var rel = Path.Combine("battle", "battleui", "ui_" + k + ".png");
         if (!File.Exists(Path.Combine(ArtDir, rel))) return cache[k] = null;
         var t = Load(rel); t.filterMode = FilterMode.Point;
-        int b = Metric(k) is int[] m && m.Length > 0 ? m[0] : 0;
+        // 一个数＝四边等宽；两个数＝横向 / 竖向（出阵按钮两端是铺首，横向要盖住整个兽面）
+        var m = Metric(k);
+        int bx = m != null && m.Length > 0 ? m[0] : 0;
+        int by = m != null && m.Length > 1 && !k.StartsWith("portrait") ? m[1] : bx;
         sp = Sprite.Create(t, new Rect(0, 0, t.width, t.height), new Vector2(.5f, .5f), 100, 0,
-                           SpriteMeshType.FullRect, new Vector4(b, b, b, b));
+                           SpriteMeshType.FullRect, new Vector4(bx, by, bx, by));
         return cache[k] = sp;
     }
 

@@ -116,6 +116,69 @@ const buildUi = k => {
   };
 };
 
+/* 阵型选择那一屏的三件：顶上的横幅牌匾（不写字，字由程序压）、
+   「VS」用的朱砂印底（同样不写字——模型写汉字和字母都不稳，只要一块印泥）、
+   阵型卡片底（选中/未选两式，几何完全一样只换边色，程序按状态切）。
+   第四格留给一根分隔用的铜纹横条。 */
+const PICK_CELLS = [
+  ['banner', '横幅牌匾', '一块**横向的木牌匾**：深褐木底、四周一圈细黄铜线脚，' +
+                        '两端各有一枚圆铜钉，牌面中央**留空不写任何字**'],
+  ['seal',   '朱砂印底', '一方**正方形的朱砂印泥印记**：饱满的朱红色、边缘微微晕开、' +
+                        '四角略圆，印面**是空白的，不刻任何字**，只要那一块红'],
+  ['card',   '阵型卡片底', '一张**竖向的小卡片底**：比面板略亮的褐木面，四周一圈极细的黄铜线脚，' +
+                        '卡面干净留空——上面稍后要用程序画阵型的点阵'],
+  ['card_on','阵型卡片底·选中', '和上一格**几何完全相同**的卡片，只有两处不同：' +
+                        '线脚从黄铜变成**亮金**、卡面稍亮一档并带一圈淡淡的金色内发光'],
+];
+function pickPrompt() {
+  const list = PICK_CELLS.map(([, n, d], i) => `${i + 1}. ${n}：${d}`).join('\n');
+  return '像素画（pixel art）风格的**界面构件表**，用于中式历史策略游戏的「阵型选择」画面。\n' +
+    '**画面严格划分成 2 列 × 2 行、共 4 个等大的方格**，每格 512×512，' +
+    '格与格之间不画边框线也不画分隔线，每格里的构件居中、占本格的八成。\n\n' +
+    '【四格，从左到右、从上到下】\n' + list + '\n\n' +
+    '风格接同一套战斗界面：汉代木牌、黄铜线脚、像素画。\n' +
+    '**第一、三、四格会被程序按九宫格拉伸**：四边等宽同纹、四角对称、中间干净。\n' +
+    PX + '\n' +
+    '**背景留空**：除了这四个构件什么都不要画，**更不要画表示透明的灰白棋盘格**。\n' +
+    '画面中不得出现任何文字、字母、数字、签名、水印。';
+}
+const buildPick = () => ({
+  id: 'bui_pick', category: 'battleui', label: '阵型选择构件·四格（2×2）',
+  meta: { 格数: 4 },
+  source: null, size: '1024x1024', background: 'transparent',
+  prompt: pickPrompt(), status: 'idle', attempts: 0,
+});
+
+/* 「出阵」大按钮。三态几何完全一样只换明暗，程序按状态切；第四格是一根铜纹横条当分隔。 */
+const GO_CELLS = [
+  ['go',      '出阵按钮·常态', '一枚**横向的大按钮**：深褐木面、四周一圈黄铜线脚，' +
+                              '左右两端各嵌一枚小小的青铜兽面铺首，按钮面**留空不写字**'],
+  ['go_on',   '出阵按钮·按下', '和上一格**几何完全相同**的按钮，只是整体暗一档、' +
+                              '上缘的高光消失、像被按下去了'],
+  ['go_off',  '出阵按钮·不可用', '和第一格**几何完全相同**的按钮，整体褪成灰褐、铜边发暗，' +
+                              '像蒙了一层灰'],
+  ['divider', '铜纹分隔条', '一根**细长的横向青铜纹饰条**：中间是连续的云雷纹，' +
+                              '两端收成小小的回纹尖头，很细，只占本格高度的一成'],
+];
+function goPrompt() {
+  const list = GO_CELLS.map(([, n, d], i) => `${i + 1}. ${n}：${d}`).join('\n');
+  return '像素画（pixel art）风格的**界面构件表**，用于中式历史策略游戏的战斗界面。\n' +
+    '**画面严格划分成 2 列 × 2 行、共 4 个等大的方格**，每格 512×512，' +
+    '格与格之间不画边框线也不画分隔线，每格里的构件水平居中、宽度占本格的九成。\n\n' +
+    '【四格，从左到右、从上到下】\n' + list + '\n\n' +
+    '风格接同一套战斗界面：汉代木牌、黄铜线脚、像素画。' +
+    '**前三格会被程序按九宫格横向拉伸**：左右两端的铺首是「角」，中段必须是干净平直的木面。\n' +
+    PX + '\n' +
+    '**背景留空**：除了这四个构件什么都不要画，**更不要画表示透明的灰白棋盘格**。\n' +
+    '画面中不得出现任何文字、字母、数字、签名、水印。';
+}
+const buildGo = () => ({
+  id: 'bui_go', category: 'battleui', label: '出阵按钮·四格（2×2）',
+  meta: { 格数: 4 },
+  source: null, size: '1024x1024', background: 'transparent',
+  prompt: goPrompt(), status: 'idle', attempts: 0,
+});
+
 const buildIcons = () => ({
   id: 'bui_icons', category: 'battleui', label: '战斗界面·兵种图标表（2×2）',
   meta: { 格数: 4 },
@@ -125,4 +188,4 @@ const buildIcons = () => ({
 
 const buildBattleUi = () => ITEMS.map(i => buildUi(i[0])).concat([buildIcons()]);
 
-module.exports = { ITEMS, ICONS, buildUi, buildIcons, buildBattleUi, uiPrompt, iconsPrompt };
+module.exports = { ITEMS, ICONS, PICK_CELLS, buildUi, buildIcons, buildPick, buildGo, GO_CELLS, buildBattleUi, uiPrompt, iconsPrompt, pickPrompt, goPrompt };

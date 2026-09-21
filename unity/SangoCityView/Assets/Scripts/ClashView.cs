@@ -37,10 +37,13 @@ public class ClashView
     RectTransform gridRoot, cmdPop;        // cmdPop：点兵种弹出来的那一竖条
     Text[] armCount = new Text[4], foeCount = new Text[4];
 
+    readonly string theme; readonly int city;      // 阵型选择那屏的底图按这场仗取
+
     public ClashView(RectTransform parent, Officer me, Officer foe,
-                     int terrain, bool weAttack, float refW, float refH)
+                     int terrain, bool weAttack, float refW, float refH,
+                     string theme = null, int city = 0)
     {
-        this.refW = refW; this.refH = refH;
+        this.refW = refW; this.refH = refH; this.theme = theme; this.city = city;
         this.me = me; this.foe = foe; this.weAttack = weAttack;
         scene = BattleRules.SceneOf(terrain);
         siege = scene == 3;
@@ -73,76 +76,174 @@ public class ClashView
     }
 
     // ── 阵型选择 ───────────────────────────────────────────────────────
+    // 原版 c.N()：卷轴底、红框面板里一个大红「VS」、两个名字、四张阵型示意图
+    // （红点武将、白点兵，lib49 那四格）。这里改成整屏：
+    // 底图就用这场仗的单挑背景（攻城 = 那座城的动图第 0 帧），压一层暗；
+    // 面板走木牌 + 錾金头像框；四张阵型图**按 Formation.Ours() 的真实坐标程序画**，
+    // 和进场后的布阵一模一样，不用另出素材。
+    readonly Image[] cardImgs = new Image[4];
     void BuildPick()
     {
         pick = Node("pick", Root); Fill(pick);
 
-        var scroll = Node("scroll", pick).gameObject.AddComponent<Image>();
-        scroll.sprite = Whole(Tex("orig/lib302.png"));
-        Place((RectTransform)scroll.transform, (refW - 352) / 2, 60, 352, 440);
-        scroll.preserveAspect = true;
+        // 底图：和 DuelView 同一套取法
+        string[] key = { "plain", "water", "forest", "siege" };
+        string bgf = "duel_bg_" + key[scene] + ".jpg";
+        if (siege)
+        {
+            if (city > 0 && HasDuel("duel_bg_siege_c" + city + "_f0.jpg")) bgf = "duel_bg_siege_c" + city + "_f0.jpg";
+            else if (city > 0 && HasDuel("duel_bg_siege_c" + city + ".jpg")) bgf = "duel_bg_siege_c" + city + ".jpg";
+            else if (!string.IsNullOrEmpty(theme) && HasDuel("duel_bg_siege_" + theme + ".jpg")) bgf = "duel_bg_siege_" + theme + ".jpg";
+        }
+        if (HasDuel(bgf))
+        {
+            var bt = Tex(Path.Combine("duel", bgf));
+            var bg = Node("bg", pick).gameObject.AddComponent<Image>();
+            bg.sprite = Whole(bt); bg.raycastTarget = false;
+            float k = Mathf.Max(refW / bt.width, refH / bt.height);       // cover 裁切，不拉伸
+            Place((RectTransform)bg.transform, (refW - bt.width * k) / 2f, (refH - bt.height * k) / 2f,
+                  bt.width * k, bt.height * k);
+        }
+        var dim = Node("dim", pick).gameObject.AddComponent<Image>();
+        Fill((RectTransform)dim.transform); dim.color = new Color(0, 0, 0, .52f); dim.raycastTarget = false;
 
-        var t = Label(pick, "战争", 22, new Color32(0xE0,0x50,0x40,255), TextAnchor.MiddleCenter);
-        Place(t.rectTransform, 0, 74, refW, 30);
+        // 整块内容垂直居中：顶栏 46 + 16 + 面板 300 + 16 + 卡 104 + 24 + 按钮 56 + 14 + 提示 20 = 596
+        float oy = (refH - 596) / 2f;
 
-        var frame = Node("frame", pick).gameObject.AddComponent<Image>();
-        frame.sprite = Whole(Tex("orig/lib90.png"));
-        Place((RectTransform)frame.transform, (refW - 292) / 2, 168, 292, 224);
+        // 顶栏
+        var top = Panel(pick, "top", Ui("pick_banner") ?? UiPlate());
+        Place((RectTransform)top.transform, 8, oy, refW - 16, 46);
+        var t = Label(pick, "战争 · " + (siege ? "攻城战" : "野战"), 19,
+                      new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleCenter);
+        Place(t.rectTransform, 0, oy, refW, 46);
 
-        var a1 = Node("a1", pick).gameObject.AddComponent<Image>();
-        a1.sprite = Avatar(me.Id); Place((RectTransform)a1.transform, (refW - 292) / 2 + 14, 182, 88, 88);
-        var a2 = Node("a2", pick).gameObject.AddComponent<Image>();
-        a2.sprite = Avatar(foe.Id); Place((RectTransform)a2.transform, (refW + 292) / 2 - 102, 182, 88, 88);
+        // VS 面板
+        var panel = Panel(pick, "vs", UiPlate());
+        Place((RectTransform)panel.transform, 12, oy + 62, refW - 24, 300);
+        const int PW = 132;
+        PortraitAt(panel.transform, 18,                 me.Id,  me.Name,  new Color32(0x9C,0xC8,0xFF,255), PW, 16);
+        PortraitAt(panel.transform, refW - 24 - 18 - PW, foe.Id, foe.Name, new Color32(0xFF,0x98,0x90,255), PW, 16);
+        // 名字底下四行：武力 智力 / 体力 兵力 / 武器 / 防具
+        StatsAt(panel.transform, 18 - 6,                 me,  16 + PW + 30);
+        StatsAt(panel.transform, refW - 24 - 18 - PW - 6, foe, 16 + PW + 30);
+        // 「VS」压在一方朱砂印上；有印就白字，没印就照原版红字
+        var seal = Ui("pick_seal");
+        if (seal != null)
+        {
+            var si = Node("seal", panel.transform).gameObject.AddComponent<Image>();
+            Place((RectTransform)si.transform, (refW - 24) / 2f - 34, 66, 68, 66);
+            si.sprite = seal; si.raycastTarget = false;
+        }
+        var vs = Label(panel.transform, "VS", 34, seal != null ? new Color32(0xFF,0xF4,0xE0,255) : new Color32(0xE0,0x40,0x30,255),
+                       TextAnchor.MiddleCenter, FontStyle.Bold);
+        Place(vs.rectTransform, 0, 74, refW - 24, 50);
+        var vsh = vs.gameObject.AddComponent<UnityEngine.UI.Shadow>();
+        vsh.effectColor = new Color(0, 0, 0, .8f); vsh.effectDistance = new Vector2(2, -2);
 
-        var n1 = Label(pick, me.Name, 16, Color.white, TextAnchor.MiddleCenter);
-        Place(n1.rectTransform, (refW - 292) / 2 + 96, 186, 100, 24);
-        var vs = Label(pick, "VS", 20, new Color32(0xE0,0x40,0x30,255), TextAnchor.MiddleCenter);
-        Place(vs.rectTransform, (refW - 292) / 2 + 96, 212, 100, 26);
-        var n2 = Label(pick, foe.Name, 16, Color.white, TextAnchor.MiddleCenter);
-        Place(n2.rectTransform, (refW - 292) / 2 + 96, 240, 100, 24);
-
-        // lib49 下半排四个 27×27 的阵型示意
-        var icons = Tex("orig/lib49.png");
+        // 四张阵型卡
+        const int CW = 80, CH = 104, GAP = 12;
+        float x0 = (refW - (4 * CW + 3 * GAP)) / 2f;
+        int nb = BattleRules.PieceCount(me.Troops);
         for (int i = 0; i < 4; i++)
         {
             int k = i;
             var b = Node("f" + i, pick);
-            Place(b, (refW - 292) / 2 + 12 + i * 70, 288, 64, 64);
-            var im = b.gameObject.AddComponent<Image>();
-            im.sprite = Sprite.Create(icons, new Rect(2 + i * 31, 1, 27, 27), new Vector2(.5f, .5f), 100);
+            Place(b, x0 + i * (CW + GAP), oy + 378, CW, CH);
+            // 卡底要不透明——按钮底那张面上带一点透明，压在城墙上底下会透出来。
+            // 有专门出的卡片底就用它，没有就用木牌面板那张（实心）。
+            cardImgs[i] = b.gameObject.AddComponent<Image>();
+            cardImgs[i].sprite = Ui("pick_card") ?? UiPlate(); cardImgs[i].type = Image.Type.Sliced;
             var btn = b.gameObject.AddComponent<Button>(); btn.transition = Selectable.Transition.None;
             btn.onClick.AddListener(() => { formation = k; MarkPick(); });
+            DrawFormationCard(b, nb, i, CW, CH);
         }
-        markRoot = Node("mark", pick); Fill(markRoot);   // 不铺满的话 Place 的左上角坐标系对不上
-
-        var title = Label(pick, "阵型选择", 18, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleCenter);
-        Place(title.rectTransform, 0, 452, refW, 28);
 
         var go = Node("go", pick);
-        Place(go, refW / 2 - 80, 510, 160, 44);
-        var gi = go.gameObject.AddComponent<Image>(); gi.sprite = Frame(); gi.type = Image.Type.Sliced;
-        var gb = go.gameObject.AddComponent<Button>(); gb.transition = Selectable.Transition.None;
+        Place(go, refW / 2 - 100, oy + 486, 200, 56);
+        var gi = go.gameObject.AddComponent<Image>();
+        gi.sprite = Ui("go") ?? UiBtn(); gi.type = Image.Type.Sliced;
+        var gb = go.gameObject.AddComponent<Button>();
+        if (Ui("go_on") != null)                                // 有按下态就换图
+        {
+            gb.transition = Selectable.Transition.SpriteSwap;
+            gb.spriteState = new SpriteState { pressedSprite = Ui("go_on"), highlightedSprite = Ui("go"), disabledSprite = Ui("go_off") ?? Ui("go") };
+        }
+        else gb.transition = Selectable.Transition.None;
         gb.onClick.AddListener(StartClash);
-        var gl = Label(go, "出阵", 17, new Color32(0xF0,0xE0,0xB8,255), TextAnchor.MiddleCenter);
+        var gl = Label(go, "出阵", 21, new Color32(0xF6,0xE8,0xC0,255), TextAnchor.MiddleCenter, FontStyle.Bold);
         Fill(gl.rectTransform);
+        var gsh = gl.gameObject.AddComponent<UnityEngine.UI.Shadow>();
+        gsh.effectColor = new Color(0, 0, 0, .8f); gsh.effectDistance = new Vector2(1, -1);
 
         var hint = Label(pick, siege ? "守方在城中——攻城的布阵和野战不一样" :
-                                       "我方阵型你选，敌方每战随机取一种", 12,
-                         new Color32(0xB8,0xB0,0x98,255), TextAnchor.MiddleCenter);
-        Place(hint.rectTransform, 0, 562, refW, 20);
+                                       "我方阵型你选，敌方每战随机取一种", 13,
+                         new Color32(0xD8,0xCC,0xB0,255), TextAnchor.MiddleCenter);
+        Place(hint.rectTransform, 0, oy + 576, refW, 20);
+        var dv = Ui("divider");
+        if (dv != null)
+        {
+            var di = Node("dv", pick).gameObject.AddComponent<Image>();
+            Place((RectTransform)di.transform, refW / 2 - 110, oy + 552, 220, 26);
+            di.sprite = dv; di.preserveAspect = true; di.raycastTarget = false;
+        }
         MarkPick();
     }
 
-    RectTransform markRoot; GameObject markObj;
+    /// 阵型示意：原版 lib49 那种红点武将、白点兵。这里按真实站位画——
+    /// 兵在 1~5 列、0~6 行，武将固定在 (1,3)。格子 10 像素，卡内居中。
+    void DrawFormationCard(RectTransform card, int nb, int f, int cw, int ch)
+    {
+        const int CELL = 10, COLS = 5, ROWS = 7, DOT = 7;
+        float ox = (cw - COLS * CELL) / 2f, oy = (ch - ROWS * CELL) / 2f;
+        void Dot(int col, int row, Color c)
+        {
+            var d = Node("d", card).gameObject.AddComponent<Image>();
+            Place((RectTransform)d.transform, ox + (col - 1) * CELL + (CELL - DOT) / 2f,
+                  oy + row * CELL + (CELL - DOT) / 2f, DOT, DOT);
+            d.color = c; d.raycastTarget = false;
+        }
+        foreach (var p in Formation.Ours(nb, f))
+            if (p.x >= 1 && p.x <= COLS && p.y >= 0 && p.y < ROWS) Dot(p.x, p.y, Color.white);
+        Dot(1, 3, new Color32(0xF0,0x40,0x30,255));                       // 武将
+    }
+
     void MarkPick()
     {
-        if (markObj != null) Object.Destroy(markObj);
-        var im = Node("m", markRoot).gameObject.AddComponent<Image>();
-        Place((RectTransform)im.transform, (refW - 292) / 2 + 12 + formation * 70, 284, 64, 72);
-        im.sprite = Frame(); im.type = Image.Type.Sliced;
-        im.color = new Color(1f, .85f, .25f, .9f); im.raycastTarget = false;
-        markObj = im.gameObject;
+        var on = Ui("pick_card_on"); var off = Ui("pick_card");
+        for (int i = 0; i < 4; i++)
+        {
+            if (cardImgs[i] == null) continue;
+            if (on != null && off != null)
+            {
+                cardImgs[i].sprite = i == formation ? on : off; cardImgs[i].color = Color.white;
+            }
+            else
+                cardImgs[i].color = i == formation ? new Color(1f, .92f, .55f, 1f) : new Color(.62f, .60f, .56f, 1f);
+        }
     }
+
+    /// 头像下的四行小字。左边一列标签暗金、右边数值米白，两列并排省高度。
+    void StatsAt(Transform p, float x, Officer o, float y, int w = 144)
+    {
+        string[][] rows = {
+            new[] { "武力", o.Might.ToString(), "智力", o.Int.ToString() },
+            new[] { "体力", o.Hp + "/" + o.HpMax, "兵力", o.Troops.ToString() },
+            new[] { "武器", BattleRules.WeaponOf(o), null, null },
+            new[] { "防具", BattleRules.ArmorOf(o), null, null },
+        };
+        var lab = new Color32(0xC8,0xA8,0x60,255); var val = new Color32(0xF2,0xE8,0xD4,255);
+        for (int r = 0; r < rows.Length; r++)
+        {
+            float yy = y + r * 19;
+            var l1 = Label(p, rows[r][0], 12, lab); Place(l1.rectTransform, x, yy, 30, 18);
+            var v1 = Label(p, rows[r][1], 13, val); Place(v1.rectTransform, x + 30, yy, rows[r][2] == null ? w - 30 : 44, 18);
+            if (rows[r][2] == null) continue;
+            var l2 = Label(p, rows[r][2], 12, lab); Place(l2.rectTransform, x + 76, yy, 30, 18);
+            var v2 = Label(p, rows[r][3], 13, val); Place(v2.rectTransform, x + 106, yy, w - 106, 18);
+        }
+    }
+
+    static bool HasDuel(string f) => File.Exists(Path.Combine(ArtDir, "battle", "duel", f));
 
     // 自检模式用的三个口子，正常玩走的是按钮
     public void PickForTest(int f) { formation = f; StartClash(); }
@@ -723,9 +824,8 @@ public class ClashView
     readonly List<GameObject> mapTmp = new List<GameObject>();
 
     /// 一个头像：洞里放脸，框压在上面，底下写名字。
-    void PortraitAt(Transform p, float x, int id, string name, Color32 c)
+    void PortraitAt(Transform p, float x, int id, string name, Color32 c, int W = 68, float y0 = 6)
     {
-        const int W = 68;                                    // 框画多大
         var m = Metric("portrait");
         var frame = Ui("portrait");
         int fw = m != null && m.Length >= 6 ? m[0] : 192, fh = m != null && m.Length >= 6 ? m[1] : 188;
@@ -741,17 +841,17 @@ public class ClashView
             float hy = m != null && m.Length >= 6 ? m[3] * k : h * .20f;
             float hw = m != null && m.Length >= 6 ? m[4] * k : W * .64f;
             float hh = m != null && m.Length >= 6 ? m[5] * k : h * .60f;
-            Place((RectTransform)im.transform, x + hx, 6 + hy, hw, hh);
+            Place((RectTransform)im.transform, x + hx, y0 + hy, hw, hh);
             im.sprite = av; im.preserveAspect = true; im.raycastTarget = false;
         }
         if (frame != null)
         {
             var fi = Node("fr", p).gameObject.AddComponent<Image>();
-            Place((RectTransform)fi.transform, x, 6, W, h);
+            Place((RectTransform)fi.transform, x, y0, W, h);
             fi.sprite = frame; fi.raycastTarget = false;      // 整框贴，不拉伸
         }
-        var n = Label(p, name, 15, c, TextAnchor.MiddleCenter);
-        Place(n.rectTransform, x - 6, 6 + h + 2, W + 12, 18);
+        var n = Label(p, name, W > 80 ? 18 : 15, c, TextAnchor.MiddleCenter);
+        Place(n.rectTransform, x - 10, y0 + h + 4, W + 20, 22);
     }
 
     void BuildMinimap()

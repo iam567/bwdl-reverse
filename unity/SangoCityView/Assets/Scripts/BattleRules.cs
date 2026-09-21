@@ -28,6 +28,17 @@ public class Officer
 
 public static class BattleRules
 {
+    /// 原版 b.ad[]：R[] 是武器（0–23）、S[] 是防具（24–31）的下标。
+    /// 单挑和列表画面都用 ad[R[x]] / ad[S[x]] 直接取名。
+    public static readonly string[] EquipName = {
+        "短剑","飞剑","长剑","破斩剑","大剑","七星剑","青釭剑","倚天剑",
+        "雍刀","眉尖刀","三尖刀","钩镰刀","偃月刀","凤嘴刀","龙牙刀","关王刀",
+        "矛","双戟","单钩枪","战斧","双钩枪","方天化戟","狼牙枪","蛇矛",
+        "纶巾","笼手","兜","硬皮","鹤氅","甲胄","圣者之衣","龙鳞宝铠",
+    };
+    public static string WeaponOf(Officer o) => o.ArmLv >= 0 && o.ArmLv < 24 ? EquipName[o.ArmLv] : "—";
+    public static string ArmorOf(Officer o)  => o.SubLv >= 24 && o.SubLv < 32 ? EquipName[o.SubLv] : "—";
+
     // ── 地形 ───────────────────────────────────────────────────────────
     /// b.h(cell, 兵种)：走一格扣多少机动力。高两位非 0 表示这格有人，过不去。
     public static int MoveCost(int cell, Kind k)
