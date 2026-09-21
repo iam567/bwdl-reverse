@@ -212,7 +212,15 @@ public class BattleField
 
     /// 自检：选中一支我方部队并下一道令（2 = 攻击），好截到目标标记
     /// 自检：选中 u、打开计策菜单（截菜单），再直接对 tgt 放第 plot 种（截结果）
-    public void PlotMenuForTest(Unit u) { sel = u; mode = ""; OpenPlotMenu(); PlotHover(6); Refresh(); }   // 顺带选中共杀看说明
+    /// 自检：all 为真时把智力/等级临时顶到 99/8，看 16 种全开的菜单
+    public void PlotMenuForTest(Unit u, bool all = false, int hover = 6)
+    {
+        sel = u; mode = "";
+        int i0 = u.O.Int, l0 = u.O.Lv;
+        if (all) { u.O.Int = 99; u.O.Lv = 8; }
+        OpenPlotMenu(); PlotHover(hover); Refresh();
+        u.O.Int = i0; u.O.Lv = l0;
+    }
     public void PlotForTest(Unit u, int plot, Unit tgt)
     {
         ClosePlotMenu(); sel = u; plotSel = plot; mode = "plot";
