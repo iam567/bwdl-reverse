@@ -109,8 +109,8 @@ for (arm, side, d), (img, box) in sorted(cells.items()):
         from PIL import ImageFilter
         a0 = fig.split()[3]
         big = a0.filter(ImageFilter.MaxFilter(OUTLINE * 2 + 1))          # 透明通道往外膨胀
-        edge = Image.new('RGBA', fig.size, (14, 10, 8, 255)); edge.putalpha(big)
-        edge = ImageChops_composite = edge
+        # 亮色描边（米白）：深色描边在船板夯土这种暗底上还是沉，亮边在暗底亮底都跳得出来
+        edge = Image.new('RGBA', fig.size, (246, 238, 214, 255)); edge.putalpha(big)
         outl = Image.new('RGBA', (T, T), (0, 0, 0, 0))
         outl.paste(edge, ((T - w) // 2, T - 1 - h), edge)
         canvas.alpha_composite(outl)
