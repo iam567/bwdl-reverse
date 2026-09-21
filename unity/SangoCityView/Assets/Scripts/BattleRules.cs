@@ -24,6 +24,7 @@ public class Officer
     public int Plots;       // Q[]  计策点
     public int ArmLv;       // R[]  兵种×等级 0–23
     public int SubLv;       // S[]  副属性 24–31
+    public int City;        // U[]  所在城市，0 = 不登场
 }
 
 public static class BattleRules
@@ -453,6 +454,27 @@ public static class BattleRules
         }
         return d;
     }
+    /// cities.csv col1 = i[] 君主武将 ID（0 = 空城）
+    public static Dictionary<int, int> LoadCityRulers(string csvPath)
+    {
+        var d = new Dictionary<int, int>();
+        if (!File.Exists(csvPath)) return d;
+        foreach (var line in File.ReadAllLines(csvPath))
+        {
+            var a = line.Split(',');
+            if (a.Length < 2 || !int.TryParse(a[0], out int id)) continue;
+            int.TryParse(a[1], out int r); d[id] = r;
+        }
+        return d;
+    }
+    public static string CityName(string jsonPath, int city)
+    {
+        if (!File.Exists(jsonPath)) return "城" + city;
+        var m = System.Text.RegularExpressions.Regex.Match(File.ReadAllText(jsonPath),
+                    "\"" + city + "\"\\s*:\\s*\\{[^}]*?\"name\"\\s*:\\s*\"([^\"]*)\"");
+        return m.Success ? m.Groups[1].Value : "城" + city;
+    }
+
     /// city-adjacency.json 是 { "13": {"adj":[..]} } 这种字典，JsonUtility 吃不下，用正则抠。
     public static int[] AdjacentCities(string jsonPath, int city)
     {
@@ -478,6 +500,7 @@ public static class BattleRules
                 Id = I(0), Name = c[1], Lv = I(2), Kind = (Kind)Mathf.Clamp(I(3), 1, 3),
                 Troops = I(4), HpMax = I(5), Hp = I(5), Int = I(6), Might = I(7),
                 Virtue = I(8), Loyal = I(9), Plots = I(10), ArmLv = I(11), SubLv = I(12),
+                City = I(14),
             };
             if (o.Id > 0) d[o.Id] = o;
         }

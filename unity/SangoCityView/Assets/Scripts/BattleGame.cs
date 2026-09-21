@@ -69,6 +69,10 @@ public class BattleGame : MonoBehaviour
         yield return Shot(dir, "2b_乱水");
         field.InfoForTest(me, foe);                // 情报：点敌将弹武将信息
         yield return Shot(dir, "2c_情报");
+        field.RetreatMenuForTest(me);              // 撤退：弹相邻城 + 下野（洛阳四邻都不是刘备的 → 只剩下野）
+        yield return Shot(dir, "2d_撤退");
+        var lord = field.UnitOf(3);                // 刘备是主公：不能下野、无城可退 → 背水一战
+        if (lord != null) { field.RetreatMenuForTest(lord); yield return Shot(dir, "2d2_主公无城"); }
         field.CommandForTest(me, 2);               // 选中我方、切到攻击模式，看目标标记
         yield return Shot(dir, "2_贴住敌军");
 

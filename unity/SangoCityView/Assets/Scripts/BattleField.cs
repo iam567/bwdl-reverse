@@ -58,7 +58,7 @@ public class BattleField
     public BattleField(RectTransform parent, int cityId, string themeKey,
                        List<Unit> roster, float refW, float refH, int[] supply = null)
     {
-        this.refW = refW; this.refH = refH; this.supply = supply ?? new int[4];
+        this.refW = refW; this.refH = refH; this.supply = supply ?? new int[4]; this.cityId = cityId;
         theme = themeKey;
         grid = BattleRules.LoadMap(Path.Combine(BattleGame.BattleDir, "maps", cityId + ".map"));
         H = grid.GetLength(0); W = grid.GetLength(1);
@@ -227,6 +227,8 @@ public class BattleField
         CenterOn(tgt.X, tgt.Y); curX = tgt.X; curY = tgt.Y; Refresh();
         DoPlot(tgt.X, tgt.Y); Refresh();
     }
+    public Unit UnitOf(int officerId) => units.Find(x => x.O.Id == officerId);
+    public void RetreatMenuForTest(Unit u) { CloseInfo(); sel = u; mode = ""; OpenRetreatMenu(); Refresh(); }
     public void InfoForTest(Unit u, Unit tgt) { ClosePlotPop(); sel = u; mode = "info"; ShowInfo(tgt); Refresh(); }   // 先收上一步的计策弹框
     public void CommandForTest(Unit u, int k) { sel = u; mode = ""; Command(k); CenterOn(u.X, u.Y); curX = u.X; curY = u.Y; Refresh(); }
 
@@ -313,11 +315,8 @@ public class BattleField
                 if (!HasFoeAdjacent(sel)) mode = "";
                 break;
             case 3: mode = "info"; hintText.text = "请选择要侦察的武将"; break;   // 原版原话
-            case 4:                                  // 撤退
-                sel.Alive = false; sel.Acted = true;
-                hintText.text = "撤退武将 " + sel.O.Name
-                              + "，损失 " + BattleRules.RoutLoss(sel.O.Troops, rng) + " 兵";
-                sel = null; mode = ""; break;
+            case 4:                                  // 撤退：原版 b.g() → 弹相邻己方城/空城，非主公多一项下野
+                mode = ""; OpenRetreatMenu(); break;
             case 5: sel.Acted = true; hintText.text = "我军待机中..."; sel = null; mode = ""; break;
         }
         Refresh();
@@ -511,6 +510,87 @@ public class BattleField
         sel.Acted = true;
         var me = sel; sel = null; mode = "";
         OnClash?.Invoke(me, foe, true);
+    }
+
+    // ── 撤退（原版 b.g / j / i + c.c(Graphics)）───────────────────────
+    // 候选 = 相邻城里「己方且城内武将不满 10」或「空城」；末尾一格红字「下野」只给非主公；
+    // 主公无城可退 → 「无城可退，背水一战吧」。选城后武将带着兵进城（空城顺手占了），没有兵力损失。
+    RectTransform retreatPop;
+    Dictionary<int, int> cityRuler; Dictionary<int, int> cityCount; int[] adjCities; HashSet<int> rulerIds;
+    readonly int cityId;
+    void LoadCityData()
+    {
+        if (cityRuler != null) return;
+        cityRuler = BattleRules.LoadCityRulers(Path.Combine(BattleGame.BattleDir, "cities.csv"));
+        adjCities = BattleRules.AdjacentCities(Path.Combine(BattleGame.BattleDir, "city-adjacency.json"), cityId);
+        rulerIds = new HashSet<int>(cityRuler.Values);
+        cityCount = new Dictionary<int, int>();
+        foreach (var o in BattleRules.LoadOfficers(Path.Combine(BattleGame.BattleDir, "officers.csv")).Values)
+            if (o.City > 0) cityCount[o.City] = cityCount.TryGetValue(o.City, out int n) ? n + 1 : 1;
+    }
+    int OurRuler()
+    {
+        LoadCityData();
+        foreach (var u in units) if (u.Ours && u.Alive && rulerIds.Contains(u.O.Id)) return u.O.Id;
+        foreach (var u in units) if (u.Ours && rulerIds.Contains(u.O.Id)) return u.O.Id;
+        return -1;
+    }
+    List<int> RetreatCities()
+    {
+        LoadCityData(); int ruler = OurRuler();
+        var list = new List<int>();
+        foreach (int c in adjCities)
+        {
+            cityRuler.TryGetValue(c, out int owner); cityCount.TryGetValue(c, out int cnt);
+            if ((owner == ruler && cnt < 10) || owner == 0) list.Add(c);      // b.j()：aZ == i[城] && r[城] < 10 || i[城] == 0
+        }
+        return list;
+    }
+    void CloseRetreatMenu() { if (retreatPop != null) Object.Destroy(retreatPop.gameObject); retreatPop = null; }
+    void OpenRetreatMenu()
+    {
+        CloseRetreatMenu(); CloseInfo(); ClosePlotMenu();
+        var cs = RetreatCities();
+        bool isRuler = sel.O.Id == OurRuler();
+        if (cs.Count == 0 && isRuler) { hintText.text = "无城可退，背水一战吧"; return; }   // W == 18
+        hintText.text = "撤退武将 " + sel.O.Name;
+        int n = cs.Count + (isRuler ? 0 : 1);                                  // 下野那格：P != 100 才有
+        const int COLS = 3, ROW = 36; int rows = (n + COLS - 1) / COLS;
+        float w = 300, h = 38 + rows * ROW + 8;
+        retreatPop = Node("rt", Root);
+        Place(retreatPop, (refW - w) / 2, refH - 100 - h - 8, w, h);
+        var bg = Panel(retreatPop, "bg", BattleUi.PlateSp()); Fill((RectTransform)bg.transform);
+        var t = Label(retreatPop, "退往何处", 14, new Color32(0xF0,0xC8,0x70,255), TextAnchor.MiddleCenter);
+        Place(t.rectTransform, 0, 8, w, 22);
+        float bw = (w - 16) / COLS;
+        for (int i = 0; i < n; i++)
+        {
+            bool xy = i == cs.Count; int city = xy ? -1 : cs[i];
+            var b = Node("c" + i, retreatPop);
+            Place(b, 8 + (i % COLS) * bw + 2, 38 + (i / COLS) * ROW, bw - 4, ROW - 6);
+            var bi = b.gameObject.AddComponent<Image>(); bi.sprite = BattleUi.BtnSp(); bi.type = Image.Type.Sliced;
+            var bt = b.gameObject.AddComponent<Button>(); bt.transition = Selectable.Transition.None;
+            bt.onClick.AddListener(() => DoRetreat(city));
+            cityRuler.TryGetValue(city, out int owner);
+            string nm = xy ? "下野" : BattleRules.CityName(Path.Combine(BattleGame.BattleDir, "city-adjacency.json"), city) + (owner == 0 ? "(空)" : "");
+            var l = Label(b, nm, 14, xy ? new Color32(0xF8,0x5A,0x52,255) : new Color32(0xF0,0xE0,0xB8,255), TextAnchor.MiddleCenter);   // 下野原版画红
+            Fill(l.rectTransform);
+        }
+    }
+    void DoRetreat(int city)
+    {
+        CloseRetreatMenu();
+        if (city > 0)
+        {
+            cityRuler.TryGetValue(city, out int owner);
+            string nm = BattleRules.CityName(Path.Combine(BattleGame.BattleDir, "city-adjacency.json"), city);
+            hintText.text = sel.O.Name + (owner == 0 ? " 退入空城 " + nm + "，就势占了" : " 退往 " + nm);
+            cityCount[city] = cityCount.TryGetValue(city, out int c) ? c + 1 : 1;             // b.a(short,byte,short)：r[城]++
+            if (owner == 0) cityRuler[city] = OurRuler();                                       // 空城 → i[城] = 我方主公
+        }
+        else hintText.text = sel.O.Name + " 下野";
+        sel.Alive = false; sel.Acted = true;                                                  // 兵跟着人走，没有损失
+        sel = null; Refresh();
     }
 
     // ── 情报（原版 c.F() + a(Graphics)）───────────────────────────────
