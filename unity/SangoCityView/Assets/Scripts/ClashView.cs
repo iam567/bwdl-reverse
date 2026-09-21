@@ -603,10 +603,10 @@ public class ClashView
                 hl.color = new Color(1f, .95f, .3f, .30f); hl.raycastTarget = false;
                 tmp.Add(hl.gameObject); hl.transform.SetSiblingIndex(im.transform.GetSiblingIndex());
             }
-            var l = Label(gridRoot, p.Arm == Arm.None ? "将" : (p.Troops / 100).ToString(),
-                          10, Color.white, TextAnchor.MiddleCenter);
-            Place(l.rectTransform, p.Col * C, p.Row * C, C, C);
-            tmp.Add(l.gameObject);
+            // 原版 c.b() 一枚棋子只画三样：小兵图、挨打时的爆点、小地图上的一个点，
+            // 棋子上一个字都不写。我早先在这儿压了「将」和兵力数字，是因为当时还用
+            // 16×16 的原版小兵图，四个兵种糊成一团分不出谁是谁；
+            // 换上新素材后武将有披风红缨偃月刀，认得出来了，标签就是挡脸的。
         }
     }
 }
