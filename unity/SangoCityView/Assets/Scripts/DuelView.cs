@@ -90,8 +90,8 @@ public class DuelView
 
         Header();
 
-        figMe  = Fighter(refW *   5f / 176f, false);
-        figFoe = Fighter(refW * 115f / 176f, true);
+        figMe  = Fighter(refW *   5f / 176f, false, out ringMe);
+        figFoe = Fighter(refW * 115f / 176f, true,  out ringFoe);
         baseYMe  = figMe.rectTransform.anchoredPosition.y;
         baseYFoe = figFoe.rectTransform.anchoredPosition.y;
         homeMe  = refW *   5f / 176f;
@@ -182,7 +182,7 @@ public class DuelView
         return fill;
     }
 
-    Image Fighter(float x, bool mirror)
+    Image Fighter(float x, bool mirror, out Image ring0)
     {
         // 两边长得一样时最难分敌我，脚下垫一个阵营色的椭圆当锚
         var ring = Node("ring", Root).gameObject.AddComponent<Image>();
@@ -196,6 +196,7 @@ public class DuelView
         im.raycastTarget = false;
         // 朝向统一交给 Put() 管：我方默认朝右、敌方默认朝左（翻转）
         Put(im, x, im.rectTransform.anchoredPosition.y, 0, !mirror);
+        ring0 = ring;
         return im;
     }
     /// foeSide 决定用哪一套立绘，和朝向无关——朝向由 Put() 管。
@@ -250,6 +251,7 @@ public class DuelView
     const float T_CHARGE = 19 * FRAME, T_BACK = 17 * FRAME, T_GAP = 0.15f;
     static readonly float[] T_HIT = { 3 * FRAME, 5 * FRAME, 11 * FRAME };   // 牵制/攻击/全力
     float homeMe, homeFoe, atkMe, atkFoe;
+    Image ringMe, ringFoe;                        // 脚下的阵营色椭圆
 
     // 原版 case 5 投降会置 au=2 走一段离场；我原来只弹一行字，看不出发生了什么。
     bool exiting; float exitT; bool exitMine;
@@ -339,13 +341,22 @@ public class DuelView
         {
             joinT += Time.deltaTime;
             float e = Mathf.Clamp01(joinT / T_JOIN);
-            float dest = homeMe + FIG * 0.62f;     // 停在我方右后方，同向并肩
+            // 停在我方「身后」＝我方左侧：我方朝右，跟在后面的才是归降的那个。
+            // 顺带把我方往前让半个身位，两骑并排才站得下。
+            float meDest  = homeMe + FIG * 0.52f;
+            float foeDest = homeMe - FIG * 0.06f;
+            float mx = Mathf.Lerp(homeMe, meDest, Ease(e));
+            float fx = Mathf.Lerp(homeFoe, foeDest, Ease(e));
             SetFrame(figFoe, e < 1f
                 ? ((int)(joinT / 0.2f) % 2 == 0 ? F_RUN_A : F_RUN_B) : F_IDLE, true);
             // 往左跑就朝左——跑的时候脸朝前进方向，到位站定才翻过来和我方同向
-            Put(figFoe, Mathf.Lerp(homeFoe, dest, Ease(e)), baseYFoe,
-                e < 1f ? Mathf.Sin(t * 22f) * 2.5f : 0, e >= 1f);
-            Put(figMe, homeMe, baseYMe, 0, true);
+            Put(figFoe, fx, baseYFoe, e < 1f ? Mathf.Sin(t * 22f) * 2.5f : 0, e >= 1f);
+            Put(figMe, mx, baseYMe, 0, true);
+            PutRing(ringMe, mx);
+            PutRing(ringFoe, fx);
+            // 红圈渐变成我方的蓝圈：谁归降了谁，看脚下这一圈最清楚
+            ringFoe.color = Color.Lerp(new Color(1f, .40f, .34f, .55f),
+                                       new Color(.40f, .68f, 1f, .55f), Ease(e));
             if (e >= 1f) joining = false;
             return;
         }
@@ -443,6 +454,12 @@ public class DuelView
 
     static float Ease(float k) => k * k * (3f - 2f * k);
     /// 摆位 + 朝向。绕左上角做水平翻转会把图整体推左一个身位，要补回来。
+    void PutRing(Image r, float x)
+    {
+        var rt = r.rectTransform;
+        rt.anchoredPosition = new Vector2(x + 18, rt.anchoredPosition.y);
+    }
+
     void Put(Image im, float x, float baseY, float dy, bool faceRight)
     {
         im.rectTransform.localScale = new Vector3(faceRight ? 1f : -1f, 1f, 1f);
