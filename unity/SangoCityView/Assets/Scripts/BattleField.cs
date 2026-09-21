@@ -17,6 +17,8 @@ public class Unit
     public string Dir = "s";    // 八向精灵目前只做了 s/se/e/ne/n，朝左靠水平翻转
     public bool Flip;
     public Vector2 Draw;        // 画在哪。向 (X,Y) 插值，走起来是滑过去不是瞬移
+    public int Trapped;         // 被困还剩几日（虚兵 / 连环 / 奇门遁甲），0 = 自由
+    public bool Cursed;         // 奇门遁甲：被困期间日减 100 兵
 }
 
 public class BattleField
@@ -209,6 +211,14 @@ public class BattleField
     }
 
     /// 自检：选中一支我方部队并下一道令（2 = 攻击），好截到目标标记
+    /// 自检：选中 u、打开计策菜单（截菜单），再直接对 tgt 放第 plot 种（截结果）
+    public void PlotMenuForTest(Unit u) { sel = u; mode = ""; OpenPlotMenu(); Refresh(); }
+    public void PlotForTest(Unit u, int plot, Unit tgt)
+    {
+        ClosePlotMenu(); sel = u; plotSel = plot; mode = "plot";
+        CenterOn(tgt.X, tgt.Y); curX = tgt.X; curY = tgt.Y; Refresh();
+        DoPlot(tgt.X, tgt.Y); Refresh();
+    }
     public void CommandForTest(Unit u, int k) { sel = u; mode = ""; Command(k); CenterOn(u.X, u.Y); curX = u.X; curY = u.Y; Refresh(); }
 
     // ── 素材 ───────────────────────────────────────────────────────────
@@ -270,7 +280,8 @@ public class BattleField
         curX = x; curY = y;
 
         var here = At(x, y);
-        if (mode == "move" && sel != null && reach.Contains(y * W + x)) { DoMove(x, y); }
+        if (mode == "plot" && sel != null) { DoPlot(x, y); }
+        else if (mode == "move" && sel != null && reach.Contains(y * W + x)) { DoMove(x, y); }
         else if (mode == "attack" && sel != null && here != null && !here.Ours && Adjacent(sel, x, y)) { DoAttack(here); }
         else if (mode == "info" && here != null) { ShowInfo(here); }
         else if (here != null && here.Ours && !here.Acted) { sel = here; mode = ""; }
@@ -285,10 +296,8 @@ public class BattleField
         {
             case 0:                                  // 移动
                 mode = "move"; ComputeReach(); break;
-            case 1:                                  // 计策
-                hintText.text = "计策：" + BattleRules.PlotName[0] + " 等 "
-                              + BattleRules.PlotCount(sel.O) + " 种可用";
-                mode = ""; break;
+            case 1:                                  // 计策：原版 b.d(X) 算出可用几种，弹单选
+                mode = ""; OpenPlotMenu(); break;
             case 2:                                  // 攻击
                 mode = "attack";
                 hintText.text = HasFoeAdjacent(sel) ? "点相邻的敌将" : "邻近无敌将!";
@@ -317,6 +326,102 @@ public class BattleField
         hintText.text = "移动消耗 " + cost + " 点";
         CenterOn(x, y);
     }
+
+    // ── 计策 ───────────────────────────────────────────────────────────
+    RectTransform plotMenu; int plotSel = -1;
+    readonly HashSet<int> ambush = new HashSet<int>();          // 十面埋伏埋下的格（y*W+x）
+    void ClosePlotMenu() { if (plotMenu != null) Object.Destroy(plotMenu.gameObject); plotMenu = null; }
+    void OpenPlotMenu()
+    {
+        ClosePlotMenu();
+        int n = BattleRules.PlotCount(sel.O);
+        const int ROW = 30, COLS = 2; int rows = (n + COLS - 1) / COLS;
+        float w = 300, h = 34 + rows * ROW + 10;
+        plotMenu = Node("plot", Root);
+        Place(plotMenu, (refW - w) / 2, refH - 100 - h - 8, w, h);
+        var bg = Panel(plotMenu, "bg", BattleUi.PlateSp()); Fill((RectTransform)bg.transform);
+        var t = Label(plotMenu, "计策 · 机动力 " + mp, 14, new Color32(0xF0,0xC8,0x70,255), TextAnchor.MiddleCenter);
+        Place(t.rectTransform, 0, 7, w, 22);
+        for (int i = 0; i < n; i++)
+        {
+            int k = i, cost = BattleRules.CostOfPlot(i);
+            bool ok = cost <= mp && k != 14;                                  // 劫火原版永远用不出去
+            var b = Node("p" + i, plotMenu);
+            Place(b, 8 + (i % COLS) * (w / COLS), 34 + (i / COLS) * ROW, w / COLS - 16, ROW - 4);
+            var bi = b.gameObject.AddComponent<Image>(); bi.sprite = BattleUi.BtnSp(); bi.type = Image.Type.Sliced;
+            bi.color = ok ? Color.white : new Color(.55f, .52f, .48f, 1f);
+            var bt = b.gameObject.AddComponent<Button>(); bt.transition = Selectable.Transition.None; bt.interactable = ok;
+            bt.onClick.AddListener(() => {
+                plotSel = k; ClosePlotMenu();
+                mode = "plot"; hintText.text = "选择计策实施地点 · " + BattleRules.PlotName[k]; Refresh();
+            });
+            var l = Label(b, BattleRules.PlotName[i] + " " + cost, 13,
+                          ok ? new Color32(0xF0,0xE0,0xB8,255) : new Color32(0x86,0x7E,0x6C,255), TextAnchor.MiddleCenter);
+            Fill(l.rectTransform);
+        }
+    }
+
+    int TerrainAt(int x, int y) => grid[y, x] & 0x1F;
+    bool HasAllyAdjacent(Unit u)
+    {
+        foreach (var o in units) if (o != u && o.Alive && o.Ours == u.Ours && Adjacent(o, u.X, u.Y)) return true;
+        return false;
+    }
+
+    /// c.H() 的后半段：落点 → 合法 → roll → 结算 → 扣机动力
+    void DoPlot(int x, int y)
+    {
+        int plot = plotSel; mode = ""; plotSel = -1;
+        int cost = BattleRules.CostOfPlot(plot);
+        if (plot == 11)                                                        // 十面埋伏：埋在自己脚下的树丛格
+        {
+            if (TerrainAt(sel.X, sel.Y) == 5 && sel.O.Troops >= 100)
+            {
+                ambush.Add(sel.Y * W + sel.X); sel.O.Troops -= 100; mp -= cost;
+                hintText.text = "埋伏完毕"; sel.Acted = true; sel = null;
+            }
+            else hintText.text = "此地无法使用该计策";
+            return;
+        }
+        var tgt = At(x, y);
+        if (tgt == null || tgt.Ours || tgt.Trapped > 0) { hintText.text = "此地无法使用该计策"; return; }
+        if (!BattleRules.PlotLegal(plot, sel.X, sel.Y, x, y, TerrainAt(sel.X, sel.Y), TerrainAt(x, y), HasAllyAdjacent(tgt)))
+        { hintText.text = "此地无法使用该计策"; return; }
+        var r = BattleRules.PlotRoll(plot, sel.O, tgt.O, supply[3], rng);
+        mp -= cost;                                                            // 成不成都扣（原版 4939）
+        if (!r.Ok) { hintText.text = "计策实施失败!"; sel.Acted = true; sel = null; return; }
+        ApplyPlot(plot, r, tgt);
+        hintText.text = BattleRules.PlotMessage(plot, r);
+        sel.Acted = true; sel = null;
+    }
+
+    /// b.a(short,byte[],byte,byte,int,boolean)
+    void ApplyPlot(int plot, BattleRules.PlotResult r, Unit tgt)
+    {
+        void Hurt(Unit u, int n) { u.O.Troops = Mathf.Max(0, u.O.Troops - n); if (u.O.Troops <= 0) u.Alive = false; }
+        switch (r.Type)
+        {
+            case 1: Hurt(tgt, r.Troops); break;
+            case 2: tgt.O.Hp = Mathf.Max(0, tgt.O.Hp - r.Hp); break;
+            case 3: supply[3] = Mathf.Max(0, supply[3] - r.Troops); break;
+            case 4: Hurt(tgt, r.Troops); tgt.O.Hp = Mathf.Max(0, tgt.O.Hp - r.Hp); break;
+            case 5: tgt.Ours = true; tgt.Acted = true; tgt.Dir = "s"; break;   // 笼络：整支转到我方
+            case 6:
+                Hurt(tgt, r.Troops);
+                foreach (var o in units) if (o != tgt && o.Alive && !o.Ours && o.Trapped == 0 && Adjacent(o, tgt.X, tgt.Y)) Hurt(o, r.Troops);
+                break;
+            case 7: tgt.Trapped = TRAP_DAYS; break;
+            case 8:
+                tgt.Trapped = TRAP_DAYS;
+                foreach (var o in units) if (o != tgt && o.Alive && !o.Ours && o.Trapped == 0 && Adjacent(o, tgt.X, tgt.Y)) o.Trapped = TRAP_DAYS;
+                break;
+            case 9: tgt.Trapped = TRAP_DAYS; tgt.Cursed = true; break;
+        }
+    }
+    // 被困几日：原版说明文案写连环「被困三天」，虚兵和奇门遁甲没写；代码里没找到递减的地方。
+    // 三种都按三天算，记在 HOUSE_RULES。
+    const int TRAP_DAYS = 3;
+    const int AMBUSH_LOSS = 150;   // 十面埋伏踩中扣多少兵：原版走 j() 我没读到数，按共杀那档 150，记 HOUSE_RULES
 
     void DoAttack(Unit foe)
     {
@@ -350,7 +455,15 @@ public class BattleField
     {
         enemyTurn = false;
         day++;
-        foreach (var u in units) u.Acted = false;
+        foreach (var u in units)
+        {
+            u.Acted = false;
+            if (u.Trapped > 0)
+            {
+                if (u.Cursed) { u.O.Troops = Mathf.Max(0, u.O.Troops - 100); if (u.O.Troops <= 0) u.Alive = false; }
+                if (--u.Trapped == 0) u.Cursed = false;
+            }
+        }
         mp = BattleRules.MoveCap(TotalTroops(true));
         hintText.text = "回合结束，第 " + day + " 日";
         Refresh();
@@ -410,6 +523,7 @@ public class BattleField
             if (list.Count == 0) return false;
             if (enemyIdx >= list.Count) { enemyIdx = 0; return false; }   // 一圈走完就收
             var e = list[enemyIdx];
+            if (e.Trapped > 0) { enemyIdx++; continue; }   // 被困：这一日不动也不打
 
             Unit target = null; int bd = 999;
             foreach (var m in units)
@@ -445,6 +559,12 @@ public class BattleField
             e.X = nx; e.Y = ny;
             acting = e; enemyIdx++;
             CenterOn(e.X, e.Y);                            // 镜头跟着走，看得见是谁在动
+            if (ambush.Remove(ny * W + nx))                // b.java 3703：踩进埋伏格
+            {
+                e.O.Troops = Mathf.Max(0, e.O.Troops - AMBUSH_LOSS);
+                if (e.O.Troops <= 0) e.Alive = false;
+                hintText.text = e.O.Name + " 中计谋十面埋伏";
+            }
             return true;
         }
         return false;
@@ -534,6 +654,21 @@ public class BattleField
         foreach (var g in marks) Object.Destroy(g);
         marks.Clear();
 
+        foreach (int k in ambush)                      // 我方埋下的十面埋伏，只有我方看得见
+        {
+            var im = Node("am", board).gameObject.AddComponent<Image>();
+            Place((RectTransform)im.transform, (k % W) * CELL, (k / W) * CELL, CELL, CELL);
+            im.color = new Color(1f, .55f, .2f, .28f); im.raycastTarget = false; marks.Add(im.gameObject);
+        }
+        if (mode == "plot" && sel != null && plotSel >= 0 && plotSel != 11)   // 计策落点：合法的敌军格亮起
+            foreach (var o in units)
+                if (o.Alive && !o.Ours && o.Trapped == 0 &&
+                    BattleRules.PlotLegal(plotSel, sel.X, sel.Y, o.X, o.Y, TerrainAt(sel.X, sel.Y), TerrainAt(o.X, o.Y), HasAllyAdjacent(o)))
+                {
+                    var im = Node("pt", board).gameObject.AddComponent<Image>();
+                    Place((RectTransform)im.transform, o.X * CELL - 3, o.Y * CELL - 3, CELL + 6, CELL + 6);
+                    im.sprite = BattleUi.Get("target") ?? CursorSprite(); im.raycastTarget = false; marks.Add(im.gameObject);
+                }
         foreach (int k in reach)                       // 可达格
         {
             var im = Node("r", board).gameObject.AddComponent<Image>();
@@ -572,6 +707,14 @@ public class BattleField
             bar.color = u.Ours ? new Color(.35f, .65f, 1f) : new Color(1f, .35f, .3f);
             bar.raycastTarget = false; marks.Add(bar.gameObject);
 
+            if (u.Trapped > 0)                             // 被困：脚下压咒缚那套绳索（复用阵型战的特效）
+            {
+                var tr = Node("trap", board).gameObject.AddComponent<Image>();
+                Place((RectTransform)tr.transform, ux - 4, uy - 4, CELL + 8, CELL + 8);
+                var sp = BattleUi.Fx("bind", (int)(Time.time / .18f) % 4);
+                if (sp != null) tr.sprite = sp; else tr.color = new Color(.6f, .3f, .9f, .45f);
+                tr.raycastTarget = false; marks.Add(tr.gameObject);
+            }
             var np = BattleUi.Get("nameplate");
             if (np != null)
             {

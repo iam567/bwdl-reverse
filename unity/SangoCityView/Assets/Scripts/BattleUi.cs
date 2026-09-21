@@ -47,6 +47,16 @@ public static class BattleUi
         return cache[k] = sp;
     }
 
+    /// 阵型战的特效帧 clashground/cg_fx_<key>_f<n>.png，战棋层也要用（被困压绳索）
+    public static Sprite Fx(string key, int f)
+    {
+        string k = "fx_" + key + "_" + f;
+        if (cache.TryGetValue(k, out var sp)) return sp;
+        var rel = Path.Combine("battle", "clashground", "cg_fx_" + key + "_f" + f + ".png");
+        if (!File.Exists(Path.Combine(ArtDir, rel))) return cache[k] = null;
+        var t = Load(rel); t.filterMode = FilterMode.Point;
+        return cache[k] = Sprite.Create(t, new Rect(0, 0, t.width, t.height), new Vector2(.5f, .5f), 100);
+    }
     public static Sprite PlateSp() => Get("plate") ?? Plate();
     public static Sprite BtnSp()   => Get("btn")   ?? Frame();
 }

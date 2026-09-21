@@ -81,6 +81,99 @@ public static class BattleRules
         "笼络","落石","连环","十面埋伏","水攻","连弩","劫火","奇门遁甲" };
     public static int CostOfPlot(int i) => (i >= 0 && i < 16) ? PlotCost[i] : 100;
 
+    // ── 战棋层的 16 种计策（b.java 2285 / 2355 / 2519，逐段移植）──────────
+    /// 计策效果的打包格式，和原版 b.a(short,short,byte,short) 的返回值一致：
+    ///   类型 << 24 | 体力伤害 << 16 | 兵力伤害。返回 -1 = 施展失败。
+    /// 类型：1 减兵 2 减体力 3 减粮 4 减兵+体力 5 笼络(俘为我方) 6 减兵并波及相邻敌军
+    ///       7 虚兵(被困) 8 连环(相邻敌军一起被困) 9 奇门遁甲 10 埋伏 11 十面埋伏结算
+    public struct PlotResult { public int Type, Hp, Troops; public bool Ok => Type > 0; }
+
+    /// b.a(int,int,byte,boolean)：这一格能不能对它用这个计策。
+    /// casterT / targetT 是地形码低 5 位；targetHasAlly = 目标旁边还贴着另一支敌军（原版 i()&1）。
+    public static bool PlotLegal(int plot, int cx, int cy, int tx, int ty, int casterT, int targetT, bool targetHasAlly)
+    {
+        if (Mathf.Abs(cx - tx) > 5 || Mathf.Abs(cy - ty) > 5) return false;     // a(...,5)
+        bool adj = Mathf.Abs(cx - tx) <= 1 && Mathf.Abs(cy - ty) <= 1;           // a(...,1)
+        switch (targetT)
+        {
+            case 0: case 1: case 3: case 4:
+                if (plot == 0 || plot == 8 || plot == 15) return true; break;
+            case 7: case 8: case 9: case 10: case 11: case 12:
+                if ((plot >= 1 && plot <= 3) || plot == 8 || plot == 15) return true;
+                if (plot == 6 && targetHasAlly && adj) return true; break;
+            case 6:
+                if (plot == 4 || plot == 8) return true;
+                if ((plot == 10 || plot == 12) && targetHasAlly) return true; break;
+            case 5:
+                if ((plot >= 0 && plot <= 3) || plot == 5 || plot == 8 || plot == 15) return true; break;
+            case 2:
+                if (plot == 7 && adj) return true; break;
+        }
+        if (((plot == 13 && casterT == 2) || (plot == 9 && casterT >= 7 && casterT <= 12 && targetT != 2)) && adj) return true;
+        // 劫火(14)：原版 2349 那两行两个分支都 return false——这条计策在原版里永远用不出去
+        return false;
+    }
+
+    /// b.a(short,short,byte,short)：成功判定 + 伤害。
+    /// foodPool 只给火箭(5)封顶用：伤害不能超过对方现有粮草。
+    public static PlotResult PlotRoll(int plot, Officer me, Officer foe, int foodPool, System.Random rng)
+    {
+        var r = new PlotResult();
+        if (plot == 8)                                                          // 笼络：h(s,s2)
+        {
+            if (foe.Loyal > 35) return r;
+            int n = me.Int - foe.Int + (35 - foe.Loyal);
+            if (n >= rng.Next(20)) { r.Type = 5; }
+            return r;
+        }
+        if (plot == 11) { r.Type = 10; return r; }                              // 埋伏：直接成功
+        int need = plot <= 1 ? 40 : (plot == 2 || plot == 7 || plot == 9) ? 56
+                 : (plot >= 3 && plot <= 5) ? 48 : (plot == 6 || plot == 10 || plot == 12 || plot == 13) ? 64 : 72;
+        int n3 = me.Lv >= foe.Lv ? me.Int + me.Int * (me.Lv - foe.Lv) / 10 - foe.Int
+                                 : me.Int - foe.Int - foe.Int * (foe.Lv - me.Lv) / 10;
+        if (n3 < need && rng.Next(need) >= n3) return r;                        // 失败
+        int hp = 20 + rng.Next(-3, 4);                                          // ap.nextInt()%4 可为负
+        if (hp >= foe.Hp) hp = foe.Hp - 1;
+        if (plot == 1) { r.Type = 2; r.Hp = hp; return r; }                     // 陷阱：只减体力
+        if (plot == 2) { r.Type = 7; return r; }                                // 虚兵
+        if (plot == 10) { r.Type = 8; return r; }                               // 连环
+        if (plot == 15) { r.Type = 9; return r; }                               // 奇门遁甲
+        int dmg, type;
+        switch (plot)
+        {
+            case 0: case 3: case 4: case 7: dmg = 100; type = 1; break;
+            case 5: dmg = 160; type = 3; break;
+            case 6: dmg = 150; type = 6; break;
+            case 9: dmg = 150; type = 4; break;
+            case 12: dmg = 180; type = 6; break;
+            default: dmg = 200; type = 6; break;                                // 13 连弩 / 14 劫火
+        }
+        if (me.Lv > foe.Lv) dmg += dmg * (1 + (me.Lv - foe.Lv) / 10);
+        dmg += rng.Next(-29, 30);                                               // ap.nextInt()%30
+        if (plot == 5) { if (dmg > foodPool) dmg = foodPool; }
+        else if (dmg > foe.Troops) dmg = foe.Troops;
+        r.Type = type; r.Troops = Mathf.Max(0, dmg);
+        if (plot == 9) r.Hp = hp;                                               // 落石：兵和体力一起扣
+        return r;
+    }
+
+    /// b.a(int,byte) 的那一行提示
+    public static string PlotMessage(int plot, PlotResult r)
+    {
+        switch (plot)
+        {
+            case 1: return "武将体力减少 " + r.Hp;
+            case 2: return "军队中计被困";
+            case 5: return "粮食减少 " + r.Troops;
+            case 8: return "成功笼络武将!";
+            case 9: return "将体力减少 " + r.Hp + ",兵数减少 " + r.Troops;
+            case 10: return "军队中计, 被困三天";
+            case 11: return "军队埋伏完毕!";
+            case 15: return "奇门遁甲施展成功!";
+            default: return "士兵数减少 " + r.Troops;
+        }
+    }
+
     /// b.d(武将)：智力与等级决定能用几种计策
     public static int PlotCount(Officer o)
     {

@@ -61,6 +61,10 @@ public class BattleGame : MonoBehaviour
         // 把我方一支挪到敌方旁边，直接触发攻击，省得模拟点击
         var me = FindUnit(true); var foe = FindUnit(false);
         me.X = foe.X - 1; me.Y = foe.Y;
+        field.PlotMenuForTest(me);                 // 计策菜单
+        yield return Shot(dir, "2a_计策菜单");
+        field.PlotForTest(me, 4, foe);             // 敌军站在水格上，用乱水（火计不许打水，原版 2330）
+        yield return Shot(dir, "2b_乱水");
         field.CommandForTest(me, 2);               // 选中我方、切到攻击模式，看目标标记
         yield return Shot(dir, "2_贴住敌军");
 
