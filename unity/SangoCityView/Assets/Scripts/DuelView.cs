@@ -342,8 +342,9 @@ public class DuelView
             float dest = homeMe + FIG * 0.62f;     // 停在我方右后方，同向并肩
             SetFrame(figFoe, e < 1f
                 ? ((int)(joinT / 0.2f) % 2 == 0 ? F_RUN_A : F_RUN_B) : F_IDLE, true);
+            // 往左跑就朝左——跑的时候脸朝前进方向，到位站定才翻过来和我方同向
             Put(figFoe, Mathf.Lerp(homeFoe, dest, Ease(e)), baseYFoe,
-                e < 1f ? Mathf.Sin(t * 22f) * 2.5f : 0, true);   // 朝右＝和我方同向
+                e < 1f ? Mathf.Sin(t * 22f) * 2.5f : 0, e >= 1f);
             Put(figMe, homeMe, baseYMe, 0, true);
             if (e >= 1f) joining = false;
             return;
