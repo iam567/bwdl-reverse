@@ -164,6 +164,17 @@ public class ClashView
     }
     public void AdvanceForTest(int n = 120) { CloseCmd(); for (int i = 0; i < n; i++) { tickAt = 0; Tick(); } }
     public void FinishForTest() { Finish(); }
+    public void FireForTest() { UseSkill(4); }        // 自检：点火矢，看箭带不带火
+    /// 自检：不等 AI 轮到弓兵，直接从第一个弓兵向右射一支（火矢），看渲染。
+    public void ShotForTest()
+    {
+        int i = mine.FindIndex(q => q.Alive && q.Arm == Arm.Gong);
+        if (i < 0) return;
+        var p = mine[i];
+        FocusOn(p.Col + 2); gridRoot.anchoredPosition = camTarget;
+        shots.Add(new Shot { X0 = p.Col, Y0 = p.Row, X1 = p.Col + 4, Y1 = p.Row,
+                             At = Time.time, Fire = BattleRules.BuffId(cd) == 5 });
+    }
 
     // ── 阵型战 ─────────────────────────────────────────────────────────
     void StartClash()
@@ -356,6 +367,7 @@ public class ClashView
     {
         Glide();                                  // 镜头每帧都动，别卡在下面的节拍判断后面
         GroundTick();
+        ShotTick();
         if (mine == null) return;                 // 还在阵型选择那屏，兵还没摆
         if (over != null)
         {
@@ -439,7 +451,8 @@ public class ClashView
             if (p.Arm == Arm.None && q.Arm == Arm.None && me.Hp > 0 && foe.Hp > 0)
             { OnDuel?.Invoke(); return true; }
             if (p.Arm == Arm.Gong)                             // 射出去的箭，画一下
-                shots.Add(new Shot { X0 = p.Col, Y0 = p.Row, X1 = q.Col, Y1 = q.Row, At = Time.time });
+                shots.Add(new Shot { X0 = p.Col, Y0 = p.Row, X1 = q.Col, Y1 = q.Row, At = Time.time,
+                                     Fire = ours && BattleRules.BuffId(cd) == 5 });   // 火矢生效时箭带火
             if (q.Arm == Arm.None)
             {
                 if (ours) foe.Hp = Mathf.Max(0, foe.Hp - BattleRules.HpHit(dmg));
@@ -653,7 +666,7 @@ public class ClashView
         }
         figCache[key] = sp; return sp;
     }
-    struct Shot { public int X0, Y0, X1, Y1; public float At; }
+    struct Shot { public int X0, Y0, X1, Y1; public float At; public bool Fire; public Image Im, Halo; }
     readonly List<Shot> shots = new List<Shot>();
     static Texture2D arrowTex; static Sprite arrowSp;
     static Sprite Arrow()
@@ -689,22 +702,7 @@ public class ClashView
         DrawSide(mine,   true);
         DrawSide(theirs, false);
 
-        shots.RemoveAll(sh => Time.time - sh.At > .5f);
-        foreach (var sh in shots)                            // 箭：从弓兵连到目标
-        {
-            int dx = System.Math.Sign(sh.X1 - sh.X0), dy = System.Math.Sign(sh.Y1 - sh.Y0);
-            int n = Mathf.Max(Mathf.Abs(sh.X1 - sh.X0), Mathf.Abs(sh.Y1 - sh.Y0));
-            for (int k = 1; k <= n; k++)
-            {
-                var im = Node("ar", gridRoot).gameObject.AddComponent<Image>();
-                Place((RectTransform)im.transform, (sh.X0 + dx * k) * C, (sh.Y0 + dy * k) * C, C, C);
-                im.sprite = Arrow(); im.raycastTarget = false;
-                if (dy != 0) im.rectTransform.localEulerAngles = new Vector3(0, 0, dy > 0 ? 90 : -90);
-                else if (dx < 0) { im.rectTransform.localScale = new Vector3(-1, 1, 1);
-                                   im.rectTransform.anchoredPosition += new Vector2(C, 0); }
-                tmp.Add(im.gameObject);
-            }
-        }
+        // 箭不在这儿画了——Redraw 一秒一次，箭要一格一格地飞，走 ShotTick 每帧摆位置
 
         var a = Formation.ByArm(mine,   me.Hp);
         var b = Formation.ByArm(theirs, foe.Hp);
@@ -883,6 +881,68 @@ public class ClashView
     static readonly int[] G_SEQ = { 0, 1, 2, 3, 2, 1 };
     const float G_FRAME = 0.28f;
     int gFrame = -1;
+
+    // 原版 o()：箭是一支、一格一格往前挪，不是沿路摆一排。
+    // 每格 0.07 秒，射四格约 0.3 秒；到目标格停一下再消失。
+    const float SHOT_STEP = 0.07f, SHOT_HOLD = 0.18f;
+    static readonly Dictionary<string, Sprite> arrowCache = new Dictionary<string, Sprite>();
+    static Sprite ArrowSp(bool fire, float t)
+    {
+        string k = !fire ? "arrow" : "fire_" + "abc"[(int)(t / 0.08f) % 3];
+        if (arrowCache.TryGetValue(k, out var sp)) return sp;
+        var rel = Path.Combine("clashground", "cg_" + k + ".png");
+        if (File.Exists(Path.Combine(ArtDir, "battle", rel)))
+        {
+            var tx = Tex(rel);
+            sp = Sprite.Create(tx, new Rect(0, 0, tx.width, tx.height), new Vector2(.5f, .5f), 100);
+        }
+        else sp = Arrow();                                    // 没做新素材就用原版 lib63
+        return arrowCache[k] = sp;
+    }
+
+    void ShotTick()
+    {
+        if (gridRoot == null || shots.Count == 0) return;
+        for (int i = shots.Count - 1; i >= 0; i--)
+        {
+            var sh = shots[i];
+            int dx = System.Math.Sign(sh.X1 - sh.X0), dy = System.Math.Sign(sh.Y1 - sh.Y0);
+            int n = Mathf.Max(Mathf.Abs(sh.X1 - sh.X0), Mathf.Abs(sh.Y1 - sh.Y0));
+            float t = Time.time - sh.At;
+            int k = Mathf.Min(n, 1 + (int)(t / SHOT_STEP));   // 现在飞到第几格（整格，不插值）
+            if (t > n * SHOT_STEP + SHOT_HOLD)
+            {
+                if (sh.Im != null) Object.Destroy(sh.Im.gameObject);
+                if (sh.Halo != null) Object.Destroy(sh.Halo.gameObject);
+                shots.RemoveAt(i); continue;
+            }
+            if (sh.Im == null)
+            {
+                // 箭杆是褐色的，落在船板、夯土上和底色顺色，看不见。
+                // 底下垫一张同图放大一圈的亮色「光晕」，等于给箭描一圈浅边，什么地面上都跳得出来。
+                float ang = dy != 0 ? (dy > 0 ? -90 : 90) : (dx < 0 ? 180 : 0);   // 朝右画的，按飞向转
+                Image Mk(string n, float size, Color c)
+                {
+                    var im = Node(n, gridRoot).gameObject.AddComponent<Image>();
+                    im.raycastTarget = false; im.color = c;
+                    var rt = im.rectTransform;
+                    rt.anchorMin = rt.anchorMax = new Vector2(0, 1); rt.pivot = new Vector2(.5f, .5f);
+                    rt.sizeDelta = new Vector2(size, size);
+                    rt.localEulerAngles = new Vector3(0, 0, ang);
+                    return im;
+                }
+                // 箭画得比格子大一圈：一格 64 里一根 3 像素粗的杆太细，放大到 1.25 格才看得清
+                sh.Halo = Mk("arh", C * 1.45f, new Color(1f, .97f, .80f, .85f));
+                sh.Im   = Mk("ar",  C * 1.25f, Color.white);
+                shots[i] = sh;
+            }
+            var sp = ArrowSp(sh.Fire, t);
+            sh.Im.sprite = sp; sh.Halo.sprite = sp;
+            var pos = new Vector2((sh.X0 + dx * k) * C + C / 2f, -((sh.Y0 + dy * k) * C + C / 2f));
+            sh.Im.rectTransform.anchoredPosition = pos; sh.Halo.rectTransform.anchoredPosition = pos;
+            sh.Halo.transform.SetAsLastSibling(); sh.Im.transform.SetAsLastSibling();   // 压在兵和墙上面
+        }
+    }
 
     void GroundTick()
     {

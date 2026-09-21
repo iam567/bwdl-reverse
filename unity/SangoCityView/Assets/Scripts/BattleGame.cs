@@ -26,6 +26,8 @@ public class BattleGame : MonoBehaviour
     /// 自检模式：命令行给 -shots <目录> 就自动走一遍三屏各截一张再退出。
     /// 我不能把没亲眼看过的画面交出去，但 macOS 的 screencapture 要屏幕录制权限，
     /// 所以让程序自己截。
+    static bool HasArg(string k) => System.Array.IndexOf(System.Environment.GetCommandLineArgs(), k) >= 0;
+
     static string ShotDir()
     {
         var a = System.Environment.GetCommandLineArgs();
@@ -76,19 +78,36 @@ public class BattleGame : MonoBehaviour
 
         clash.AdvanceForTest(45);                  // 120 拍会一路打到武将碰面进单挑，看不到阵型战
         yield return Shot(dir, "5_打了一阵");
+        // 火矢：点了之后再推几拍，趁箭还在飞连抓几帧——Shot() 要等 0.35 秒，箭早到了
+        clash.FireForTest();
+        clash.ShotForTest();                       // 注入一支火矢，逐帧抓，不靠 AI 轮到弓兵
+        for (int i = 0; i < 10; i++)
+        {
+            ScreenCapture.CaptureScreenshot(Path.Combine(dir, "5c_火矢_" + i + ".png"));
+            yield return new WaitForSeconds(.05f);
+        }
+        yield return new WaitForSeconds(.4f);
 
         clash.OnDuel();                            // 双方武将碰上的那一屏
         yield return Shot(dir, "5b_单挑");
+        // 这一屏拍完必须销毁。之前它一直留在底下，后面每段招式演示销毁自己的那一帧，
+        // 底下这张落日背景就漏出来几毫秒——就是「莫名其妙插一下落日」的来源。
+        if (duel != null) { Object.Destroy(duel.Root.gameObject); duel = null; }
+        yield return null;
         // 三种招式各演一遍：攻击 / 全力 / 投降
-        field.Root.gameObject.SetActive(false);
-        if (clash != null) clash.Root.gameObject.SetActive(false);
-        yield return DuelDemo(dir, "a攻击", 1, 34);
-        yield return DuelDemo(dir, "b全力", 2, 34);
-        yield return DuelDemo(dir, "c投降", 5, 10);
-        yield return DuelDemo(dir, "d落马", 0, 16, 3);   // 牵制必中，体力 3 一击必死
-        yield return DuelDemo(dir, "e招降", 3, 14, 10, 35);   // 体力低、忠诚低才招得动
-        field.Root.gameObject.SetActive(true);
-        if (clash != null) clash.Root.gameObject.SetActive(true);
+        // 调阵型战的时候不用每次都把五段单挑演示跑一遍：命令行给 -skipduel 就跳过
+        if (!HasArg("-skipduel"))
+        {
+            field.Root.gameObject.SetActive(false);
+            if (clash != null) clash.Root.gameObject.SetActive(false);
+            yield return DuelDemo(dir, "a攻击", 1, 34);
+            yield return DuelDemo(dir, "b全力", 2, 34);
+            yield return DuelDemo(dir, "c投降", 5, 10);
+            yield return DuelDemo(dir, "d落马", 0, 16, 3);   // 牵制必中，体力 3 一击必死
+            yield return DuelDemo(dir, "e招降", 3, 14, 10, 35);   // 体力低、忠诚低才招得动
+            field.Root.gameObject.SetActive(true);
+            if (clash != null) clash.Root.gameObject.SetActive(true);
+        }
 
         // 再来一场攻城：把敌方放到城池格上
         clash.FinishForTest();

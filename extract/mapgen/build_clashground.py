@@ -11,6 +11,7 @@
      静态  build_clashground.py <表.png> <输出目录> [水战单图.png]
      动画  build_clashground.py --anim <动画表目录> <输出目录>
      城墙  build_clashground.py --walls <城墙表.png> <输出目录>
+     箭矢  build_clashground.py --arrows <箭矢表.png> <输出目录>
 
    城墙那支**不做**半格位移混合——那一步会把垛口和栅门的结构糊成一团，
    墙块本来就是一块块摆的，边缘对不对得上靠提示词里「四边平直、能拼接」。
@@ -25,7 +26,8 @@ from PIL import Image
 ARGS = sys.argv[1:]
 ANIM = ARGS and ARGS[0] == '--anim'
 WALLS = ARGS and ARGS[0] == '--walls'
-if ANIM or WALLS: ARGS = ARGS[1:]
+ARROWS = ARGS and ARGS[0] == '--arrows'
+if ANIM or WALLS or ARROWS: ARGS = ARGS[1:]
 SHEET, OUT = ARGS[0], ARGS[1]
 SHUI = ARGS[2] if len(ARGS) > 2 else None
 N, COLORS = 256, 16
@@ -40,6 +42,31 @@ def seamless(img, dst):
                     raw, dst, str(N), str(COLORS)], check=True)
     os.remove(raw)
 
+
+if ARROWS:
+    # 四格共用一个缩放比、按包围盒居中——火矢三帧只有火焰不同，
+    # 各缩各的会让箭本身在三帧之间跳动。透明底，缩完把半透明边一刀切硬。
+    A = 128
+    sh = Image.open(SHEET).convert('RGBA')
+    if sh.size != (1024, 1024): sh = sh.resize((1024, 1024), Image.LANCZOS)
+    keys = ['arrow', 'fire_a', 'fire_b', 'fire_c']
+    cells = []
+    for i, k in enumerate(keys):
+        c = sh.crop((i % 2 * 512, i // 2 * 512, i % 2 * 512 + 512, i // 2 * 512 + 512))
+        b = c.split()[3].point(lambda v: 255 if v > 24 else 0).getbbox()
+        cells.append((k, c, b))
+    wmax = max(b[2] - b[0] for _, _, b in cells); hmax = max(b[3] - b[1] for _, _, b in cells)
+    sc = min((A - 2) / wmax, (A - 2) / hmax)
+    for k, c, b in cells:
+        fig = c.crop(b)
+        w = max(1, round(fig.width * sc)); h = max(1, round(fig.height * sc))
+        fig = fig.resize((w, h), Image.BOX)
+        fig.putalpha(fig.split()[3].point(lambda v: 255 if v >= 110 else 0))
+        cv = Image.new('RGBA', (A, A), (0, 0, 0, 0))
+        cv.paste(fig, ((A - w) // 2, (A - h) // 2), fig)
+        cv.save(os.path.join(OUT, 'cg_%s.png' % k))
+        print('%-7s → cg_%s.png  %dx%d' % (k, k, w, h))
+    raise SystemExit
 
 if WALLS:
     W = 128

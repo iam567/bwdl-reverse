@@ -183,6 +183,44 @@ const buildWalls = () => ({
   prompt: wallsPrompt(), status: 'idle', attempts: 0,
 });
 
-module.exports = { CELLS, ANIM, WALL_CELLS, buildWalls, wallsPrompt,
+/* ── 弓兵的箭 ──────────────────────────────────────────────────────────
+   原版 lib63 一格 16×16。这里 2×2 出四格：普通箭一格，火矢三格（火焰三帧轮播）。
+   都朝右画，上下左右由程序旋转。 */
+const ARROW_CELLS = [
+  ['arrow',  '普通箭',   '一支汉代的**羽箭**，水平朝右：竹木箭杆、三棱铁镞在右端、' +
+                        '尾羽在左端，杆细、镞和羽是仅有的两处细节'],
+  ['fire_a', '火矢·帧一', '同一支羽箭，**箭镞后面裹着燃烧的布团**，火焰向左后方拖出一小段，' +
+                        '火是明亮的橙黄、外圈偏红，带两三粒火星'],
+  ['fire_b', '火矢·帧二', '和上一格**完全相同的箭**，只有火焰的形状变了：火舌更长一点、' +
+                        '火星换了位置'],
+  ['fire_c', '火矢·帧三', '和前两格**完全相同的箭**，火焰又是另一个相位：火舌短而鼓、' +
+                        '火星飘得更高'],
+];
+
+function arrowsPrompt() {
+  const list = ARROW_CELLS.map(([, n, d], i) => `${i + 1}. ${n}：${d}`).join('\n');
+  return '像素画（pixel art）风格的**箭矢图表**，用于策略游戏战棋盘上弓兵射出的箭。\n' +
+    '**画面严格划分成 2 列 × 2 行、共 4 个等大的方格**，每格 512×512，' +
+    '格与格之间不画边框线也不画分隔线，**每格里的箭居中、水平朝右、长度占格宽的八成**。\n\n' +
+    '【四格，从左到右、从上到下】\n' + list + '\n\n' +
+    '**四格里的箭本身必须一模一样**：同样的长度、粗细、位置、镞与羽的样子——' +
+    '火矢三帧只有火焰不同，其余一个像素都不许变，这样轮播时箭不会抖。\n' +
+    '**这支箭最终会缩到 64 像素长显示**：靠剪影辨识，轮廓要粗、要闭合，' +
+    '箭杆至少三个像素粗，不要细到一缩就断。\n' +
+    '**严格的像素网格**：每个像素都是清晰的方块，边缘硬阶梯状，绝不做抗锯齿与渐变；' +
+    '色板受限。\n' +
+    '**背景留空**：除了箭（和火）什么都不要画，不要弓、不要手、不要影子，' +
+    '**更不要画表示透明的灰白棋盘格**。\n' +
+    '画面中不得出现任何文字、水印、边框或UI元素。';
+}
+
+const buildArrows = () => ({
+  id: 'cga_arrows', category: 'clashground', label: '弓兵箭矢·四格（箭 + 火矢三帧）',
+  meta: { 格数: 4 },
+  source: null, size: '1024x1024', background: 'transparent',
+  prompt: arrowsPrompt(), status: 'idle', attempts: 0,
+});
+
+module.exports = { CELLS, ANIM, WALL_CELLS, buildWalls, wallsPrompt, ARROW_CELLS, buildArrows, arrowsPrompt,
                    buildGround, groundPrompt, buildShui, shuiPrompt,
                    animPrompt, buildAnim, buildAnims };
