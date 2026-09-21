@@ -234,9 +234,9 @@ public class ClashView
         var topBar = Panel(field, "top", UiPlate());
         Place((RectTransform)topBar.transform, 4, 3, refW - 8, 38);
 
-        dayT = Label(field, "", 15, new Color32(0xF2,0xE8,0xD4,255));
+        dayT = Label(field, "", 17, new Color32(0xF2,0xE8,0xD4,255));
         Place(dayT.rectTransform, 20, 13, 200, 20);   // 20 是让开左边那道铜边
-        buffT = Label(field, "", 12, new Color32(0xF0,0xC8,0x70,255), TextAnchor.MiddleRight);
+        buffT = Label(field, "", 13, new Color32(0xF0,0xC8,0x70,255), TextAnchor.MiddleRight);
         Place(buffT.rectTransform, refW - 8 - 58 - 10 - 150, 13, 150, 20);
 
         // 场地比视窗宽（16 × 64 = 1024 对 375），所以套一层遮罩，里面那层拖着走。
@@ -296,11 +296,11 @@ public class ClashView
         string[] lab = { "体", "骑", "弓", "步" };
         for (int i = 0; i < 4; i++)
         {
-            var l = Label(info.transform, lab[i], 13, new Color32(0xD0,0xC0,0x98,255), TextAnchor.MiddleCenter);
+            var l = Label(info.transform, lab[i], 15, new Color32(0xD0,0xC0,0x98,255), TextAnchor.MiddleCenter);
             Place(l.rectTransform, refW / 2 - 24, 24 + i * 20, 32, 20);
-            armCount[i] = Label(info.transform, "", 14, Color.white, TextAnchor.MiddleRight);
+            armCount[i] = Label(info.transform, "", 17, Color.white, TextAnchor.MiddleRight);
             Place(armCount[i].rectTransform, refW / 2 - 130, 24 + i * 20, 100, 20);
-            foeCount[i] = Label(info.transform, "", 14, Color.white);
+            foeCount[i] = Label(info.transform, "", 17, Color.white);
             Place(foeCount[i].rectTransform, refW / 2 + 22, 24 + i * 20, 100, 20);
         }
 
@@ -312,7 +312,7 @@ public class ClashView
         var qi = quit.gameObject.AddComponent<Image>(); qi.sprite = UiBtn(); qi.type = Image.Type.Sliced;
         var qb = quit.gameObject.AddComponent<Button>(); qb.transition = Selectable.Transition.None;
         qb.onClick.AddListener(Finish);
-        var ql = Label(quit, "收兵", 12, new Color32(0xE0,0xD0,0xA8,255), TextAnchor.MiddleCenter);
+        var ql = Label(quit, "收兵", 14, new Color32(0xE0,0xD0,0xA8,255), TextAnchor.MiddleCenter);
         Fill(ql.rectTransform);
     }
 
@@ -682,7 +682,7 @@ public class ClashView
             Place((RectTransform)fi.transform, x, 6, W, h);
             fi.sprite = frame; fi.raycastTarget = false;      // 整框贴，不拉伸
         }
-        var n = Label(p, name, 13, c, TextAnchor.MiddleCenter);
+        var n = Label(p, name, 15, c, TextAnchor.MiddleCenter);
         Place(n.rectTransform, x - 6, 6 + h + 2, W + 12, 18);
     }
 
@@ -721,24 +721,24 @@ public class ClashView
     /// 点了「计策」之后的二级菜单：六个能力，点数不够的挑不动。
     void OpenSkillCmd(int col, int row)
     {
-        int w = 104, rowH = 30, h = 26 + 6 * rowH + 6;
+        int w = 122, rowH = 34, h = 30 + 6 * rowH + 8;
         PlacePop(col, row, w, h);
-        var t = Label(cmdPop, "计策 · 余 " + plotPts, 12,
+        var t = Label(cmdPop, "计策 · 余 " + plotPts, 14,
                       new Color32(0xF0,0xC8,0x70,255), TextAnchor.MiddleCenter);
-        Place(t.rectTransform, 0, 5, w, 20);
+        Place(t.rectTransform, 0, 7, w, 20);
 
         for (int i = 0; i < 6; i++)
         {
             int k = i;
             bool ok = BattleRules.SkillCost[i] <= plotPts;
             var b = Node("k" + i, cmdPop);
-            Place(b, 6, 26 + i * rowH, w - 12, rowH - 4);
+            Place(b, 8, 30 + i * rowH, w - 16, rowH - 5);
             var bi = b.gameObject.AddComponent<Image>(); bi.sprite = UiBtn(); bi.type = Image.Type.Sliced;
             bi.color = ok ? Color.white : new Color(.55f, .52f, .48f, 1f);
             var bt = b.gameObject.AddComponent<Button>(); bt.transition = Selectable.Transition.None;
             bt.interactable = ok;
             bt.onClick.AddListener(() => { CloseCmd(); UseSkill(k); });
-            var l = Label(b, BattleRules.SkillName[i] + " " + BattleRules.SkillCost[i], 12,
+            var l = Label(b, BattleRules.SkillName[i] + " " + BattleRules.SkillCost[i], 14,
                           ok ? new Color32(0xF0,0xE0,0xB8,255) : new Color32(0x86,0x7E,0x6C,255),
                           TextAnchor.MiddleCenter);
             Fill(l.rectTransform);
@@ -834,16 +834,16 @@ public class ClashView
 
     void OpenCmd(int arm, int col, int row)
     {
-        int n = OrderCount(arm), w = 92, rowH = 30, h = 26 + n * rowH + 6;
+        int n = OrderCount(arm), w = 106, rowH = 34, h = 30 + n * rowH + 8;
         PlacePop(col, row, w, h);
-        var t = Label(cmdPop, ARM[arm], 13, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleCenter);
-        Place(t.rectTransform, 0, 5, w, 20);
+        var t = Label(cmdPop, ARM[arm], 15, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleCenter);
+        Place(t.rectTransform, 0, 7, w, 20);
 
         for (int i = 0; i < n; i++)
         {
             int k = i;
             var b = Node("c" + i, cmdPop);
-            Place(b, 6, 26 + i * rowH, w - 12, rowH - 4);
+            Place(b, 8, 30 + i * rowH, w - 16, rowH - 5);
             var bi = b.gameObject.AddComponent<Image>(); bi.sprite = UiBtn(); bi.type = Image.Type.Sliced;
             bi.color = orders[arm] == i ? new Color(1f, .92f, .60f, 1f) : Color.white;
             var bt = b.gameObject.AddComponent<Button>(); bt.transition = Selectable.Transition.None;
@@ -852,7 +852,7 @@ public class ClashView
                 if (arm == 0 && k == 4) { OpenSkillCmd(col, row); return; }
                 orders[arm] = k; CloseCmd(); Redraw();
             });
-            var l = Label(b, ORDER[i], 13, new Color32(0xF0,0xE0,0xB8,255), TextAnchor.MiddleCenter);
+            var l = Label(b, ORDER[i], 15, new Color32(0xF0,0xE0,0xB8,255), TextAnchor.MiddleCenter);
             Fill(l.rectTransform);
         }
     }
