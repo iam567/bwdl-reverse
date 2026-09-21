@@ -94,6 +94,34 @@ for k, target in TARGET.items():
     im.save(os.path.join(OUT, 'ui_%s.png' % k))
     print('%-9s %dx%-4d %s' % (k, im.width, im.height, meta[k]))
 
+# 兵种图标：一张 1024 切 2×2。四个共用一个缩放比，
+# 各缩各的会让马头比将盔大一圈，摆成一列就参差不齐。
+ico = os.path.join(SRC, 'bui_icons.png')
+if os.path.exists(ico):
+    ICO = 64
+    sheet = Image.open(ico).convert('RGBA')
+    if sheet.size != (1024, 1024):
+        sheet = sheet.resize((1024, 1024), Image.LANCZOS)
+    keys = ['ti', 'qi', 'gong', 'bu']
+    cells = {}
+    for i, k in enumerate(keys):
+        c = sheet.crop((i % 2 * 512, i // 2 * 512, i % 2 * 512 + 512, i // 2 * 512 + 512))
+        b = c.split()[3].point(lambda v: 255 if v > 24 else 0).getbbox()
+        if b is None: continue
+        cells[k] = (c, b)
+    if cells:
+        sc = min((ICO - 2) / max(b[2] - b[0] for _, b in cells.values()),
+                 (ICO - 2) / max(b[3] - b[1] for _, b in cells.values()))
+        for k, (c, b) in cells.items():
+            fig = c.crop(b)
+            w = max(1, round(fig.width * sc)); h = max(1, round(fig.height * sc))
+            fig = fig.resize((w, h), Image.BOX)
+            canvas = Image.new('RGBA', (ICO, ICO), (0, 0, 0, 0))
+            canvas.paste(fig, ((ICO - w) // 2, (ICO - h) // 2), fig)
+            canvas.save(os.path.join(OUT, 'ui_icon_%s.png' % k))
+            print('icon %-5s %2dx%-2d' % (k, w, h))
+        meta['icon'] = {'w': ICO, 'h': ICO}
+
 with open(os.path.join(OUT, 'battleui.json'), 'w', encoding='utf-8') as fp:
     json.dump(meta, fp, ensure_ascii=False)
 

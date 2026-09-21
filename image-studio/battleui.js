@@ -58,6 +58,34 @@ const ITEMS = [
    '底纹一旦花了就看不清棋子了。四边要能无缝平铺。'],
 ];
 
+/* 信息栏那四行原来只写「体 骑 弓 步」四个字，压不住整块面板。
+   改成四个小图标，一张 1024 切 2×2、每格 512，不单独出四张。
+   「体」是武将本人的体力，所以用将盔；骑弓步是三种兵，
+   辨识点跟场上的小兵对齐（马首 / 弓 / 盾戟），看一眼就能对上号。 */
+const ICONS = [
+  ['ti',   '体·将盔', '一顶汉代的**兜鍪**（将领头盔），正面，顶上一簇**朱红色的缨**，' +
+                      '盔体是冷铁灰带黄铜护额'],
+  ['qi',   '骑·马首', '一个**马头**的侧影，朝右，配着辔头与一小片黄铜面当', ],
+  ['gong', '弓·长弓', '一张**竖立的长弓**，弓弦拉开、搭着一支箭，箭头朝右'],
+  ['bu',   '步·盾戟', '一面**方盾**与一杆**长戟**交叉，盾在前、戟斜穿在后'],
+];
+
+function iconsPrompt() {
+  const list = ICONS.map((x, i) => `${i + 1}. ${x[1]}：${x[2]}`).join('\n');
+  return '像素画（pixel art）风格的**图标表**，用于中式历史策略游戏的战斗信息栏。\n' +
+    '**画面严格划分成 2 列 × 2 行、共 4 个等大的方格**，每格 512×512，' +
+    '格与格之间不画边框线也不画分隔线，' +
+    '**每个图标都要完整、居中、占本格的七成左右，不越界、不跨格**。\n\n' +
+    '【四格，从左到右、从上到下】\n' + list + '\n\n' +
+    '四个图标是**同一套**：一样的描边粗细、一样的配色逻辑、一样的体量感，' +
+    '主体是**黄铜与冷铁灰**，只有将盔的缨是朱红。\n' +
+    '**最终会缩到 24×24 显示**：所以只要剪影和大色块，' +
+    '不要细碎的纹样、不要小铆钉、不要文字标注；轮廓线要粗、要闭合。\n' + PX + '\n' +
+    '**背景留空**：除了这四个图标什么都不要画，不要底板、不要边框、不要影子，' +
+    '**更不要画表示透明的灰白棋盘格**。\n' +
+    '画面中不得出现任何文字、字母、汉字、数字、签名、水印。';
+}
+
 function uiPrompt(key) {
   const it = ITEMS.find(x => x[0] === key);
   const nine = key === 'mapbg' ? '' : (key === 'portrait' ? '' : NINE);
@@ -75,6 +103,13 @@ const buildUi = k => {
   };
 };
 
-const buildBattleUi = () => ITEMS.map(i => buildUi(i[0]));
+const buildIcons = () => ({
+  id: 'bui_icons', category: 'battleui', label: '战斗界面·兵种图标表（2×2）',
+  meta: { 格数: 4 },
+  source: null, size: '1024x1024', background: 'transparent',
+  prompt: iconsPrompt(), status: 'idle', attempts: 0,
+});
 
-module.exports = { ITEMS, buildUi, buildBattleUi, uiPrompt };
+const buildBattleUi = () => ITEMS.map(i => buildUi(i[0])).concat([buildIcons()]);
+
+module.exports = { ITEMS, ICONS, buildUi, buildIcons, buildBattleUi, uiPrompt, iconsPrompt };

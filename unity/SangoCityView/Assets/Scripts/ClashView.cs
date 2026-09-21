@@ -87,6 +87,7 @@ public class ClashView
                            SpriteMeshType.FullRect, new Vector4(b, b, b, b));
         return uiCache[k] = sp;
     }
+    static readonly string[] IconKey = { "ti", "qi", "gong", "bu" };
     static Sprite UiPlate() => Ui("plate") ?? Plate();
     static Sprite UiBtn()   => Ui("btn")   ?? Frame();
 
@@ -214,7 +215,7 @@ public class ClashView
     // 靠 aa 左右滚；我们不再迁就「一屏看全」，改成放大到半屏、拖着看。
     // 按参考分辨率 375 × 812 算。底下的兵种指令栏、计策栏、说明文字都拆了，
     // 「收兵」挪进顶栏，小地图铺满整宽（一格 20，面板 344）：
-    // 44(顶栏) + 7C + 14 + 116(信息) + 12 + 164(小地图) + 28(下边距) = 812 → C = 64。
+    // 44(顶栏) + 7C + 14 + 124(信息) + 10 + 164(小地图) = 804，下边还剩 8 → C = 64。
     // 再往上顶就没意义了——C=78 时七行吃掉 67% 屏高，横向只剩不到五列，
     // 一屏大半是空地面，那不是放大是放过头。
     // 小兵图跟着按 FIG 重切（整图一格 512，分辨率够，重切不花钱），
@@ -225,7 +226,7 @@ public class ClashView
     static int VIEW_H => BattleRules.GridH * C;   // 7 × 64 = 448，占竖屏的五成五
     // 下面三栏挨着场地往下排。写死绝对 Y 的话，C 一改就会撞在一起。
     static int INFO_Y  => VIEW_Y + VIEW_H + 14;
-    static int MAP_Y   => INFO_Y + 116 + 12;   // 小地图。底下原来是指令栏和计策栏，都拆了
+    static int MAP_Y   => INFO_Y + 124 + 10;   // 小地图。底下原来是指令栏和计策栏，都拆了
     const int MM = 20;                         // 小地图一格多大（原版是 3 像素）
     void BuildField()
     {
@@ -287,21 +288,39 @@ public class ClashView
 
         // 信息栏：体 / 骑 / 弓 / 步，和原版底部那一栏一样
         var info = Panel(field, "info", UiPlate());
-        Place((RectTransform)info.transform, 8, INFO_Y, refW - 16, 116);
+        Place((RectTransform)info.transform, 8, INFO_Y, refW - 16, 124);
         // 两侧各摆一个头像：先贴头像，再把錾金框压在上面。
         // 框中间那个洞的位置是量出来的，写在 battleui.txt 里。
         float pw = refW - 16;                                // 信息栏自己的宽
         PortraitAt(info.transform, 12,          me.Id,  me.Name,  new Color32(0x8C,0xC0,0xFF,255));
         PortraitAt(info.transform, pw - 12 - 68, foe.Id, foe.Name, new Color32(0xFF,0x90,0x88,255));
+        // 中间这一列原来是「体 骑 弓 步」四个字，压不住整块面板，换成图标。
+        // 没切出图标的话退回文字，界面不至于开天窗。
         string[] lab = { "体", "骑", "弓", "步" };
+        const int IC = 28, ROW = 28, Y0 = 8;
+        // 这一列一直是按 refW/2 定的，可面板自己从 x=8 起算，
+        // 于是整列比面板中线偏右 8 像素。按面板自己的中线来。
+        float cx = pw / 2;
         for (int i = 0; i < 4; i++)
         {
-            var l = Label(info.transform, lab[i], 15, new Color32(0xD0,0xC0,0x98,255), TextAnchor.MiddleCenter);
-            Place(l.rectTransform, refW / 2 - 24, 24 + i * 20, 32, 20);
+            int y = Y0 + i * ROW;
+            var ico = Ui("icon_" + IconKey[i]);
+            if (ico != null)
+            {
+                var im = Node("ic", info.transform).gameObject.AddComponent<Image>();
+                Place((RectTransform)im.transform, cx - IC / 2f, y, IC, IC);
+                im.sprite = ico; im.raycastTarget = false;
+            }
+            else
+            {
+                var l = Label(info.transform, lab[i], 15,
+                              new Color32(0xD0,0xC0,0x98,255), TextAnchor.MiddleCenter);
+                Place(l.rectTransform, cx - 16, y + 4, 32, 20);
+            }
             armCount[i] = Label(info.transform, "", 17, Color.white, TextAnchor.MiddleRight);
-            Place(armCount[i].rectTransform, refW / 2 - 130, 24 + i * 20, 100, 20);
+            Place(armCount[i].rectTransform, cx - 30 - 100, y + 4, 100, 20);
             foeCount[i] = Label(info.transform, "", 17, Color.white);
-            Place(foeCount[i].rectTransform, refW / 2 + 22, 24 + i * 20, 100, 20);
+            Place(foeCount[i].rectTransform, cx + 30, y + 4, 100, 20);
         }
 
         BuildMinimap();
