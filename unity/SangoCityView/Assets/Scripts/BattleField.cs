@@ -227,7 +227,7 @@ public class BattleField
         CenterOn(tgt.X, tgt.Y); curX = tgt.X; curY = tgt.Y; Refresh();
         DoPlot(tgt.X, tgt.Y); Refresh();
     }
-    public void InfoForTest(Unit u, Unit tgt) { sel = u; mode = "info"; ShowInfo(tgt); Refresh(); }
+    public void InfoForTest(Unit u, Unit tgt) { ClosePlotPop(); sel = u; mode = "info"; ShowInfo(tgt); Refresh(); }   // 先收上一步的计策弹框
     public void CommandForTest(Unit u, int k) { sel = u; mode = ""; Command(k); CenterOn(u.X, u.Y); curX = u.X; curY = u.Y; Refresh(); }
 
     // ── 素材 ───────────────────────────────────────────────────────────
