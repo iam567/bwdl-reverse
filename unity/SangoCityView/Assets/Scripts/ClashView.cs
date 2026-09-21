@@ -156,9 +156,15 @@ public class ClashView
         Redraw();
     }
 
-    const int C = 22;                      // 阵型格一格多大
-    const int ORDER_Y = 428;               // 指令栏位置。钉屏幕底会在中间留一大块黑
-    const int SKILL_Y = 350;               // 计策点面板，别压住信息栏的「步」那一行
+    // 场地是 16 列 × 7 行（bK = byte[7][16]）。原版屏宽 176，一次只显示 11 列，
+    // 靠 aa 左右滚；我们竖屏 500 宽，16 × 31 = 496 刚好整场一格不落地摆下，
+    // 不用滚也不会裁。31 就是「全场可见」的上限，再大只能改成横向滚动。
+    const int C = 31;                      // 阵型格一格多大
+    const int FIG = C + 6;                 // 棋子画多大：比格子略大一圈，和原版一样有点探出
+    // 下面三栏挨着场地往下排。写死绝对 Y 的话，C 一改就会撞在一起。
+    static int INFO_Y  => 44 + BattleRules.GridH * C + 26;
+    static int SKILL_Y => INFO_Y + 116 + 14;   // 计策点面板，别压住信息栏的「步」那一行
+    static int ORDER_Y => SKILL_Y + 84;        // 指令栏。钉屏幕底会在中间留一大块黑
     void BuildField()
     {
         field = Node("field", Root); Fill(field);
@@ -178,7 +184,7 @@ public class ClashView
 
         // 信息栏：体 / 骑 / 弓 / 步，和原版底部那一栏一样
         var info = Panel(field, "info", Plate());
-        Place((RectTransform)info.transform, 8, 44 + BattleRules.GridH * C + 26, refW - 16, 116);
+        Place((RectTransform)info.transform, 8, INFO_Y, refW - 16, 116);
         var an1 = Label(info.transform, me.Name, 14, new Color32(0x8C,0xC0,0xFF,255));
         Place(an1.rectTransform, 14, 8, 110, 20);
         var an2 = Label(info.transform, foe.Name, 14, new Color32(0xFF,0x90,0x88,255), TextAnchor.MiddleRight);
@@ -582,13 +588,13 @@ public class ClashView
         {
             if (!p.Alive) continue;
             var im = Node("p", gridRoot).gameObject.AddComponent<Image>();
-            Place((RectTransform)im.transform, p.Col * C - 2, p.Row * C - 4, C + 4, C + 4);
+            Place((RectTransform)im.transform, p.Col * C - 3, p.Row * C - 6, FIG, FIG);
             im.sprite = Soldier(p.Arm, p.Dir, ours);
             im.raycastTarget = false; tmp.Add(im.gameObject);
             if (p.Dir == 2)                            // 朝左＝把朝右那张水平镜像
             {
                 im.rectTransform.localScale = new Vector3(-1, 1, 1);
-                im.rectTransform.anchoredPosition += new Vector2(C + 4, 0);
+                im.rectTransform.anchoredPosition += new Vector2(FIG, 0);
             }
             if (Time.time - p.HitAt < .45f)            // 刚挨打，闪一下爆点
             {
@@ -599,7 +605,7 @@ public class ClashView
             if (ActingSide == (ours ? 0 : 1) && ps.IndexOf(p) == ActingIdx)
             {
                 var hl = Node("hl", gridRoot).gameObject.AddComponent<Image>();
-                Place((RectTransform)hl.transform, p.Col * C - 2, p.Row * C - 4, C + 4, C + 4);
+                Place((RectTransform)hl.transform, p.Col * C - 3, p.Row * C - 6, FIG, FIG);
                 hl.color = new Color(1f, .95f, .3f, .30f); hl.raycastTarget = false;
                 tmp.Add(hl.gameObject); hl.transform.SetSiblingIndex(im.transform.GetSiblingIndex());
             }
