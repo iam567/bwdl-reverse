@@ -85,6 +85,8 @@ shutil.copy2(os.path.join(ROOT, 'extract/data/duel-skin.json'), os.path.join(DST
 
 shutil.copy2(os.path.join(ROOT, 'extract/data/city-theme.json'), os.path.join(DST, 'city-theme.json'))
 shutil.copy2(os.path.join(ROOT, 'extract/data/officers.csv'),    os.path.join(DST, 'officers.csv'))
+shutil.copy2(os.path.join(ROOT, 'extract/data/cities.csv'),      os.path.join(DST, 'cities.csv'))
+shutil.copy2(os.path.join(ROOT, 'extract/data/city-adjacency.json'), os.path.join(DST, 'city-adjacency.json'))
 
 # 头像按武将 ID 重命名，运行时好查。
 # 原图 1024²，一张 250KB，265 张就是 65MB；战斗界面里只显示 60–90px，

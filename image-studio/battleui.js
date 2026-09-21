@@ -179,6 +179,40 @@ const buildGo = () => ({
   prompt: goPrompt(), status: 'idle', attempts: 0,
 });
 
+/* 战棋层（战争回合的移动画面）四件：格子光标、攻击目标标记、部队名牌底、可达格底纹。
+   格子是 44×44，光标和标记要**只画四个角的括弧**，中间留空——不能挡住格子里的部队。 */
+const FIELD_CELLS = [
+  ['cursor',   '格子光标',   '一个**只有四个角的方形括弧**：四段 L 形的亮金色短边，中间完全留空，' +
+                            '边宽约占格子边长的十分之一，角上各有一粒小圆点'],
+  ['target',   '攻击目标标记', '和上一格**几何完全相同**的四角括弧，颜色换成朱红，' +
+                            '四角的小圆点换成小小的三角箭头、都指向中心'],
+  ['nameplate','部队名牌底', '一块**横向的小牌子**：深色木底、极细的黄铜线脚，' +
+                            '左端有一枚小铜钉，牌面留空不写字，' +
+                            '整体很薄——高度只占本格的四分之一，宽度占九成'],
+  ['reach',    '可达格底纹', '一块**正方形的半透明淡金色底纹**：铺满整格，' +
+                            '面上是稀疏的汉代云纹暗花，四边有一圈略亮的细边；' +
+                            '整体要淡，是叠在地图格子上表示「能走到这里」的提示，不能盖住地形'],
+];
+function fieldPrompt() {
+  const list = FIELD_CELLS.map(([, n, d], i) => `${i + 1}. ${n}：${d}`).join('\n');
+  return '像素画（pixel art）风格的**界面构件表**，用于中式历史策略游戏的战棋地图画面。\n' +
+    '**画面严格划分成 2 列 × 2 行、共 4 个等大的方格**，每格 512×512，' +
+    '格与格之间不画边框线也不画分隔线，每格里的构件居中、占本格的九成。\n\n' +
+    '【四格，从左到右、从上到下】\n' + list + '\n\n' +
+    '风格接同一套战斗界面：汉代木牌、黄铜线脚、像素画。' +
+    '**第三格（名牌）会被程序横向九宫格拉伸**：左端的铜钉是「角」，中段必须平直干净。\n' +
+    PX + '\n' +
+    '**背景留空**：除了这四个构件什么都不要画，光标和标记的中间必须是透明的，' +
+    '**更不要画表示透明的灰白棋盘格**。\n' +
+    '画面中不得出现任何文字、字母、数字、签名、水印。';
+}
+const buildField = () => ({
+  id: 'bui_field', category: 'battleui', label: '战棋层构件·四格（2×2）',
+  meta: { 格数: 4 },
+  source: null, size: '1024x1024', background: 'transparent',
+  prompt: fieldPrompt(), status: 'idle', attempts: 0,
+});
+
 const buildIcons = () => ({
   id: 'bui_icons', category: 'battleui', label: '战斗界面·兵种图标表（2×2）',
   meta: { 格数: 4 },
@@ -188,4 +222,4 @@ const buildIcons = () => ({
 
 const buildBattleUi = () => ITEMS.map(i => buildUi(i[0])).concat([buildIcons()]);
 
-module.exports = { ITEMS, ICONS, PICK_CELLS, buildUi, buildIcons, buildPick, buildGo, GO_CELLS, buildBattleUi, uiPrompt, iconsPrompt, pickPrompt, goPrompt };
+module.exports = { ITEMS, ICONS, PICK_CELLS, buildUi, buildIcons, buildPick, buildGo, GO_CELLS, buildField, FIELD_CELLS, fieldPrompt, buildBattleUi, uiPrompt, iconsPrompt, pickPrompt, goPrompt };

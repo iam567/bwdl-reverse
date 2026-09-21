@@ -328,6 +328,32 @@ public static class BattleRules
     }
 
     // ── 数据装载 ───────────────────────────────────────────────────────
+    /// cities.csv：1 起数 col7 = l[] 黄金、col8 = m[] 粮草（GAME_LOGIC 已验证），即下标 6 / 7。
+    public static Dictionary<int, (int gold, int food)> LoadCitySupply(string csvPath)
+    {
+        var d = new Dictionary<int, (int, int)>();
+        if (!File.Exists(csvPath)) return d;
+        foreach (var line in File.ReadAllLines(csvPath))
+        {
+            var a = line.Split(',');
+            if (a.Length < 8 || !int.TryParse(a[0], out int id)) continue;
+            int.TryParse(a[6], out int g); int.TryParse(a[7], out int f);
+            d[id] = (g, f);
+        }
+        return d;
+    }
+    /// city-adjacency.json 是 { "13": {"adj":[..]} } 这种字典，JsonUtility 吃不下，用正则抠。
+    public static int[] AdjacentCities(string jsonPath, int city)
+    {
+        if (!File.Exists(jsonPath)) return new int[0];
+        var m = System.Text.RegularExpressions.Regex.Match(File.ReadAllText(jsonPath),
+                    "\"" + city + "\"\\s*:\\s*\\{[^}]*?\"adj\"\\s*:\\s*\\[([^\\]]*)\\]");
+        if (!m.Success) return new int[0];
+        var list = new List<int>();
+        foreach (var t in m.Groups[1].Value.Split(',')) if (int.TryParse(t.Trim(), out int v)) list.Add(v);
+        return list.ToArray();
+    }
+
     public static Dictionary<int, Officer> LoadOfficers(string csvPath)
     {
         var d = new Dictionary<int, Officer>();

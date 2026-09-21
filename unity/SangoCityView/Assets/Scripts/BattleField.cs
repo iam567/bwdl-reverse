@@ -52,10 +52,11 @@ public class BattleField
 
     static readonly string[] CMD = { "移动", "计策", "攻击", "情报", "撤退", "待机" };
 
+    readonly int[] supply;                                  // 我金 我粮 敌金 敌粮
     public BattleField(RectTransform parent, int cityId, string themeKey,
-                       List<Unit> roster, float refW, float refH)
+                       List<Unit> roster, float refW, float refH, int[] supply = null)
     {
-        this.refW = refW; this.refH = refH;
+        this.refW = refW; this.refH = refH; this.supply = supply ?? new int[4];
         theme = themeKey;
         grid = BattleRules.LoadMap(Path.Combine(BattleGame.BattleDir, "maps", cityId + ".map"));
         H = grid.GetLength(0); W = grid.GetLength(1);
@@ -112,67 +113,84 @@ public class BattleField
         Hook(EventTriggerType.PointerUp, d => { if (!dragged) OnBoardClick(d, clip); });
 
         cursorImg = Node("cursor", board).gameObject.AddComponent<Image>();
-        cursorImg.sprite = CursorSprite();
+        cursorImg.sprite = BattleUi.Get("cursor") ?? CursorSprite();
         cursorImg.raycastTarget = false;
     }
 
+    Image[] cmdImgs;
     void BuildHud()
     {
-        var top = Panel(Root, "top", Plate());
-        Place((RectTransform)top.transform, 8, 8, refW - 16, 60);
-        dayText = Label(top.transform, "", 15, new Color32(0xF2,0xE8,0xD4,255));
-        Place(dayText.rectTransform, 12, 8, 160, 22);
-        mpText = Label(top.transform, "", 14, new Color32(0xF0,0xD0,0x88,255), TextAnchor.MiddleRight);
-        Place(mpText.rectTransform, refW - 190, 8, 170, 22);
-        hintText = Label(top.transform, "", 12, new Color32(0xC8,0xC0,0xA8,255));
-        Place(hintText.rectTransform, 12, 32, refW - 40, 20);
+        // 顶栏：左我方金粮、中间日数与机动力、右敌方金粮；第二行是提示
+        var top = Panel(Root, "top", BattleUi.PlateSp());
+        Place((RectTransform)top.transform, 8, 8, refW - 16, 66);
+        var lab = new Color32(0xC8,0xA8,0x60,255);
+        Text Col(float x, float w, string t, int size, Color32 c, TextAnchor a)
+        {
+            var l = Label(top.transform, t, size, c, a); Place(l.rectTransform, x, 8, w, 22); return l;
+        }
+        Col(14, 40, "我方", 13, new Color32(0x9C,0xC8,0xFF,255), TextAnchor.MiddleLeft);
+        Col(54, 110, "金 " + supply[0] + "  粮 " + supply[1], 13, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleLeft);
+        Col(refW - 16 - 14 - 40, 40, "敌方", 13, new Color32(0xFF,0x98,0x90,255), TextAnchor.MiddleRight);
+        Col(refW - 16 - 14 - 40 - 110, 110, "金 " + supply[2] + "  粮 " + supply[3], 13, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleRight);
+        dayText = Col(0, refW - 16, "", 15, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleCenter);
+        mpText  = Label(top.transform, "", 13, new Color32(0xF0,0xD0,0x88,255), TextAnchor.MiddleCenter);
+        Place(mpText.rectTransform, 0, 30, refW - 16, 18);
+        hintText = Label(top.transform, "", 12, new Color32(0xC8,0xC0,0xA8,255), TextAnchor.MiddleCenter);
+        Place(hintText.rectTransform, 12, 46, refW - 40, 18);
 
         cmdBar = Node("cmd", Root);
-        Place(cmdBar, 0, refH - 88, refW, 88);
-        var bg = Panel(cmdBar, "bg", Plate()); Fill((RectTransform)bg.transform);
+        Place(cmdBar, 0, refH - 100, refW, 100);
+        var bg = Panel(cmdBar, "bg", BattleUi.PlateSp()); Fill((RectTransform)bg.transform);
 
-        cmdSel = Node("sel", cmdBar).gameObject.AddComponent<Image>();
-        cmdSel.color = new Color(1f, .85f, .2f, .22f);
-        cmdSel.raycastTarget = false;
-
-        cmdLabels = new Text[CMD.Length];
-        float bw = (refW - 16) / CMD.Length;
+        // 六道令：一排六块木牌按钮，选中的那块换金
+        cmdLabels = new Text[CMD.Length]; cmdImgs = new Image[CMD.Length];
+        float bw = (refW - 24) / CMD.Length;
         for (int i = 0; i < CMD.Length; i++)
         {
             int k = i;
             var b = Node("b" + i, cmdBar);
-            Place(b, 8 + i * bw, 10, bw, 40);
-            var img = b.gameObject.AddComponent<Image>();
-            img.color = new Color(0, 0, 0, 0.01f);
+            Place(b, 12 + i * bw + 2, 10, bw - 4, 36);
+            cmdImgs[i] = b.gameObject.AddComponent<Image>();
+            cmdImgs[i].sprite = BattleUi.BtnSp(); cmdImgs[i].type = Image.Type.Sliced;
             var btn = b.gameObject.AddComponent<Button>();
             btn.transition = Selectable.Transition.None;
             btn.onClick.AddListener(() => Command(k));
             cmdLabels[i] = Label(b, CMD[i], 15, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleCenter);
             Fill(cmdLabels[i].rectTransform);
         }
+        cmdSel = Node("sel", cmdBar).gameObject.AddComponent<Image>();   // 旧的高亮块留着占位，不再用
+        cmdSel.enabled = false; cmdSel.raycastTarget = false;
 
-        // 战场比一屏大，给两个跳转按钮，省得一路拖
-        void JumpBtn(string txt, float x, System.Action act)
+        // 下面三枚：铺首大按钮那一套（出阵按钮同款）
+        void BigBtn(string txt, float x, float w, System.Action act, float ppu)
         {
             var b = Node("j" + txt, cmdBar);
-            Place(b, x, 52, 78, 28);
-            var i2 = b.gameObject.AddComponent<Image>(); i2.sprite = Frame(); i2.type = Image.Type.Sliced;
-            var t2 = b.gameObject.AddComponent<Button>(); t2.transition = Selectable.Transition.None;
+            Place(b, x, 54, w, 38);
+            var i2 = b.gameObject.AddComponent<Image>();
+            i2.sprite = BattleUi.Get("go") ?? BattleUi.BtnSp(); i2.type = Image.Type.Sliced;
+            // 铺首那张是按 200×56 的出阵按钮量的 border（横 63）。这里按钮只有 100×38，
+            // 两枚铺首加起来比按钮还宽，Unity 会把它们撑满整个按钮、字全压在兽面底下。
+            // 用 pixelsPerUnitMultiplier 把九宫格的边整体缩小。
+            i2.pixelsPerUnitMultiplier = ppu;
+            var t2 = b.gameObject.AddComponent<Button>();
+            if (BattleUi.Get("go_on") != null)
+            {
+                t2.transition = Selectable.Transition.SpriteSwap;
+                t2.spriteState = new SpriteState { pressedSprite = BattleUi.Get("go_on"), highlightedSprite = BattleUi.Get("go") };
+            }
+            else t2.transition = Selectable.Transition.None;
             t2.onClick.AddListener(() => act());
-            var l2 = Label(b, txt, 12, new Color32(0xE0,0xD0,0xA8,255), TextAnchor.MiddleCenter);
+            var l2 = Label(b, txt, 14, new Color32(0xF6,0xE8,0xC0,255), TextAnchor.MiddleCenter, FontStyle.Bold);
             Fill(l2.rectTransform);
+            var sh = l2.gameObject.AddComponent<Shadow>(); sh.effectColor = new Color(0, 0, 0, .8f); sh.effectDistance = new Vector2(1, -1);
         }
-        JumpBtn("看我军", 10, () => JumpTo(true));
-        JumpBtn("看敌军", refW - 88, () => JumpTo(false));
-
-        var end = Node("end", cmdBar);
-        Place(end, refW / 2 - 70, 52, 140, 28);
-        var eimg = end.gameObject.AddComponent<Image>(); eimg.sprite = Frame(); eimg.type = Image.Type.Sliced;
-        var ebtn = end.gameObject.AddComponent<Button>(); ebtn.transition = Selectable.Transition.None;
-        ebtn.onClick.AddListener(EndDay);
-        var el = Label(end, "结束这一日", 13, new Color32(0xE8,0xD8,0xB0,255), TextAnchor.MiddleCenter);
-        Fill(el.rectTransform);
+        BigBtn("看我军", 12, 100, () => JumpTo(true), 3.4f);
+        BigBtn("回合结束", refW / 2 - 70, 140, EndDay, 2.2f);
+        BigBtn("看敌军", refW - 12 - 100, 100, () => JumpTo(false), 3.4f);
     }
+
+    /// 自检：选中一支我方部队并下一道令（2 = 攻击），好截到目标标记
+    public void CommandForTest(Unit u, int k) { sel = u; mode = ""; Command(k); CenterOn(u.X, u.Y); curX = u.X; curY = u.Y; Refresh(); }
 
     // ── 素材 ───────────────────────────────────────────────────────────
     static readonly Dictionary<int, string> SLOT = new Dictionary<int, string> {
@@ -313,7 +331,7 @@ public class BattleField
         day++;
         foreach (var u in units) u.Acted = false;
         mp = BattleRules.MoveCap(TotalTroops(true));
-        hintText.text = "战争回合结束！第 " + day + " 日";
+        hintText.text = "回合结束，第 " + day + " 日";
         Refresh();
     }
 
@@ -499,7 +517,10 @@ public class BattleField
         {
             var im = Node("r", board).gameObject.AddComponent<Image>();
             Place((RectTransform)im.transform, (k % W) * CELL, (k / W) * CELL, CELL, CELL);
-            im.color = new Color(.35f, .75f, 1f, .30f); im.raycastTarget = false;
+            var rs = BattleUi.Get("reach");
+            if (rs != null) { im.sprite = rs; im.color = new Color(1f, 1f, 1f, .62f); }
+            else im.color = new Color(.35f, .75f, 1f, .30f);
+            im.raycastTarget = false;
             marks.Add(im.gameObject);
         }
         foreach (var u in units)                       // 部队
@@ -530,12 +551,28 @@ public class BattleField
             bar.color = u.Ours ? new Color(.35f, .65f, 1f) : new Color(1f, .35f, .3f);
             bar.raycastTarget = false; marks.Add(bar.gameObject);
 
-            var nm = Label(board, u.O.Name + " " + u.O.Troops, 11, Color.white, TextAnchor.UpperCenter);
-            Place(nm.rectTransform, ux - 14, uy + CELL, CELL + 28, 14);
+            var np = BattleUi.Get("nameplate");
+            if (np != null)
+            {
+                var pl = Node("np", board).gameObject.AddComponent<Image>();
+                Place((RectTransform)pl.transform, ux - 14, uy + CELL, CELL + 28, 16);
+                pl.sprite = np; pl.type = Image.Type.Sliced; pl.raycastTarget = false;
+                marks.Add(pl.gameObject);
+            }
+            var nm = Label(board, u.O.Name + " " + u.O.Troops, 11, Color.white, TextAnchor.MiddleCenter);
+            Place(nm.rectTransform, ux - 14, uy + CELL, CELL + 28, 16);
             var ol = nm.gameObject.AddComponent<Outline>();     // 压在地形上不描边看不清
             ol.effectColor = new Color(0, 0, 0, .95f);
             ol.effectDistance = new Vector2(1.2f, 1.2f);
             marks.Add(nm.gameObject);
+            if (mode == "attack" && sel != null && !u.Ours && Adjacent(sel, u.X, u.Y))
+            {
+                var tg = Node("tg", board).gameObject.AddComponent<Image>();
+                Place((RectTransform)tg.transform, ux - 3, uy - 3, CELL + 6, CELL + 6);
+                tg.sprite = BattleUi.Get("target") ?? CursorSprite();
+                if (BattleUi.Get("target") == null) tg.color = new Color(1f, .3f, .25f, 1f);
+                tg.raycastTarget = false; marks.Add(tg.gameObject);
+            }
             if (sel == u || acting == u)
             {
                 var hl = Node("hl", board).gameObject.AddComponent<Image>();
@@ -547,14 +584,14 @@ public class BattleField
             }
         }
 
-        Place((RectTransform)cursorImg.transform, curX * CELL, curY * CELL, CELL, CELL);
+        Place((RectTransform)cursorImg.transform, curX * CELL - 3, curY * CELL - 3, CELL + 6, CELL + 6);
         cursorImg.transform.SetAsLastSibling();
 
         dayText.text = "第 " + day + " 日";
         mpText.text = "机动力 " + mp + " / " + BattleRules.MoveCap(TotalTroops(true));
-        float bw = (refW - 16) / CMD.Length;
         int hi = mode == "move" ? 0 : mode == "attack" ? 2 : mode == "info" ? 3 : -1;
-        cmdSel.enabled = hi >= 0;
-        if (hi >= 0) Place((RectTransform)cmdSel.transform, 8 + hi * bw, 10, bw, 40);
+        for (int i = 0; i < CMD.Length; i++)
+            if (cmdImgs[i] != null)
+                cmdImgs[i].color = i == hi ? new Color(1f, .92f, .55f, 1f) : Color.white;
     }
 }

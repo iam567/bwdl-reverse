@@ -61,7 +61,7 @@ public class BattleGame : MonoBehaviour
         // 把我方一支挪到敌方旁边，直接触发攻击，省得模拟点击
         var me = FindUnit(true); var foe = FindUnit(false);
         me.X = foe.X - 1; me.Y = foe.Y;
-        field.Refresh();
+        field.CommandForTest(me, 2);               // 选中我方、切到攻击模式，看目标标记
         yield return Shot(dir, "2_贴住敌军");
 
         field.OnClash(me, foe, true);
@@ -189,7 +189,14 @@ public class BattleGame : MonoBehaviour
                                       Draw = new Vector2(fx[i], fy[i]) });
         foreach (var u in roster) if (u.O.Troops == 0) u.O.Troops = 800;   // 管辂之流开局没兵，给点
 
-        field = new BattleField(root, CITY, ThemeOf(CITY), roster, REF_W, REF_H);
+        // 顶栏两侧的金粮：守方就是这座城；攻方的补给城原版是出兵的那座，
+        // 演示里没有出兵城，取它的第一座邻城顶上——数据里来的，不是编的。
+        var supply = BattleRules.LoadCitySupply(Path.Combine(BattleDir, "cities.csv"));
+        var adj = BattleRules.AdjacentCities(Path.Combine(BattleDir, "city-adjacency.json"), CITY);
+        int atkCity = adj.Length > 0 ? adj[0] : CITY;
+        supply.TryGetValue(atkCity, out var mine); supply.TryGetValue(CITY, out var theirs);
+        field = new BattleField(root, CITY, ThemeOf(CITY), roster, REF_W, REF_H,
+                                new[] { mine.gold, mine.food, theirs.gold, theirs.food });
         field.OnClash = (me, foe, weAttack) =>
         {
             field.Root.gameObject.SetActive(false);

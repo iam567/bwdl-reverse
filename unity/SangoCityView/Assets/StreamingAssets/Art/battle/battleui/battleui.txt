@@ -9,3 +9,4 @@ pick_card_on 13
 go 63 8
 go_on 63 9
 go_off 80 2
+nameplate 14 4

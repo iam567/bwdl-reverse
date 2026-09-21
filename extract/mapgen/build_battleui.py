@@ -173,6 +173,28 @@ if os.path.exists(gp):
         c.save(os.path.join(OUT, 'ui_%s.png' % k))
         print('%-8s %dx%-4d %s' % (k, c.width, c.height, meta[k]))
 
+# 战棋层构件：2×2 → 光标 / 攻击目标标记 / 部队名牌 / 可达格底纹。
+# 光标和标记整格贴（四角括弧，中间透明），名牌横向九宫格，可达底整格贴。
+fd = os.path.join(SRC, 'bui_field.png')
+if os.path.exists(fd):
+    sh = Image.open(fd).convert('RGBA')
+    if sh.size != (1024, 1024): sh = sh.resize((1024, 1024), Image.LANCZOS)
+    for i, k in enumerate(['cursor', 'target', 'nameplate', 'reach']):
+        c = trim(sh.crop((i % 2 * 512, i // 2 * 512, i % 2 * 512 + 512, i // 2 * 512 + 512)))
+        if k == 'nameplate':
+            sc = 40 / c.height
+        else:
+            sc = 96 / max(c.width, c.height)
+        c = c.resize((max(1, round(c.width * sc)), max(1, round(c.height * sc))), Image.LANCZOS)
+        if k == 'nameplate':
+            # 竖向按亮转暗量出来是 18（40 高的图上下各 18，中段只剩 4），
+            # 名牌在游戏里只有 16 高，竖向 border 就钉成 4；横向盖住左端那枚铜钉
+            meta[k] = {'w': c.width, 'h': c.height, 'border': max(bronze_extent(c), 14), 'border_y': 4}
+        else:
+            meta[k] = {'w': c.width, 'h': c.height}
+        c.save(os.path.join(OUT, 'ui_%s.png' % k))
+        print('%-9s %dx%-4d %s' % (k, c.width, c.height, meta[k]))
+
 with open(os.path.join(OUT, 'battleui.json'), 'w', encoding='utf-8') as fp:
     json.dump(meta, fp, ensure_ascii=False)
 
