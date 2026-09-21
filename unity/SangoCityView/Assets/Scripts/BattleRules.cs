@@ -306,7 +306,9 @@ public static class BattleRules
         // 忠诚 100 仍然进公式：L + 100 − n + rng < 100 ⇒ 只有体力打到个位数才可能，够苛刻。
         int n = (me.Virtue * 7 + me.Int * 3) * 10 / 99;
         n = (n - 70) / 5;
-        if (n == 4) n = 6; else if (n == 5) n = 8;
+        // 原版只特判 4→6、5→8；德智都到 100 时 x=101 落进 6 那格、没特判，反而比 95 档低。
+        // 把 6 也抹平成 8（HOUSE_RULES），别让满值吃亏。
+        if (n == 4) n = 6; else if (n >= 5) n = 8;
         return foe.Hp + foe.Loyal - n + rng.Next(4) < 100;
     }
 
