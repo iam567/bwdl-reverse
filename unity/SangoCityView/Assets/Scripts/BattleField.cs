@@ -904,8 +904,33 @@ public class BattleField
     readonly Queue<Unit> retreatQ = new Queue<Unit>();
     RectTransform overPop;
     int AliveCount(bool ours) { int n = 0; foreach (var u in units) if (u.Ours == ours && u.Alive) n++; return n; }
+    // 家规：主公一旦打到旗下一个武将都不剩，忠诚自动掉到 60。
+    //   原版主公忠诚恒 100，Y() 围捕和 k() 劝降都卡 P > 99，等于永远擒不住也劝不动。
+    //   玩家的设定是「孤家寡人就该动摇」——这样原版那两道门原样留着，家规自己把它打开：
+    //   降到 60 之后照样吃「忠诚 ≥ 80 减 10」那档惩罚，体力也还得先打到 40 以下，不算好抓。
+    const int LONE_RULER_LOYAL = 60;
+    void UpdateLoneRuler()
+    {
+        LoadCityData();
+        for (int side = 0; side < 2; side++)
+        {
+            bool ours = side == 0;
+            Unit ruler = null; int alive = 0;
+            foreach (var u in units)
+            {
+                if (u.Ours != ours || !u.Alive) continue;
+                alive++;
+                if (u.O.Id == rulerId || rulerIds.Contains(u.O.Id)) ruler = u;
+            }
+            if (ruler == null || alive != 1 || ruler.O.Loyal <= LONE_RULER_LOYAL) continue;
+            ruler.O.Loyal = LONE_RULER_LOYAL;
+            hintText.text = ruler.O.Name + " 众叛亲离,军心动摇!";
+        }
+    }
+
     void CheckOver()
     {
+        UpdateLoneRuler();
         if (over || retreating) return;
         string cn = BattleRules.CityName(Path.Combine(BattleGame.BattleDir, "city-adjacency.json"), cityId);
         if (AliveCount(false) == 0)
@@ -995,6 +1020,26 @@ public class BattleField
         var here = At(x, y);
         if (here != null && here.Ours && here.Trapped > 0) hintText.text = "武将中计,无法动弹!";
         CenterOn(x, y); curX = x; curY = y; Refresh();
+    }
+    /// 自检：把敌方除主公外全部打掉，看忠诚是不是自动掉到 60
+    readonly List<Unit> loneSaved = new List<Unit>();
+    public void LoneRulerForTest()
+    {
+        LoadCityData(); CloseAsk(); CloseInfo(); ClosePlotPop();
+        int r = -1;
+        foreach (var u in units) if (!u.Ours && u.Alive && rulerIds.Contains(u.O.Id)) { r = u.O.Id; break; }
+        loneSaved.Clear();
+        foreach (var u in units)
+            if (!u.Ours && u.Alive && u.O.Id != r) { loneSaved.Add(u); u.Alive = false; }
+        UpdateLoneRuler();
+        foreach (var u in units) if (!u.Ours && u.O.Id == r) { CenterOn(u.X, u.Y); ShowInfo(u); }
+        Refresh();
+    }
+    public void LoneRulerResetForTest()
+    {
+        CloseInfo();
+        foreach (var u in loneSaved) u.Alive = true;
+        loneSaved.Clear(); Refresh();
     }
     public void CaptureForTest() { CloseAsk(); CloseInfo(); ClosePlotPop(); forceDefend = true; Captured(); }
     public void CaptureResetForTest() { captured = retreating = over = false; forceDefend = false; retreatQ.Clear(); System.Array.Copy(supply0, supply, 4); RefreshTop(); CloseRetreatMenu(); if (overPop != null) Object.Destroy(overPop.gameObject); overPop = null; sel = null; Refresh(); }

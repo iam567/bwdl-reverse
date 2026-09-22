@@ -118,6 +118,9 @@ public class BattleGame : MonoBehaviour
         field.LandForTest(me, 4, 9);               // 关羽挪远些，再跑 14 步敌军回合看 AI 走位
         field.EnemyTurnForTest(14);
         yield return Shot(dir, "2h_敌军回合");
+        field.LoneRulerForTest();                  // 家规：敌方只剩主公一人 → 忠诚自动掉到 60
+        yield return Shot(dir, "2n_主公孤立");
+        field.LoneRulerResetForTest();
         field.CaptureForTest();                    // 硬当守方：敌军踩上城池格 → 「敌军占领我方城池!」→ 逐将选退路
         yield return Shot(dir, "2i_失城逐将撤退");
         field.CaptureResetForTest();
