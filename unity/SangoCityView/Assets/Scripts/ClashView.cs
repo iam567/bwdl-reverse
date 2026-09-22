@@ -1131,7 +1131,9 @@ public class ClashView
         if (figCache.TryGetValue(key, out var sp)) return sp;
 
         var rel = Path.Combine("clash",
-            "c_" + (ours ? "red" : "blue") + "_" + ArmKey[(int)a] + "_"
+            // 我方蓝、敌方红 —— 和战棋层那一层对齐（u_blue_* 是我方）。
+            // 原先这里反着来，从大地图打进阵型战两边颜色对调，一眼看过去像换了边。
+            "c_" + (ours ? "blue" : "red") + "_" + ArmKey[(int)a] + "_"
             + (dir == 0 ? "n" : dir == 1 ? "s" : "e") + ".png");
         if (File.Exists(Path.Combine(ArtDir, "battle", rel)))
         {
@@ -1399,8 +1401,8 @@ public class ClashView
         foreach (var g in mapTmp) Object.Destroy(g);
         mapTmp.Clear();
         if (mapRoot == null) return;
-        MapSide(mine,   new Color32(0xFF, 0xFF, 0xFF, 255));
-        MapSide(theirs, new Color32(0xF8, 0x5A, 0x52, 255));
+        MapSide(mine,   new Color32(0x5C, 0xA8, 0xFF, 255));   // 和场上的兵棋同色：我方蓝
+        MapSide(theirs, new Color32(0xF8, 0x5A, 0x52, 255));   // 敌方红
         mapView.SetAsLastSibling();
 
         var clip = (RectTransform)gridRoot.parent;
