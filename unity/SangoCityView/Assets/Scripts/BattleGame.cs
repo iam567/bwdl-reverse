@@ -73,9 +73,12 @@ public class BattleGame : MonoBehaviour
         yield return Shot(dir, "2b_乱水");
         field.InfoForTest(me, foe);                // 情报：点敌将弹武将信息
         yield return Shot(dir, "2c_情报");
-        field.LandForTest(me, 4, 9);               // 关羽放回原位，再跑 14 步敌军回合看 AI 走位
+        field.LandForTest(me, 4, 9);               // 关羽挪远些，再跑 14 步敌军回合看 AI 走位
         field.EnemyTurnForTest(14);
         yield return Shot(dir, "2h_敌军回合");
+        field.CaptureForTest();                    // 硬当守方：敌军踩上城池格 → 「敌军占领我方城池!」→ 逐将选退路
+        yield return Shot(dir, "2i_失城逐将撤退");
+        field.CaptureResetForTest();               // 演示完复位，后面的截图还当攻方
         field.LandForTest(me, foe.X - 1, foe.Y);
         field.LandForTest(me, 5, 5);               // 站到粮仓(码3)上：看压不压住、弹「是否进入村庄?」
         yield return Shot(dir, "2e_村庄");
@@ -224,16 +227,10 @@ public class BattleGame : MonoBehaviour
     void OpenField()
     {
         var roster = new List<Unit>();
-        int[] ox = { 4, 5, 3, 4 }, oy = { 9, 10, 11, 12 };
-        for (int i = 0; i < OURS.Length; i++)
-            if (book.TryGetValue(OURS[i], out var o))
-                roster.Add(new Unit { O = Clone(o), X = ox[i], Y = oy[i], Ours = true, Dir = "e",
-                                      Draw = new Vector2(ox[i], oy[i]) });
-        int[] fx = { 26, 27, 28, 27 }, fy = { 8, 9, 10, 11 };
-        for (int i = 0; i < FOES.Length; i++)
-            if (book.TryGetValue(FOES[i], out var o))
-                roster.Add(new Unit { O = Clone(o), X = fx[i], Y = fy[i], Ours = false, Dir = "e", Flip = true,
-                                      Draw = new Vector2(fx[i], fy[i]) });
+        foreach (int id in OURS) if (book.TryGetValue(id, out var o)) roster.Add(new Unit { O = Clone(o), Ours = true });
+        foreach (int id in FOES) if (book.TryGetValue(id, out var o)) roster.Add(new Unit { O = Clone(o), Ours = false });
+        // 摆位照原版 b.w()：守方太守（FOES[0] 吕布）站城池格，其余守军城旁 2×5，攻方 8–9 列开外。种子固定，自检截图稳定
+        BattleField.Deploy(BattleRules.LoadMap(Path.Combine(BattleDir, "maps", CITY + ".map")), roster, true, new System.Random(7));
         foreach (var u in roster) if (u.O.Troops == 0) u.O.Troops = 800;   // 管辂之流开局没兵，给点
 
         // 顶栏两侧的金粮：守方就是这座城；攻方的补给城原版是出兵的那座，

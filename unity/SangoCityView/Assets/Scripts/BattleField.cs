@@ -74,6 +74,45 @@ public class BattleField
         Refresh();
     }
 
+    // ── 开场摆位：原版 b.w()（我攻）/ b.x()（我守）──────────────────────
+    //   守方第一员（太守）站在城池格（码 2）上；其余守军在城旁 2 列 × 5 行里随机落（不重叠）；
+    //   攻方在同一侧 8–9 列开外、同样 5 行里随机落。方向：城在 x>15 往左摆（bw=-1），y>10 往上摆（bx=-1）。
+    //   原版扫格是"最后一列有码 2 的、那列最上面那格"，照抄。
+    public static void Deploy(int[,] grid, List<Unit> roster, bool weAttack, System.Random rng)
+    {
+        int H = grid.GetLength(0), W = grid.GetLength(1), cx = -1, cy = -1;
+        for (int x = 0; x < W; x++)
+            for (int y = 0; y < H; y++)
+                if ((grid[y, x] & 0xF) == 2) { cx = x; cy = y; break; }
+        if (cx < 0) { cx = W / 2; cy = H / 2; }
+        int bw = cx > 15 ? -1 : 1, bx = cy > 10 ? -1 : 1;
+        var used = new HashSet<int> { cy * W + cx };
+        void Drop(Unit u, int colBase, int colSpan, bool faceEast)
+        {
+            int x = cx, y = cy;
+            for (int t = 0; t < 200; t++)
+            {
+                x = cx + (rng.Next(colSpan) + colBase) * bw; y = cy + rng.Next(5) * bx;
+                if (x >= 0 && y >= 0 && x < W && y < H && !used.Contains(y * W + x)) break;
+            }
+            used.Add(y * W + x);
+            u.X = x; u.Y = y; u.Draw = new Vector2(x, y); u.Dir = "e"; u.Flip = !faceEast;
+        }
+        bool first = true;
+        foreach (var u in roster)
+        {
+            bool defender = u.Ours != weAttack;
+            bool faceEast = defender ? bw > 0 : bw < 0;       // 守军朝攻军来的那边，攻军朝城
+            if (defender && first)
+            {
+                first = false;
+                u.X = cx; u.Y = cy; u.Draw = new Vector2(cx, cy); u.Dir = "e"; u.Flip = !faceEast;
+            }
+            else if (defender) Drop(u, 0, 2, faceEast);
+            else Drop(u, 8, 2, faceEast);
+        }
+    }
+
     // ── 搭画面 ─────────────────────────────────────────────────────────
     void BuildBoard()
     {
@@ -304,7 +343,7 @@ public class BattleField
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             board, d.position, d.pressEventCamera, out var lp);
         int x = Mathf.FloorToInt(lp.x / CELL), y = Mathf.FloorToInt(-lp.y / CELL);
-        if (x < 0 || y < 0 || x >= W || y >= H) return;
+        if (x < 0 || y < 0 || x >= W || y >= H || over) return;
         curX = x; curY = y;
 
         var here = At(x, y);
@@ -318,6 +357,7 @@ public class BattleField
 
     void Command(int i)
     {
+        if (over) return;
         if (enemyTurn) { hintText.text = "敌军行动中..."; return; }
         if (sel == null) { hintText.text = "先点一支我方部队"; return; }
         if (mode == "move") EndMove();               // 走到一半按别的令：先按原版 E() 确定
@@ -627,7 +667,13 @@ public class BattleField
         CloseRetreatMenu(); CloseInfo(); ClosePlotMenu();
         var cs = RetreatCities();
         bool isRuler = sel.O.Id == OurRuler();
-        if (cs.Count == 0 && isRuler) { hintText.text = "无城可退，背水一战吧"; return; }   // W == 18
+        if (cs.Count == 0 && isRuler)
+        {
+            if (captured)                                                       // W == 9：城没了、主公也无处可去 → 这支就没了
+            { hintText.text = "君主所在城市被攻占,无可退城市!"; sel.Alive = false; sel = null; Refresh(); AfterRetreat(); }
+            else hintText.text = "无城可退，背水一战吧";                        // W == 18
+            return;
+        }
         hintText.text = "撤退武将 " + sel.O.Name;
         int n = cs.Count + (isRuler ? 0 : 1);                                  // 下野那格：P != 100 才有
         const int COLS = 3, ROW = 36; int rows = (n + COLS - 1) / COLS;
@@ -666,6 +712,7 @@ public class BattleField
         else hintText.text = sel.O.Name + " 下野";
         sel.Alive = false; sel.Acted = true;                                                  // 兵跟着人走，没有损失
         sel = null; Refresh();
+        AfterRetreat();
     }
 
     // ── 情报（原版 c.F() + a(Graphics)）───────────────────────────────
@@ -767,6 +814,65 @@ public class BattleField
         }
     }
 
+    // ── 攻城的胜负：原版是不对称的 ──────────────────────────────────────
+    //   攻方赢 = 守军一个不剩（死 / 俘 / 退，b.java 2984：bj==0 → D() 城易主，"X 军攻占了 Y!"）。
+    //   玩家攻城**没有**"踩上城池格就赢"这一说（c.java 里没查过码 2），得把太守打掉。
+    //   守方输 = 敌军任一支踩上城池格（b.k(by) 3834，只在敌军回合查）→「敌军占领我方城池!」→
+    //            我方余将逐一「撤退武将 X」选相邻城 / 下野（A()），主公无城可退 →「君主所在城市被攻占,无可退城市!」。
+    bool WeAttack { get { LoadCityData(); cityRuler.TryGetValue(cityId, out int o); return forceDefend ? false : o != OurRuler(); } }
+    bool forceDefend;                      // 自检用：演示局里我们是攻方，硬当守方试失城那条路
+    bool over, captured;
+    readonly Queue<Unit> retreatQ = new Queue<Unit>();
+    RectTransform overPop;
+    int AliveCount(bool ours) { int n = 0; foreach (var u in units) if (u.Ours == ours && u.Alive) n++; return n; }
+    void CheckOver()
+    {
+        if (over || captured) return;
+        string cn = BattleRules.CityName(Path.Combine(BattleGame.BattleDir, "city-adjacency.json"), cityId);
+        if (AliveCount(false) == 0) ShowOver(WeAttack ? "我军攻占了 " + cn + "!" : "敌军攻打 " + cn + " 失败了!");
+        else if (AliveCount(true) == 0) ShowOver(WeAttack ? "我军攻打 " + cn + " 失败了!" : "敌军占领了 " + cn + "!");
+    }
+    void ShowOver(string msg)
+    {
+        over = true; enemyTurn = false; sel = null; mode = ""; reach.Clear();
+        CloseAsk(); CloseInfo(); CloseRetreatMenu(); ClosePlotMenu();
+        hintText.text = msg;
+        float w = 320, h = 70;
+        overPop = Node("over", Root);
+        Place(overPop, (refW - w) / 2, (refH - h) / 2 - 40, w, h);
+        var bg = Panel(overPop, "bg", BattleUi.PlateSp()); Fill((RectTransform)bg.transform); bg.raycastTarget = true;
+        var t = Label(overPop, msg, 18, new Color32(0xF0,0xC8,0x70,255), TextAnchor.MiddleCenter); Fill(t.rectTransform);
+        Refresh();
+    }
+    /// 敌军踩上城池格：城易主，我方余将一个一个选退路
+    void Captured()
+    {
+        captured = true; enemyTurn = false; plans = null;
+        cityRuler.TryGetValue(cityId, out int old);
+        int foeRuler = 0; foreach (var u in units) if (!u.Ours && u.Alive && rulerIds.Contains(u.O.Id)) foeRuler = u.O.Id;
+        cityRuler[cityId] = foeRuler != 0 ? foeRuler : old;                           // 谁来占的就归谁；演示里认不出主公就不改
+        hintText.text = "敌军占领我方城池!";
+        retreatQ.Clear();
+        foreach (var u in units) if (u.Ours && u.Alive) retreatQ.Enqueue(u);
+        NextRetreat();
+    }
+    void NextRetreat()
+    {
+        while (retreatQ.Count > 0)
+        {
+            var u = retreatQ.Dequeue();
+            if (!u.Alive) continue;
+            sel = u; mode = ""; CenterOn(u.X, u.Y); curX = u.X; curY = u.Y;
+            OpenRetreatMenu(); Refresh();
+            return;
+        }
+        string cn = BattleRules.CityName(Path.Combine(BattleGame.BattleDir, "city-adjacency.json"), cityId);
+        ShowOver("敌军占领了 " + cn + "!");
+    }
+    void AfterRetreat() { if (captured) NextRetreat(); }
+    public void CaptureForTest() { CloseAsk(); CloseInfo(); ClosePlotPop(); forceDefend = true; Captured(); }
+    public void CaptureResetForTest() { captured = false; forceDefend = false; retreatQ.Clear(); CloseRetreatMenu(); sel = null; Refresh(); }
+
     void EndDay()
     {
         if (enemyTurn) return;
@@ -810,6 +916,7 @@ public class BattleField
 
     public void Tick()
     {
+        CheckOver();
         bool moving = false;
         foreach (var u in units)                   // 滑向各自的格子
         {
@@ -1011,6 +1118,7 @@ public class BattleField
                     if (e.O.Troops <= 0) e.Alive = false;
                     hintText.text = e.O.Name + " 中计谋十面埋伏";
                 }
+                if (e.Alive && !WeAttack && (grid[e.Y, e.X] & 0xF) == 2) { Captured(); }   // b.k(by)：踩上城池格 → aq=4
                 return true;
             }
         }
