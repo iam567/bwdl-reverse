@@ -5,9 +5,10 @@
    这里补上，顺带解决「人物压在深绿林地和灰岩上看不清」：
 
    人物是深蓝加铁灰，压在深绿林地和灰岩上整个糊掉。
-   试过内暗外浅的双层描边，拔得最干净，但外面那圈浅边一上来就是「贴纸」感（阵型战那회
-   已经因为这个把白边换掉了）。最后走的是**一圈近黑描边 + 把人物本身提亮一档**：
-   暗边负责在亮草地上勾出轮廓，提亮负责让深蓝从暗林地里浮出来，两样都不破坏像素画的质感。
+   先试过近黑描边 + 提亮，在暗林地上还是不够跳。战棋层的地块比阵型战花得多
+   （林地是一团团亮绿、水面是亮蓝、岩石是灰），暗边在亮底上有用、在暗底上等于没有。
+   最后按玩家的意思换成**白描边**：亮草地、暗林地、灰岩、蓝水四种底都能把轮廓勾出来。
+   人物本身仍然提亮一档，免得白边一圈里裹着一坨黑。
 
    用法: build_units.py [原图目录] [输出目录]
 """
@@ -21,7 +22,7 @@ OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(ROOT, 'assets/battleuni
 os.makedirs(OUT, exist_ok=True)
 
 T = 64                      # 成品边长，和格子一致
-DARK = (14, 10, 8, 255)     # 描边：近黑，和阵型战小兵那套一致
+EDGE = (246, 244, 238, 255) # 描边：近白。阵型战那边底色浅、用的是暗边，这边反过来
 BRIGHT, SATUR = 1.22, 1.15  # 人物本身提亮 / 略增饱和
 
 # 同一批里共用一个缩放比，各缩各的会让骑马的比步行的大一圈
@@ -38,7 +39,7 @@ if not raw:
     print('没找到原图'); sys.exit(1)
 wmax = max(i.width for i in raw.values())
 hmax = max(i.height for i in raw.values())
-s = min((T - 2) / wmax, (T - 2) / hmax)                     # 和旧版一个大小，描边往那 1 像素余量里长
+s = min((T - 4) / wmax, (T - 4) / hmax)                     # 留 2 像素给白边
 
 for key, fig in sorted(raw.items()):
     w = max(1, round(fig.width * s)); h = max(1, round(fig.height * s))
@@ -51,9 +52,9 @@ for key, fig in sorted(raw.items()):
     fig = Image.merge('RGBA', (*rgb.split(), a))
 
     canvas = Image.new('RGBA', (T, T), (0, 0, 0, 0))
-    ox, oy = (T - w) // 2, T - h                            # 横向居中、脚落在格底
-    ring = Image.new('RGBA', fig.size, DARK)
-    ring.putalpha(a.filter(ImageFilter.MaxFilter(3)))
+    ox, oy = (T - w) // 2, T - h - 2                        # 横向居中、脚落在格底（下面留 2 像素给描边）
+    ring = Image.new('RGBA', fig.size, EDGE)
+    ring.putalpha(a.filter(ImageFilter.MaxFilter(5)))      # 2 像素，1 像素在 44 的格子上看不见
     canvas.alpha_composite(ring, (ox, oy))
     canvas.alpha_composite(fig, (ox, oy))
     canvas.save(os.path.join(OUT, key + '.png'))

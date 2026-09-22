@@ -99,6 +99,25 @@ public static class UIKit
     }
 
     /// 椭圆光环：贴地的选中标记
+    /// 实心的软边椭圆：战棋层拿它当脚下的投影，把小人从花地块上垫起来。
+    /// Ring() 画的是环，中间是空的，垫不住。
+    static Sprite disc;
+    public static Sprite Disc(int w = 192, int h = 72)
+    {
+        if (disc != null) return disc;
+        var t = new Texture2D(w, h, TextureFormat.RGBA32, false);
+        float cx = w / 2f, cy = h / 2f;
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                float dx = (x - cx) / (w / 2f), dy = (y - cy) / (h / 2f);
+                float d = Mathf.Sqrt(dx * dx + dy * dy);
+                t.SetPixel(x, y, new Color(0f, 0f, 0f, Mathf.Clamp01(1f - d) * Mathf.Clamp01(1f - d)));
+            }
+        t.Apply(); t.filterMode = FilterMode.Bilinear;
+        return disc = Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(.5f, .5f), 100);
+    }
+
     public static Sprite Ring(int w = 384, int h = 256, float thick = .085f)
     {
         var t = new Texture2D(w, h, TextureFormat.RGBA32, false);

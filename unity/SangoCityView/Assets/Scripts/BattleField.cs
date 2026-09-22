@@ -1633,12 +1633,33 @@ public class BattleField
             im.raycastTarget = false;
             marks.Add(im.gameObject);
         }
-        foreach (var u in units)                       // 部队
+        // 按行从上往下画：靠下的那支后画，于是它探出格子的头会压在上面那支的名牌上，
+        // 而不是反过来被人家的名牌盖住脸。原先按名册顺序画，谁先谁后全看运气。
+        var order = units.FindAll(u => u.Alive);
+        order.Sort((p, q) => p.Draw.y != q.Draw.y ? p.Draw.y.CompareTo(q.Draw.y)
+                                                  : p.Draw.x.CompareTo(q.Draw.x));
+        foreach (var u in order)                       // 部队
         {
-            if (!u.Alive) continue;
             float ux = u.Draw.x * CELL, uy = u.Draw.y * CELL;
+
+            // 脚下垫一圈阵营色的椭圆。阵型战和单挑早就这么干了（「两边长得一样时最难分敌我」），
+            // 战棋层一直没接——地块又花又暗，光靠描边还是认不出来。
+            var sh = Node("sh", board).gameObject.AddComponent<Image>();      // 深色投影：把人从花地块上垫起来
+            Place((RectTransform)sh.transform, ux + 1, uy + CELL - 16, CELL - 2, 15);
+            sh.sprite = Disc(); sh.color = new Color(0, 0, 0, .5f);
+            sh.raycastTarget = false; marks.Add(sh.gameObject);
+            var ring = Node("ring", board).gameObject.AddComponent<Image>();   // 亮色阵营环：认敌我
+            Place((RectTransform)ring.transform, ux - 3, uy + CELL - 18, CELL + 6, 18);
+            ring.sprite = Ring(192, 72, .22f);
+            // 白描边已经把人勾出来了，这圈只管认敌我，别跟描边抢
+            ring.color = u.Ours ? new Color(.45f, .85f, 1f, .55f) : new Color(1f, .52f, .34f, .55f);
+            ring.raycastTarget = false; marks.Add(ring.gameObject);
+
+            // 小人画得比格子大一圈：源图就是 64，缩到 44 等于白丢分辨率，
+            // 放到 60 差不多一比一，脚仍落在格底、横向居中（阵型战的 FIG = C + 14 也是这个路子）
             var im = Node("u", board).gameObject.AddComponent<Image>();
-            Place((RectTransform)im.transform, ux, uy, CELL, CELL);
+            const int FIG = CELL + 16;
+            Place((RectTransform)im.transform, ux - (FIG - CELL) / 2f, uy + CELL - FIG, FIG, FIG);   // 脚正好落在格底
             im.sprite = UnitSprite(u); im.raycastTarget = false;
             im.color = Color.white;                    // 原版没有"已行动"变灰：一个武将只要机动力够可以一直用
             if (u.Flip)
@@ -1647,17 +1668,19 @@ public class BattleField
                 // 整个小人会被推左一格，而名字血条不跟着翻 —— 于是错位一格。
                 // 补回一格宽度，等价于绕格子中心翻。
                 im.rectTransform.localScale = new Vector3(-1, 1, 1);
-                im.rectTransform.anchoredPosition += new Vector2(CELL, 0);
+                im.rectTransform.anchoredPosition += new Vector2(FIG, 0);
             }
             marks.Add(im.gameObject);
 
+            // 兵力条收窄到格子中段，两头留出来给脚下那圈阵营色的弧
+            const float BW = CELL - 18;
             var back = Node("bk", board).gameObject.AddComponent<Image>();
-            Place((RectTransform)back.transform, ux + 2, uy + CELL - 9, CELL - 4, 8);
+            Place((RectTransform)back.transform, ux + 9, uy + CELL - 9, BW, 7);
             back.color = new Color(0, 0, 0, .55f); back.raycastTarget = false;
             marks.Add(back.gameObject);
             var bar = Node("bar", board).gameObject.AddComponent<Image>();
             float f = Mathf.Clamp01(u.O.Troops / 1000f);
-            Place((RectTransform)bar.transform, ux + 3, uy + CELL - 8, (CELL - 6) * f, 6);
+            Place((RectTransform)bar.transform, ux + 10, uy + CELL - 8, (BW - 2) * f, 5);
             bar.color = u.Ours ? new Color(.35f, .65f, 1f) : new Color(1f, .35f, .3f);
             bar.raycastTarget = false; marks.Add(bar.gameObject);
 
