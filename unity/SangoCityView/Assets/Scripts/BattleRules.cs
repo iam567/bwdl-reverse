@@ -621,9 +621,27 @@ public static class BattleRules
                 Virtue = I(8), Loyal = I(9), Exp = Mathf.Min(I(10) * 100, 30000), ArmLv = I(11), SubLv = I(12),
                 City = I(14),
             };
+            StartLevelHouseRule(o);
             if (o.Id > 0) d[o.Id] = o;
         }
         return d;
+    }
+
+    /// 家规（见 docs/HOUSE_RULES.md）：开局等级压到 1–3，谁都有得练。
+    ///
+    /// 原版 228 人分成 1 / 2 / 3 / 4 / 8 五档，19 个猛将开局就是 8 级、经验顶格 30000，
+    /// 一点也练不动；新登场的武将从 1 级起步，中间隔着 30000 点经验，永远追不上。
+    /// 这里按原档位压缩，相对高低不变，但把成长空间还给所有人：
+    ///     原 1 / 2 / 3 → 1 级（198 人）
+    ///     原 4         → 2 级（11 人，曹操、孙坚这一档）
+    ///     原 8         → 3 级（19 人，关羽、张飞、吕布这一批）
+    /// 经验一律落到新等级的档位起点（0 / 2000 / 4000），从头往上爬。
+    /// 副作用是全员的兵种配比、计策种数、计策成功率都按新等级走——敌我同等，是对称的。
+    static readonly int[] StartLv = { 1, 1, 1, 1, 2, 2, 2, 2, 3 };   // 下标 = 原版等级 0..8
+    public static void StartLevelHouseRule(Officer o)
+    {
+        o.Lv = StartLv[Mathf.Clamp(o.Lv, 0, StartLv.Length - 1)];
+        o.Exp = ExpFloor(o.Lv);
     }
 
     /// .map 是纯文本 CSV，一行一排
