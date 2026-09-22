@@ -8,8 +8,10 @@
    对齐用的是**外框宽度**不是高度：马身侧面的长度基本不随姿势变
    （caocao 的动作帧都是 110~125 宽，只有站立那帧 226），而高度会——
    落马那一帧是躺着的，按高度拉就会被抻成一匹巨马。
-   以这一套里最宽的那帧为准等比缩放，**脚线对齐画布底部、横向居中**
-   （马蹄落在同一条地平线上，不然帧与帧之间会上下蹿）。
+   目标宽度是**全局固定的**（画布的 88%），不是"本套里最宽的那帧"——
+   各套立绘画得有大有小，按本套对齐只能让自己前后一致，
+   两套凑到一块（我方 vs 敌方）还是一大一小。
+   脚线对齐画布底部、横向居中（马蹄落在同一条地平线上，不然帧与帧之间会上下蹿）。
    放大是在 256 的原图上做的，最终显示 128，等于没有真的丢分辨率。
 
    用法: normalize_duelskin.py [立绘目录] [输出目录]
@@ -34,9 +36,8 @@ for d in sorted(glob.glob(os.path.join(SRC, '*'))):
         b = im.split()[3].point(lambda v: 255 if v > 16 else 0).getbbox()
         if b: box[f] = (im, b)
     if not box: continue
-    widest = max(b[2] - b[0] for _, b in box.values())
     W, H = next(iter(box.values()))[0].size
-    want = min(widest, int(W * TARGET))            # 最宽那一帧也不许顶破画布
+    want = int(W * TARGET)                         # 所有套、所有帧都对到同一个宽度
     od = os.path.join(OUT, os.path.basename(d)); os.makedirs(od, exist_ok=True)
     for f, (im, b) in box.items():
         fig = im.crop(b)

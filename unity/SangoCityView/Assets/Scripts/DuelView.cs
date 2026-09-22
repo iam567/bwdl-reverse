@@ -287,7 +287,11 @@ public class DuelView
         {
             int k = i;
             var b = Node("m" + i, menu);
-            Place(b, 18 + (i % 3) * 106, 18 + (i / 3) * 58, 96, 46);
+            // 面板宽度跟着 refW 走（宽屏上会变宽），按钮却是固定的 96+10 间距，
+            // 写死左边距 18 的话窗口一宽就全挤在左边。改成把这三列整体居中。
+            const float MBW = 96, MGAP = 10;
+            float x0 = ((refW - 24) - (MBW * 3 + MGAP * 2)) / 2f;
+            Place(b, x0 + (i % 3) * (MBW + MGAP), 18 + (i / 3) * 58, MBW, 46);
             var bi = b.gameObject.AddComponent<Image>();
             bi.color = new Color(0, 0, 0, .18f);
             var bt = b.gameObject.AddComponent<Button>(); bt.transition = Selectable.Transition.None;
