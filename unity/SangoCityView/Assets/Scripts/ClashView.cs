@@ -375,6 +375,18 @@ public class ClashView
         // b.S() 守城那一支末尾：for (n=0;n<4;n++) cj[n] = 1；
         // 守方四个兵种开局全是「待机」——守城本来就该守在原位，不是冲出去。
         if (siege && !weAttack) for (int i = 0; i < 4; i++) orders[i] = 1;
+        if (Trace)
+        {
+            string Dump(System.Collections.Generic.List<Piece> ps, string tag)
+            {
+                var sb = new System.Text.StringBuilder(tag);
+                for (int i = 0; i < ps.Count; i++) sb.Append($" #{i}{ps[i].Arm}({ps[i].Col},{ps[i].Row})");
+                return sb.ToString();
+            }
+            Debug.Log($"[deploy] siege={siege} weAttack={weAttack} form={formation} 我{me.Name}兵{me.Troops} 敌{foe.Name}兵{foe.Troops}");
+            Debug.Log("[deploy] " + Dump(mine, "我方:"));
+            Debug.Log("[deploy] " + Dump(theirs, "敌方:"));
+        }
         roundNo = 0; Cc = 0; idleTicks = 0;
         troops0Me = me.Troops; troops0Foe = foe.Troops;
         enemyPts = BattleRules.PlotPoints(foe);
@@ -703,10 +715,14 @@ public class ClashView
     static readonly int[] DX = { 0, 0, -1, 1 }, DY = { -1, 1, 0, 0 };   // 0 上 1 下 2 左 3 右
 
     /// 一格上有什么，按原版 bK 的位：0x20 墙（32）/ 2、16 栅门 / 0x40 我方兵棋 / 0x80 敌方兵棋。
-    /// 出界当作三样全有，省得每处都写边界判断。
+    /// **出界只算墙（0x20），不能带上 0x40 / 0x80**——原先图省事返回 0xE0（三样全有），
+    /// 于是站在最上 / 最下一行的棋子会把界外那格当成「有敌人」，七成概率朝屏幕外发起攻击，
+    /// 找不到目标、这次行动白白作废，看着就是边上那枚骑兵只走了一格。
+    /// 围捕数人头（& 0x40）和敌方上能力也吃这个亏：贴边的武将会被界外凑成「四面围住」。
+    /// 原版每处都先判边界再取 bK，不存在这个问题。
     int Cell(int x, int y)
     {
-        if (x < 0 || y < 0 || x >= BattleRules.GridW || y >= BattleRules.GridH) return 0xE0;
+        if (x < 0 || y < 0 || x >= BattleRules.GridW || y >= BattleRules.GridH) return 0x20;
         int v = walls.TryGetValue(new Vector2Int(x, y), out int w) ? w : 0;
         if (Occupied(mine, x, y)) v |= 0x40;
         if (Occupied(theirs, x, y)) v |= 0x80;
