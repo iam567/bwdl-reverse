@@ -305,6 +305,12 @@ public class BattleField
         OpenPlotMenu(); PlotHover(hover); Refresh();
         u.O.Int = i0; u.O.Lv = l0;
     }
+    /// 自检：只进落点选择态，不真的放——好截到红框上那圈成功率
+    public void PlotAimForTest(Unit u, int plot)
+    {
+        ClosePlotMenu(); sel = u; plotSel = plot; mode = "plot";
+        CenterOn(u.X, u.Y); curX = u.X; curY = u.Y; Refresh();
+    }
     public void PlotForTest(Unit u, int plot, Unit tgt)
     {
         ClosePlotMenu(); sel = u; plotSel = plot; mode = "plot";
@@ -1715,6 +1721,18 @@ public class BattleField
                     var im = Node("pt", board).gameObject.AddComponent<Image>();
                     Place((RectTransform)im.transform, o.X * CELL - 3, o.Y * CELL - 3, CELL + 6, CELL + 6);
                     im.sprite = BattleUi.Get("target") ?? CursorSprite(); im.raycastTarget = false; marks.Add(im.gameObject);
+                    // 红框上沿挂一个成功率——原版不给，玩家只能凭感觉赌，
+                    // 一条计策十几点机动力，赌错一次这一天就没了。
+                    int pct = Mathf.RoundToInt(BattleRules.PlotSuccess(plotSel, sel.O, o.O) * 100);
+                    var pt = Label(board, pct + "%", 12,
+                        pct >= 70 ? new Color32(0x7C, 0xE8, 0x6A, 255) :        // 稳
+                        pct >= 35 ? new Color32(0xF5, 0xD0, 0x50, 255)          // 悬
+                                  : new Color32(0xFF, 0x7A, 0x6A, 255),         // 别赌
+                        TextAnchor.MiddleCenter, FontStyle.Bold);
+                    Place(pt.rectTransform, o.X * CELL - 6, o.Y * CELL - 15, CELL + 12, 14);
+                    var po = pt.gameObject.AddComponent<Outline>();             // 压在地形上不描边看不清
+                    po.effectColor = new Color(0, 0, 0, .95f); po.effectDistance = new Vector2(1.2f, 1.2f);
+                    marks.Add(pt.gameObject);
                 }
         foreach (int k in reach)                       // 可达格
         {

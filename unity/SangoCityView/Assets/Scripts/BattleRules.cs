@@ -172,6 +172,26 @@ public static class BattleRules
         return r;
     }
 
+    /// 对着某个目标放这条计策，成功率是多少。原版不显示，是我们加给玩家的。
+    /// 判定照 PlotRoll 反推：得分达到门槛必成，否则掷 0..门槛-1，掷中小于得分的才成，
+    /// 所以概率就是 得分 ÷ 门槛。笼络另算（掷 0..19，掷出的数不大于得分就成）。
+    public static float PlotSuccess(int plot, Officer me, Officer foe)
+    {
+        if (plot == 11) return 1f;                                              // 埋伏不掷骰
+        if (plot == 8)                                                          // 笼络：吃忠诚，不吃等级
+        {
+            if (foe.Loyal > 35) return 0f;
+            int k = me.Int - foe.Int + (35 - foe.Loyal);
+            return Mathf.Clamp01((k + 1) / 20f);
+        }
+        if (plot == 14) return 0f;                                              // 劫火：原版两个分支都失败
+        int need = plot <= 1 ? 40 : (plot == 2 || plot == 7 || plot == 9) ? 56
+                 : (plot >= 3 && plot <= 5) ? 48 : (plot == 6 || plot == 10 || plot == 12 || plot == 13) ? 64 : 72;
+        int n3 = me.Lv >= foe.Lv ? me.Int + me.Int * (me.Lv - foe.Lv) / 10 - foe.Int
+                                 : me.Int - foe.Int - foe.Int * (foe.Lv - me.Lv) / 10;
+        return Mathf.Clamp01(n3 / (float)need);
+    }
+
     /// b.a(int,byte) 的那一行提示
     public static string PlotMessage(int plot, PlotResult r)
     {
