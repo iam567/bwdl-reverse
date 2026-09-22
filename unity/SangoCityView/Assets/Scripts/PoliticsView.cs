@@ -94,10 +94,15 @@ public class PoliticsView
     const float CARD_W = 99f, CARD_H = 134f, GAP = 8f;
     void PickOfficer()
     {
-        int cols = 3;
-        int rowN = (roster.Count + cols - 1) / cols;
+        // 一城最多 10 人。硬按三列排，10 个会剩最后一行孤零零一张卡。
+        // 改成先定行数，再把人均摊到每行、每行各自居中：
+        // 10 人 → 3/3/2/2，7 人 → 3/2/2，5 人 → 3/2，怎么排都不落单。
+        const int COLS = 3;
+        int n = roster.Count;
+        int rowN = Mathf.Max(1, (n + COLS - 1) / COLS);
+        int baseN = n / rowN, extra = n % rowN;        // 前 extra 行各多放一个
         float gridH = rowN * CARD_H + (rowN - 1) * GAP;
-        float viewH = Mathf.Min(gridH, 4 * CARD_H + 3 * GAP);          // 一城最多 10 人，四行正好装下
+        float viewH = Mathf.Min(gridH, 4 * CARD_H + 3 * GAP);
         var box = Sheet(Politics.CmdName[(int)cmd] + "　遣何人前往", 56 + viewH + 50);
         float w = refW - 40;
 
@@ -107,7 +112,7 @@ public class PoliticsView
         if (dvs != null) { dv.sprite = Whole(dvs); dv.preserveAspect = true; }
         dv.raycastTarget = false;
 
-        float gw = cols * CARD_W + (cols - 1) * GAP;
+        float gw = COLS * CARD_W + (COLS - 1) * GAP;
         var view = Node("view", box);
         Place(view, (w - gw) / 2, 54, gw, viewH);
         view.gameObject.AddComponent<RectMask2D>();
@@ -120,11 +125,18 @@ public class PoliticsView
             sr.movementType = ScrollRect.MovementType.Clamped; sr.scrollSensitivity = 26;
         }
 
-        for (int i = 0; i < roster.Count; i++)
+        int at = 0;
+        for (int r = 0; r < rowN; r++)
         {
-            int idx = i;
-            Card(content, roster[i], (i % cols) * (CARD_W + GAP), (i / cols) * (CARD_H + GAP),
-                 () => { picked = roster[idx]; Confirm(); });
+            int cnt = baseN + (r < extra ? 1 : 0);
+            float rowW = cnt * CARD_W + (cnt - 1) * GAP;
+            float x0 = (gw - rowW) / 2f;                                   // 这一行自己居中
+            for (int c = 0; c < cnt; c++, at++)
+            {
+                int idx = at;
+                Card(content, roster[at], x0 + c * (CARD_W + GAP), r * (CARD_H + GAP),
+                     () => { picked = roster[idx]; Confirm(); });
+            }
         }
         Btn(box, "作罢", (w - 124) / 2, 56 + viewH + 8, 124, 34, Cancel);
     }
