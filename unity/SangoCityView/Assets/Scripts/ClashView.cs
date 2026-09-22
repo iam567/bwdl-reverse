@@ -1038,7 +1038,10 @@ public class ClashView
                     var q = theirs[k];
                     if (!q.Alive || q.Col != x || q.Row != y) continue;
                     if (q.Arm == Arm.None)
+                    {
                         foe.Hp = Mathf.Max(0, foe.Hp - BattleRules.BlazeHpDamage(rng));
+                        if (foe.Hp <= 0) q.Alive = false;      // 原版 5291：体力归零，武将棋子一样离盘
+                    }
                     else
                     {
                         q.Troops -= BattleRules.BlazeTroopDamage(rng);

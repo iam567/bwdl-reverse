@@ -13,6 +13,7 @@ public class DuelView
     public System.Action OnDone;
     public System.Action OnSurrender;             // 投降：不回阵型战，整场结束、回战棋层选退路
     bool surrendered;
+    readonly bool prizeArmed;          // b.cB：开打那一刻就定了够不够格拿宝物
     /// 劝降成功要把人收过来，交给外面处理
     public System.Action<Officer> OnRecruit;
 
@@ -78,6 +79,7 @@ public class DuelView
                     float refW, float refH, string theme = null, int city = 0)
     {
         this.me = me; this.foe = foe; this.refW = refW; this.refH = refH;
+        prizeArmed = BattleRules.DuelPrizeArmed(me, foe);   // 敌将满体力＝头一回交手，得在挨打之前记下
         mySkin = SkinOf(me.Id); foeSkin = SkinOf(foe.Id);
         BattleRules.DuelStats(me, foe, out myAtk, out myDef, out foeAtk, out foeDef);
         cc = BattleRules.Counter(me, foe);
@@ -394,7 +396,16 @@ public class DuelView
         if (b.Dmg == 0) return;
         var tgt = b.Mine ? foe : me;
         tgt.Hp = Mathf.Max(0, tgt.Hp - b.Dmg);
-        if (tgt.Hp == 0) over = (b.Mine ? foe.Name : me.Name) + "战亡沙场.";
+        if (tgt.Hp == 0)
+        {
+            over = (b.Mine ? foe.Name : me.Name) + "战亡沙场.";
+            // 原版 c.java 2023：我方把敌将打死那一下才调 b.af() 发宝物
+            if (b.Mine && prizeArmed)
+            {
+                var prize = BattleRules.DuelPrize(me, foe);
+                if (prize != null) over += "  " + prize;
+            }
+        }
     }
 
     /// 每帧推进：冲锋 → 命中 → 退回，双方各一遍

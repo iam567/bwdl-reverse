@@ -147,7 +147,7 @@ public static class BattleRules
         int n3 = me.Lv >= foe.Lv ? me.Int + me.Int * (me.Lv - foe.Lv) / 10 - foe.Int
                                  : me.Int - foe.Int - foe.Int * (foe.Lv - me.Lv) / 10;
         if (n3 < need && rng.Next(need) >= n3) return r;                        // 失败
-        int hp = 20 + rng.Next(-3, 4);                                          // ap.nextInt()%4 可为负
+        int hp = 20 + JMod(rng, 4);
         if (hp >= foe.Hp) hp = foe.Hp - 1;
         if (plot == 1) { r.Type = 2; r.Hp = hp; return r; }                     // 陷阱：只减体力
         if (plot == 2) { r.Type = 7; return r; }                                // 虚兵
@@ -164,7 +164,7 @@ public static class BattleRules
             default: dmg = 200; type = 6; break;                                // 13 连弩 / 14 劫火
         }
         if (me.Lv > foe.Lv) dmg += dmg * (1 + (me.Lv - foe.Lv) / 10);
-        dmg += rng.Next(-29, 30);                                               // ap.nextInt()%30
+        dmg += JMod(rng, 30);
         if (plot == 5) { if (dmg > foodPool) dmg = foodPool; }
         else if (dmg > foe.Troops) dmg = foe.Troops;
         r.Type = type; r.Troops = Mathf.Max(0, dmg);
@@ -198,15 +198,24 @@ public static class BattleRules
         if (o.Int >= 93 && o.Lv >= 4) return 12;
         if (o.Int >= 85) return 10;
         if (o.Int >= 80) return 8;
-        return 6;
+        if (o.Int >= 60) return 6;
+        if (o.Int >= 40) return 4;
+        return 2;                       // 原版 d() 最后三档，之前漏抄了 60/40 两级
     }
 
-    /// b.c(总兵力)：每回合机动力的上限，按千位查表
-    static readonly int[] MpCap = { 20,26,32,36,42,46,51,53,55,57,59 };
-    public static int MoveCap(int totalTroops)
+    /// b.b(总兵力) 每回合发多少机动力 / b.c(总兵力) 机动力上限，都按千位查表
+    static readonly int[] MpBase = { 10,16,20,24,28,32,35,37,40,42,42 };
+    static readonly int[] MpCap  = { 20,26,32,36,42,46,51,53,58,60,60 };
+    /// b.a(短[],byte,byte[],byte)：这一回合的机动力 = 基数 + **上一回合没用完的**，封顶 c(兵)。
+    /// 攒着不动下回合就能多走一截 —— 原先我们每回合重置成上限，既把攒的扔了，
+    /// 又让第一回合就直接拿满（原版第一回合只有基数）。
+    /// 顶栏「x / y」里的 y：这个兵力档的上限
+    public static int MoveCapMax(int totalTroops)
+        => MpCap[Mathf.Clamp(totalTroops / 1000, 0, MpCap.Length - 1)];
+    public static int MoveCap(int totalTroops, int leftover = 0)
     {
         int i = Mathf.Clamp(totalTroops / 1000, 0, MpCap.Length - 1);
-        return MpCap[i];
+        return Mathf.Min(MpBase[i] + Mathf.Max(0, leftover), MpCap[i]);
     }
 
     // ── 兵种克制 ───────────────────────────────────────────────────────
@@ -295,6 +304,28 @@ public static class BattleRules
            ? DuelBase(o, num, den) / 2
            : -(14 + rng.Next(9));
 
+    // ── 单挑宝物（b.ae() 定条件、b.af() 发奖）──────────────────────────
+    //   在单挑里**亲手打死**某几个特定武将会白捡一件兵器或防具。
+    //   条件分两段：开打那一刻看敌将（满体力＝头一回交手），打完看自己。
+    /// 开打时先记下够不够格（原版的 cB）
+    public static bool DuelPrizeArmed(Officer me, Officer foe)
+    {
+        if (foe.Id == 61) return me.Lv <= 3 && foe.Hp == foe.HpMax;          // 曹操：新手期头一回碰上
+        if (foe.Id == 4 || foe.Id == 24 || foe.Id == 30 || foe.Id == 40 || foe.Id == 69)
+            return foe.Hp == foe.HpMax;
+        return foe.Id == 1;                                                   // 管辂：总是够格
+    }
+    /// 打赢之后发奖，返回报给玩家的那句话；没发就返回 null
+    public static string DuelPrize(Officer me, Officer foe)
+    {
+        if (foe.Id == 61) { me.ArmLv = 6;  return "获得 " + EquipName[6]; }   // 青釭剑
+        if (foe.Id == 4)  { me.SubLv = 31; return "获得 " + EquipName[31]; }  // 龙鳞宝铠
+        if (foe.Id == 1 && me.Hp == me.HpMax)      { me.ArmLv = 7; return "获得 " + EquipName[7]; }   // 倚天剑：全程没挨打
+        if (foe.Id == 24 && me.Hp * 5 <= me.HpMax) { me.ArmLv = 5; return "获得 " + EquipName[5]; }   // 七星剑：打成残血才给
+        // 30 / 40 / 69 那一支原版还要 bP == 1（场景状态位，没追到是什么），先不发龙牙刀
+        return null;
+    }
+
     /// 单挑的六招（画死在原版 lib60 那张菜单图里）
     public static readonly string[] DuelMove = { "牵制", "攻击", "全力", "劝降", "逃跑", "投降" };
 
@@ -310,7 +341,7 @@ public static class BattleRules
         // 原版只特判 4→6、5→8；德智都到 100 时 x=101 落进 6 那格、没特判，反而比 95 档低。
         // 把 6 也抹平成 8（HOUSE_RULES），别让满值吃亏。
         if (n == 4) n = 6; else if (n >= 5) n = 8;
-        return foe.Hp + foe.Loyal - n + rng.Next(4) < 100;
+        return foe.Hp + foe.Loyal - n + JMod(rng, 4) < 100;     // 原版 nextInt()%4 可为负
     }
 
     /// 逃跑：**用的就是单挑胜负那个公式**，武力高才跑得掉
@@ -326,8 +357,10 @@ public static class BattleRules
     }
 
     /// b.b(我,敌)：基准 50%，每 20 点武力差折 10%
+    /// b.b(short,short)：单挑胜负 / 逃跑判定。原版用的是**带符号**的 nextInt() % 10，
+    /// 武力相当时约七成过，不是五成。
     public static bool DuelWin(Officer me, Officer foe, System.Random rng)
-        => rng.Next(10) < 5 + (me.Might - foe.Might) / 20;
+        => JMod(rng, 10) < 5 + (me.Might - foe.Might) / 20;
 
     /// b.j(部队)：溃败损失
     public static int RoutLoss(int troops, System.Random rng)
@@ -357,6 +390,11 @@ public static class BattleRules
     public static int Def(Officer o) => o.Might + o.Might * ArmBonus(o.SubLv) / 100;
 
     /// b.a(short)：整数平方根，封顶 15
+    /// Java 的 `ap.nextInt() % k`：`nextInt()` 是**带符号**的，所以结果落在 -(k-1)..k-1，
+    /// 不是 0..k-1。原版好几处随机都靠这个双向摆动；写成 rng.Next(k) 会把整条分布抬高一截
+    /// （伤害只多不少、逃跑只难不易）。`s()` 是 Math.abs(nextInt())，那种才是 0..k-1。
+    public static int JMod(System.Random rng, int k) => k <= 1 ? 0 : rng.Next(-(k - 1), k);
+
     public static int ISqrt(int s)
     {
         for (int i = 15; i > 0; i--) if (i * i <= s) return i;
@@ -425,7 +463,7 @@ public static class BattleRules
         int n3 = atk >= def ? Mathf.Min(n4, atk * 3 / 2) : Mathf.Max(n4, atk * 2 / 3);
         n3 = ISqrt(n3) * 5;
         n3 = n3 * attackerTroops / 100;            // 按这枚兵棋还剩多少兵缩放
-        n3 += rng.Next(n3 / 10 + 1);
+        n3 += JMod(rng, n3 / 10 + 1);            // 原版是带符号的 ±10%，不是只加不减
         return Mathf.Min(110, n3);
     }
     /// 打到武将本人身上是扣体力，不是扣兵

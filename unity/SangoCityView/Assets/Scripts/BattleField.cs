@@ -647,7 +647,8 @@ public class BattleField
             case 2: tgt.O.Hp = Mathf.Max(0, tgt.O.Hp - r.Hp); break;
             case 3: supply[foodIdx] = Mathf.Max(0, supply[foodIdx] - r.Troops); RefreshTop(); break;
             case 4: Hurt(tgt, r.Troops); tgt.O.Hp = Mathf.Max(0, tgt.O.Hp - r.Hp); break;
-            case 5: tgt.Ours = casterOurs; tgt.Dir = "s"; break;   // 笼络：整支转到施计的一边
+            // 笼络：整支转到施计的一边。原版 h() 成功之后还要调 m(s2) 把忠诚重掷一遍
+            case 5: tgt.Ours = casterOurs; tgt.Dir = "s"; tgt.O.Loyal = BattleRules.Rebind(tgt.O.Loyal, rng); break;
             case 6:
                 Hurt(tgt, r.Troops);
                 foreach (var o in units) if (o != tgt && o.Alive && o.Ours == tgtSide && o.Trapped == 0 && Adjacent(o, tgt.X, tgt.Y)) Hurt(o, r.Troops);
@@ -1044,7 +1045,7 @@ public class BattleField
     {
         if (enemyTurn) return;
         enemyTurn = true;
-        enemyMp = BattleRules.MoveCap(TotalTroops(false));
+        enemyMp = BattleRules.MoveCap(TotalTroops(false), enemyMp);   // 上回合没用完的接着攒
         enemyIdx = 0; plans = null; roundStartMp = -1;
         sel = null; mode = ""; reach.Clear();
         hintText.text = "敌军行动中...";
@@ -1097,7 +1098,7 @@ public class BattleField
                 if (--u.Trapped == 0) u.Cursed = false;
             }
         }
-        mp = BattleRules.MoveCap(TotalTroops(true));
+        mp = BattleRules.MoveCap(TotalTroops(true), mp);              // 同上：机动力是攒的，不是每回合重置
         hintText.text = "回合结束，第 " + day + " 日";
         Refresh();
     }
@@ -1627,7 +1628,7 @@ public class BattleField
         cursorImg.transform.SetAsLastSibling();
 
         dayText.text = "第 " + day + " 日";
-        mpText.text = "机动力 " + mp + " / " + BattleRules.MoveCap(TotalTroops(true));
+        mpText.text = "机动力 " + mp + " / " + BattleRules.MoveCapMax(TotalTroops(true));
         int hi = mode == "move" ? 0 : mode == "attack" ? 2 : mode == "info" ? 3 : -1;
         for (int i = 0; i < CMD.Length; i++)
             if (cmdImgs[i] != null)
