@@ -9,6 +9,7 @@ public struct Piece
     public Arm Arm;
     public int Troops;        // bZ[][]，这枚兵棋还剩多少兵
     public bool Alive;
+    public bool Off;          // cb=false 且坐标 -1：撤退出了场。兵还算数，只是不在盘上
     public int Dir;           // bX[][]：0 上 1 下 2 左 3 右
     public int HitArm;        // 最近一次被谁打的：0 武将 1 骑 2 弓 3 步 4 爆炎——决定命中特效用哪套
     public float HitAt;       // 刚挨打的时刻，用来闪那一下爆点

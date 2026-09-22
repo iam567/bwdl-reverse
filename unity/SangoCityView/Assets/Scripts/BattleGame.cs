@@ -27,6 +27,7 @@ public class BattleGame : MonoBehaviour
     /// 我不能把没亲眼看过的画面交出去，但 macOS 的 screencapture 要屏幕录制权限，
     /// 所以让程序自己截。
     static bool HasArg(string k) => System.Array.IndexOf(System.Environment.GetCommandLineArgs(), k) >= 0;
+    void Awake() { ClashView.Trace = HasArg("-trace"); }
 
     static string ShotDir()
     {
@@ -57,6 +58,10 @@ public class BattleGame : MonoBehaviour
     {
         Directory.CreateDirectory(dir);
         yield return Shot(dir, "1_战棋层");
+
+        var mv = FindUnit(true);                   // 按「移动」点远处一格：照原版贪心路一格一格走过去，扣机动力
+        field.MoveForTest(mv, mv.X + 4, mv.Y + 2);
+        yield return Shot(dir, "1b_移动");
 
         // 把我方一支挪到敌方旁边，直接触发攻击，省得模拟点击
         var me = FindUnit(true); var foe = FindUnit(false);

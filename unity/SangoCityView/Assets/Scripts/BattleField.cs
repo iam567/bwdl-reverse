@@ -245,6 +245,8 @@ public class BattleField
     public void AskYesForTest() { var b = askPop != null ? askPop.Find("b是") : null; b?.GetComponent<Button>().onClick.Invoke(); }
     public void RetreatMenuForTest(Unit u) { CloseInfo(); sel = u; mode = ""; OpenRetreatMenu(); Refresh(); }
     public void InfoForTest(Unit u, Unit tgt) { ClosePlotPop(); sel = u; mode = "info"; ShowInfo(tgt); Refresh(); }   // 先收上一步的计策弹框
+    /// 自检：按「移动」再点一格（相邻 = 走一步；远处 = 照原版贪心路连着走），留在移动态好看四邻的高亮
+    public void MoveForTest(Unit u, int x, int y) { CloseAsk(); sel = u; mode = "move"; ComputeSteps(); MoveTap(x, y); curX = u.X; curY = u.Y; Refresh(); }
     public void CommandForTest(Unit u, int k) { sel = u; mode = ""; Command(k); CenterOn(u.X, u.Y); curX = u.X; curY = u.Y; Refresh(); }
 
     // ── 素材 ───────────────────────────────────────────────────────────
@@ -307,7 +309,11 @@ public class BattleField
 
         var here = At(x, y);
         if (mode == "plot" && sel != null) { DoPlot(x, y); }
-        else if (mode == "move" && sel != null && reach.Contains(y * W + x)) { DoMove(x, y); }
+        else if (mode == "move" && sel != null)
+        {
+            if (here != null && here.Ours && here != sel) { EndMove(); sel = here; }   // 换人 = 先确定
+            else MoveTap(x, y);
+        }
         else if (mode == "attack" && sel != null && here != null && !here.Ours && Adjacent(sel, x, y)) { DoAttack(here); }
         else if (mode == "info" && here != null) { ShowInfo(here); }
         else if (here != null && here.Ours && here.Trapped == 0) { sel = here; mode = ""; }   // 原版 4631：只过滤 bu 状态，没有"已行动"锁
@@ -318,10 +324,11 @@ public class BattleField
     {
         if (enemyTurn) { hintText.text = "敌军行动中..."; return; }
         if (sel == null) { hintText.text = "先点一支我方部队"; return; }
+        if (mode == "move") EndMove();               // 走到一半按别的令：先按原版 E() 确定
         switch (i)
         {
             case 0:                                  // 移动
-                mode = "move"; ComputeReach(); break;
+                mode = "move"; ComputeSteps(); break;
             case 1:                                  // 计策：原版 b.d(X) 算出可用几种，弹单选
                 mode = ""; OpenPlotMenu(); break;
             case 2:                                  // 攻击
@@ -335,20 +342,6 @@ public class BattleField
             case 5: hintText.text = "我军待机中..."; sel = null; mode = ""; EndDay(); break;   // 原版 4713：aq=1，整军交回合
         }
         Refresh();
-    }
-
-    void DoMove(int x, int y)
-    {
-        int cost = costTo.TryGetValue(y * W + x, out var c) ? c : 0;
-        mp -= cost;
-        int dx = x - sel.X, dy = y - sel.Y;
-        sel.Dir = Mathf.Abs(dx) > Mathf.Abs(dy) ? "e" : (dy > 0 ? "s" : "n");
-        sel.Flip = dx < 0;
-        sel.X = x; sel.Y = y;
-        mode = ""; reach.Clear();
-        hintText.text = "移动消耗 " + cost + " 点";
-        CenterOn(x, y);
-        OnLanded(sel);
     }
 
     // ── 落到建筑格：原版 c.java 4766 j(格) → 「是否进入村庄?」→ G() 按格分派 ──
@@ -943,32 +936,6 @@ public class BattleField
         return list;
     }
 
-    /// 一格一步的最短路（走一格的消耗仍是 b.h(格,兵种)），返回下一格；走不到返回 (-1,-1)
-    Vector2Int NextStepToward(Unit e, int tx, int ty)
-    {
-        var prev = new Dictionary<int, int>(); var q = new Queue<int>();
-        int s0 = e.Y * W + e.X; prev[s0] = -1; q.Enqueue(s0); int found = -1;
-        int[] dx = { 0, 0, -1, 1 }, dy = { -1, 1, 0, 0 };
-        while (q.Count > 0 && found < 0)
-        {
-            int cur = q.Dequeue(); int cx = cur % W, cy = cur / W;
-            for (int i = 0; i < 4; i++)
-            {
-                int nx = cx + dx[i], ny = cy + dy[i];
-                if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
-                int k = ny * W + nx;
-                if (prev.ContainsKey(k)) continue;
-                if (nx == tx && ny == ty) { prev[k] = cur; found = k; break; }   // 目标格本身有人，只到它旁边
-                if (At(nx, ny) != null || BattleRules.MoveCost(grid[ny, nx] & 0xF, e.O.Kind) >= 100) continue;
-                prev[k] = cur; q.Enqueue(k);
-            }
-        }
-        if (found < 0) return new Vector2Int(-1, -1);
-        int step = found;
-        while (prev[step] != s0) step = prev[step];
-        return new Vector2Int(step % W, step / W);
-    }
-
     bool EnemyStep()
     {
         for (int guard = 0; guard < 4; guard++)
@@ -1021,7 +988,7 @@ public class BattleField
             {
                 // 贴上任何一支我方就打（原版 3659：扫全部我方，不限定目标）
                 foreach (var m in units)
-                    if (m.Ours && m.Alive && Adjacent(e, m.X, m.Y))
+                    if (m.Ours && m.Alive && m.Trapped == 0 && Adjacent(e, m.X, m.Y))   // bu 1–3 被困的不算
                     {
                         if (enemyMp < BattleRules.AttackCost) return false;
                         enemyMp -= BattleRules.AttackCost;
@@ -1030,9 +997,12 @@ public class BattleField
                         return true;
                     }
                 if (pl.Target == null || !pl.Target.Alive) return false;
-                var nxt = NextStepToward(e, pl.Target.X, pl.Target.Y);
-                if (nxt.x < 0) return false;
-                int cost = BattleRules.MoveCost(grid[nxt.y, nxt.x] & 0xF, e.O.Kind);
+                // 原版 3652：路是 b.a() 贪心算的，每轮只走第一步，下一轮从新位置重算；
+                // 第一步撞上有人的格（h()=100）就这轮不动，不换方向
+                var path = GreedyPath(e.X, e.Y, pl.Target.X, pl.Target.Y, true);
+                if (path.Count == 0) return false;
+                var nxt = new Vector2Int(e.X + DX[path[0]], e.Y + DY[path[0]]);
+                int cost = StepCost(e, nxt.x, nxt.y);
                 if (cost > enemyMp) return false;
                 enemyMp -= cost;
                 e.Dir = nxt.x != e.X ? "e" : (nxt.y > e.Y ? "s" : "n");
@@ -1052,35 +1022,154 @@ public class BattleField
     }
 
     // ── 计算 ───────────────────────────────────────────────────────────
-    readonly Dictionary<int, int> costTo = new Dictionary<int, int>();
-    /// 原版寻路是贪心逐格逼近、最多 16 步；这里换成按机动力预算的 BFS，
-    /// 走一格的消耗仍然是 b.h(格,兵种)。路径形状会和原版略有出入。
-    void ComputeReach()
+    // ── 移动：原版 c.java 5180-5262 O/P/Q/R —— 方向键按一下走一格 ──
+    //   那格 f()==0（没站人）且 h(格,兵种) ≤ 机动力 → 扣掉、挪过去。原版没有"可达范围"，也没有一次走多格；
+    //   走完按确定（E()）：落到建筑格问要不要进村，然后菜单回来，机动力还有就还能再动（同一将也行）。
+    //   触屏没有方向键：点相邻格 = 按一下方向键；点远处的格 = 连着按，顺序照原版 AI 寻路 b.a() 那套
+    //   （先走长轴、横向被挡改纵向、最多 16 步），走到机动力不够或被挡为止；点武将自己 = 确定。
+    static readonly int[] DX = { 0, 0, -1, 1 }, DY = { -1, 1, 0, 0 };   // 0 上 1 下 2 左 3 右
+    void ComputeSteps()
     {
-        reach.Clear(); costTo.Clear();
-        var q = new Queue<int>();
-        int s = sel.Y * W + sel.X;
-        costTo[s] = 0; q.Enqueue(s);
-        while (q.Count > 0)
+        reach.Clear();
+        for (int d = 0; d < 4; d++)
         {
-            int cur = q.Dequeue(); int cx = cur % W, cy = cur / W, cc = costTo[cur];
-            int[] dx = { 0, 0, -1, 1 }, dy = { -1, 1, 0, 0 };
-            for (int i = 0; i < 4; i++)
+            int nx = sel.X + DX[d], ny = sel.Y + DY[d];
+            if (CanStep(sel, nx, ny)) reach.Add(ny * W + nx);
+        }
+        hintText.text = "武将移动 · 点相邻格走一步，点自己确定 · 机动力 " + mp;
+    }
+    /// b.h(格,兵种)：有人站着算 100（走不了）
+    int StepCost(Unit u, int nx, int ny) => At(nx, ny) != null ? 100 : BattleRules.MoveCost(grid[ny, nx] & 0xF, u.O.Kind);
+    bool CanStep(Unit u, int nx, int ny) =>
+        nx >= 0 && ny >= 0 && nx < W && ny < H && StepCost(u, nx, ny) <= mp;
+    bool StepTo(Unit u, int nx, int ny)
+    {
+        if (!CanStep(u, nx, ny)) return false;
+        mp -= StepCost(u, nx, ny); moved = true;
+        u.Dir = nx != u.X ? "e" : (ny > u.Y ? "s" : "n");
+        u.Flip = nx < u.X;
+        u.X = nx; u.Y = ny;
+        return true;
+    }
+    void MoveTap(int x, int y)
+    {
+        if (x == sel.X && y == sel.Y) { EndMove(); return; }
+        if (Adjacent(sel, x, y))
+        {
+            if (!StepTo(sel, x, y))
             {
-                int nx = cx + dx[i], ny = cy + dy[i];
-                if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
-                if (At(nx, ny) != null) continue;
-                int step = BattleRules.MoveCost(grid[ny, nx] & 0xF, sel.O.Kind);
-                if (step >= 100) continue;
-                int nc = cc + step;
-                if (nc > mp) continue;
-                int key = ny * W + nx;
-                if (costTo.TryGetValue(key, out var old) && old <= nc) continue;
-                costTo[key] = nc; reach.Add(key); q.Enqueue(key);
+                hintText.text = At(x, y) != null ? "那格有人" : "机动力不足";
+                Refresh(); return;
             }
         }
-        reach.Remove(s);
-        hintText.text = "武将移动 · 亮格可达 · 剩 " + mp + " 点";
+        else
+        {
+            int n = 0;
+            foreach (int d in GreedyPath(sel.X, sel.Y, x, y, At(x, y) != null))
+            {
+                if (!StepTo(sel, sel.X + DX[d], sel.Y + DY[d])) break;
+                n++;
+            }
+            if (n == 0) { hintText.text = "走不过去"; Refresh(); return; }
+        }
+        ComputeSteps(); CenterOn(sel.X, sel.Y);
+    }
+    /// 原版 E()：确定。落到建筑格问「是否进入村庄?」，回到「选择武将下命令」
+    bool moved;
+    void EndMove()
+    {
+        mode = ""; reach.Clear();
+        hintText.text = "选择武将下命令";
+        if (moved) OnLanded(sel);                 // 原版不挪也问；触屏上误点了「移动」再按别的令，别弹村庄
+        moved = false;
+    }
+
+    /// 原版 b.a(byte×4,…) 3436：贪心寻路。
+    /// 目标格有人（nudge）就先把目标挪到它旁边一格——按象限定四个方向的先后；
+    /// 然后逐格逼近：先走长轴，横向那格有人才改纵向（纵向不查有没有人，撞上就是走不动）；最多 16 步。
+    /// 返回一串方向。地图层敌军每轮只走它的第一步，下一轮从新位置重算。
+    List<int> GreedyPath(int x, int y, int tx, int ty, bool nudge)
+    {
+        bool F(int a, int b) => a >= 0 && b >= 0 && a < W && b < H && At(a, b) == null;   // f()==0
+        int n = tx - x, n2 = ty - y;
+        if (nudge)
+        {
+            if (n >= 0 && n2 >= 0)
+            {
+                if (n - n2 >= 0)
+                {
+                    if (tx > 0 && F(tx - 1, ty)) tx--;
+                    else if (ty > 0 && F(tx, ty - 1)) ty--;
+                    else if (ty < H - 1 && F(tx, ty + 1)) ty++;
+                    else if (tx < W - 1 && F(tx + 1, ty)) tx++;
+                }
+                else if (ty > 0 && F(tx, ty - 1)) ty--;
+                else if (tx > 0 && F(tx - 1, ty)) tx--;
+                else if (tx < W - 1 && F(tx + 1, ty)) tx++;
+                else if (ty < H - 1 && F(tx, ty + 1)) ty++;
+            }
+            else if (n < 0 && n2 >= 0)
+            {
+                if (n + n2 < 0)
+                {
+                    if (tx < W - 1 && F(tx + 1, ty)) tx++;
+                    else if (ty > 0 && F(tx, ty - 1)) ty--;
+                    else if (ty < H - 1 && F(tx, ty + 1)) ty++;
+                    else if (tx > 0 && F(tx - 1, ty)) tx--;
+                }
+                else if (ty > 0 && F(tx, ty - 1)) ty--;
+                else if (tx < W - 1 && F(tx + 1, ty)) tx++;
+                else if (tx > 0 && F(tx - 1, ty)) tx--;
+                else if (ty < H - 1 && F(tx, ty + 1)) ty++;
+            }
+            else if (n >= 0 && n2 < 0)
+            {
+                if (n + n2 >= 0)
+                {
+                    if (tx > 0 && F(tx - 1, ty)) tx--;
+                    else if (ty < H - 1 && F(tx, ty + 1)) ty++;
+                    else if (ty > 0 && F(tx, ty - 1)) ty--;
+                    else if (tx < W - 1 && F(tx + 1, ty)) tx++;
+                }
+                else if (ty < H - 1 && F(tx, ty + 1)) ty++;
+                else if (tx > 0 && F(tx - 1, ty)) tx--;
+                else if (tx < W - 1 && F(tx + 1, ty)) tx++;
+                else if (ty > 0 && F(tx, ty - 1)) ty--;
+            }
+            else
+            {
+                if (n - n2 < 0)
+                {
+                    if (tx < W - 1 && F(tx + 1, ty)) tx++;
+                    else if (ty < H - 1 && F(tx, ty + 1)) ty++;
+                    else if (ty > 0 && F(tx, ty - 1)) ty--;
+                    else if (tx > 0 && F(tx - 1, ty)) tx--;
+                }
+                else if (ty < H - 1 && F(tx, ty + 1)) ty++;
+                else if (tx < W - 1 && F(tx + 1, ty)) tx++;
+                else if (tx > 0 && F(tx - 1, ty)) tx--;
+                else if (ty > 0 && F(tx, ty - 1)) ty--;
+            }
+        }
+        var path = new List<int>(16);
+        while ((x != tx || y != ty) && path.Count < 16)
+        {
+            n = tx - x; n2 = ty - y;
+            int d;
+            if (Mathf.Abs(n) - Mathf.Abs(n2) >= 0)
+            {
+                if (n >= 0 && F(x + 1, y)) d = 3;
+                else if (n < 0 && F(x - 1, y)) d = 2;
+                else d = n2 >= 0 ? 1 : 0;
+            }
+            else if (n2 >= 0 && F(x, y + 1)) d = 1;
+            else if (n2 < 0 && F(x, y - 1)) d = 0;
+            else d = n >= 0 ? 3 : 2;
+            x += DX[d]; y += DY[d];
+            if (x < 0 || y < 0 || x >= W || y >= H) break;
+            path.Add(d);
+        }
+        return path;
     }
 
     bool Adjacent(Unit u, int x, int y) => Mathf.Abs(u.X - x) + Mathf.Abs(u.Y - y) == 1;

@@ -298,6 +298,7 @@ public class ClashView
         // b.S() 守城那一支末尾：for (n=0;n<4;n++) cj[n] = 1；
         // 守方四个兵种开局全是「待机」——守城本来就该守在原位，不是冲出去。
         if (siege && !weAttack) for (int i = 0; i < 4; i++) orders[i] = 1;
+        roundNo = 0; RefreshEnemyOrders();
         BuildField();
         Redraw();
     }
@@ -471,6 +472,7 @@ public class ClashView
     int roundNo;
     float overAt;                          // 分出胜负那一刻，用来延一小会儿再收场
     public int ActingSide = -1, ActingIdx = -1;
+    public static bool Trace;                  // -trace：每一步写进 Player.log，自检用
     string over;
 
     public void Tick()
@@ -504,6 +506,7 @@ public class ClashView
             var p = side[turnIdx];
             int idx = turnIdx;
             bool did = p.Alive && Act(side, other, turnSide == 0, turnIdx);
+            if (Trace && did) Debug.Log($"[clash] r{roundNo} side{turnSide} #{idx} {p.Arm} ({p.Col},{p.Row}) -> ({side[idx].Col},{side[idx].Row}) dir{side[idx].Dir}");
 
             // 原版是先 s(cD) 再判断切边，用的是上一轮留下的 cF
             if (idx == 0 && extra >= 1)
@@ -512,10 +515,14 @@ public class ClashView
                 turnSide = 1 - turnSide;
                 var ns = turnSide == 0 ? mine : theirs;
                 turnIdx = ns.Count > 1 ? 1 : 0;              // cD = bI > 1 ? 1 : 0
-                if (turnSide == 0 && cd != 0)                // 我方又轮了一整圈
+                if (turnSide == 0)                           // 我方又轮了一整圈：cG++，敌方按 h(cG) 重新下令
                 {
-                    cd = (cd & 0xF0) | Mathf.Max(0, (cd & 0xF) - 1);
-                    if ((cd & 0xF) == 0) cd = 0;
+                    roundNo++; RefreshEnemyOrders();
+                    if (cd != 0)
+                    {
+                        cd = (cd & 0xF0) | Mathf.Max(0, (cd & 0xF) - 1);
+                        if ((cd & 0xF) == 0) cd = 0;
+                    }
                 }
                 if (did) { ActingSide = 1 - turnSide; ActingIdx = idx; FocusOn(p.Col); break; }
                 continue;
@@ -523,8 +530,8 @@ public class ClashView
 
             // if (!cb[cD] || bU[cD] >= 2 || cF >= 1) { cD++; cF = 0; } else cF++;
             // bU >= 2 是弓兵和步兵 —— 只有武将(0)和骑兵(1)能动第二次。
-            bool twice = p.Alive && (p.Arm == Arm.None || p.Arm == Arm.Qi);
-            if (!p.Alive || !twice || extra >= 1) { turnIdx++; extra = 0; }
+            bool twice = p.Alive && !p.Off && (p.Arm == Arm.None || p.Arm == Arm.Qi);
+            if (!p.Alive || p.Off || !twice || extra >= 1) { turnIdx++; extra = 0; }
             else extra++;
 
             if (did) { ActingSide = turnSide; ActingIdx = idx; FocusOn(p.Col); break; }
@@ -532,145 +539,283 @@ public class ClashView
 
         if (Formation.TotalTroops(theirs) == 0 || foe.Hp <= 0) over = "敌军溃败";
         else if (Formation.TotalTroops(mine) == 0 || me.Hp <= 0) over = "我军溃败";
+        else if (AllOff(theirs)) over = "敌军撤退";
+        else if (AllOff(mine)) over = "我军撤退";
         Redraw();
     }
 
     /// b.s(by)：一枚兵棋的一次行动。返回它是不是真做成了事（原版的 cH）。
+    ///
+    /// 原版按令分派（bY = cj[兵种]）：0 前进 m() / 1 待机 p() / 2 撤退 q() / 3 包围 r()。
+    /// 敌方是 u() / x() / y()，逻辑镜像，令由 h(cG) 每轮刷新（见 RefreshEnemyOrders）。
+    ///  · 前进：先用 l()/t() 朝**对方武将**选一个方向（不是离得最近的兵），
+    ///          再看四邻有没有敌人：选定方向上有、或者我是武将且邻着对方武将 → 必打；
+    ///          其余相邻敌人 70% 打、30% 不理继续走；四邻没人就迈一步。
+    ///          弓兵是沿四条直线扫射程内第一个敌人，80% 射。
+    ///  · 待机：只打相邻（弓兵射直线上的），从不挪窝。
+    ///  · 撤退：我方一路向左、敌方向右，走到边上出场；前面有墙/有人，我方往上下侧移，敌方干等。
+    ///  · 包围：和前进一样走位，但**不打对方武将也不往他身上走**，弓兵射线到他那格就停。
     bool Act(List<Piece> side, List<Piece> other, bool ours, int i)
+    {
+        var p = side[i];
+        if (!p.Alive || p.Off) return false;
+        int cmd = ours ? orders[(int)p.Arm] : enemyOrders[(int)p.Arm];
+        // 咒缚（cd 高 4 位 = 1）：敌方**武将本人**改走 x(0)——待机那一支，只打相邻的，不移动
+        if (!ours && p.Arm == Arm.None && BattleRules.BuffId(cd) == 1) cmd = 1;
+        int range = BattleRules.ArrowRange(ours ? cd : 0);
+
+        switch (cmd)
+        {
+            case 1:                                            // 待机 n()/o()、v()/w()
+            {
+                int d = p.Arm == Arm.Gong ? LineTarget(p, -1, ours, false, range)
+                                          : AdjTarget(p, -1, ours, false);
+                if (d < 0) return false;
+                return Attack(side, other, ours, i, d, range);
+            }
+            case 2:                                            // 撤退 q() / y()
+                return Retreat(side, ours, i);
+            default:                                           // 前进 m() / 包围 r()
+            {
+                bool surround = cmd == 3;
+                int dir = Toward(p, ours);
+                if (dir >= 0) { p.Dir = dir; side[i] = p; }   // bX 跟着走向更新
+                int d = p.Arm == Arm.Gong ? LineTarget(p, dir, ours, surround, range)
+                                          : AdjTarget(p, dir, ours, surround);
+                if (d >= 0) return Attack(side, other, ours, i, d, range);
+                if (dir >= 0 && d != -2) return Move(side, i, dir);
+                return false;
+            }
+        }
+    }
+
+    static readonly int[] DX = { 0, 0, -1, 1 }, DY = { -1, 1, 0, 0 };   // 0 上 1 下 2 左 3 右
+
+    /// 一格上有什么，按原版 bK 的位：0x20 墙（32）/ 2、16 栅门 / 0x40 我方兵棋 / 0x80 敌方兵棋。
+    /// 出界当作三样全有，省得每处都写边界判断。
+    int Cell(int x, int y)
+    {
+        if (x < 0 || y < 0 || x >= BattleRules.GridW || y >= BattleRules.GridH) return 0xE0;
+        int v = walls.TryGetValue(new Vector2Int(x, y), out int w) ? w : 0;
+        if (Occupied(mine, x, y)) v |= 0x40;
+        if (Occupied(theirs, x, y)) v |= 0x80;
+        return v;
+    }
+
+    /// b.l(by) / b.t(by)：朝对方武将选向。
+    /// 先把"目标"从武将本人挪到他旁边一格：不同行时优先他**身后**那格（我方看是右边、敌方看是左边），
+    /// 同行时上/下/前。然后横向优先：目标在右且右边能走 → 右 …… 已经同列就上下随机侧移，同行就左右侧移。
+    /// "能走"只看 (格 & 0x60)==0（我方）—— 墙和自己人挡路，**敌人不挡**，走过去就是打。
+    int Toward(Piece p, bool ours)
+    {
+        var g = ours ? theirs[0] : mine[0];
+        if (!g.Alive || g.Off) return -1;
+        int blk = 0x20 | (ours ? 0x40 : 0x80);
+        bool Free(int x, int y) => (Cell(x, y) & blk) == 0;
+        int gx = g.Col, gy = g.Row, px = p.Col, py = p.Row, n = -1;
+        if (ours)
+        {
+            if (gx < 15 && Free(gx + 1, gy) && gy != py) gx++;
+            else if (gy - py <= 0)
+            {
+                if (gy > 0 && Free(gx, gy - 1)) gy--;
+                else if (gy < 6 && Free(gx, gy + 1)) gy++;
+                else if (gx > 0 && Free(gx - 1, gy)) gx--;
+            }
+            else if (gy < 6 && Free(gx, gy + 1)) gy++;
+            else if (gy > 0 && Free(gx, gy - 1)) gy--;
+            else if (gx > 0 && Free(gx - 1, gy)) gx--;
+        }
+        else
+        {
+            // 原版 t() 镜像的时候把查的格写反了：查 gx+1 却往 gx-1 挪、查 gx-1 却往 gx+1 挪。照抄。
+            if (gx > 0 && Free(gx + 1, gy) && gy != py) gx--;
+            else if (gy - py <= 0)
+            {
+                if (gy > 0 && Free(gx, gy - 1)) gy--;
+                else if (gy < 6 && Free(gx, gy + 1)) gy++;
+                else if (gx < 15 && Free(gx - 1, gy)) gx++;
+            }
+            else if (gy < 6 && Free(gx, gy + 1)) gy++;
+            else if (gy > 0 && Free(gx, gy - 1)) gy--;
+            else if (gx < 15 && Free(gx - 1, gy)) gx++;
+        }
+        if (px < 15 && gx - px > 0 && Free(px + 1, py)) { if (gx == px + 1 && gy == py) n = 3; else return 3; }
+        if (px > 0 && gx - px < 0 && Free(px - 1, py)) { if (gx == px - 1 && gy == py) n = 2; else return 2; }
+        if (py < 6 && gy - py > 0 && Free(px, py + 1)) return 1;
+        if (py > 0 && gy - py < 0 && Free(px, py - 1)) return 0;
+        if (gx == px)
+        {
+            if (px < 15 && px > 0 && Free(px + 1, py) && Cell(px - 1, py) == 0) return rng.Next(2) + 2;
+            if (px < 15 && Free(px + 1, py)) return 3;
+            if (px > 0 && Free(px - 1, py)) return 2;
+        }
+        if (gy == py)
+        {
+            if (py < 6 && py > 0 && Free(px, py + 1) && Free(px, py - 1)) return rng.Next(2);
+            if (py < 6 && Free(px, py + 1)) return 1;
+            if (py > 0 && Free(px, py - 1)) return 0;
+        }
+        return n;
+    }
+
+    /// b.l(by,by2) / t(by,by2)，包围令走 p(by,by2)：四邻里挑一个打，返回方向；-1 不打；-2（包围）连走都别走。
+    int AdjTarget(Piece p, int dir, bool ours, bool surround)
+    {
+        int foe = ours ? 0x80 : 0x40;
+        var g = ours ? theirs[0] : mine[0];
+        var cand = new List<int>(4);
+        for (int d = 0; d < 4; d++)
+        {
+            int x = p.Col + DX[d], y = p.Row + DY[d];
+            bool isGen = g.Alive && !g.Off && g.Col == x && g.Row == y;
+            if (surround)
+            {
+                if (dir == d && isGen) { dir = -1; continue; }         // 选的方向上是对方武将：不打、也不走
+                if ((Cell(x, y) & foe) != 0 && !isGen) { if (dir == d) return d; cand.Add(d); }
+            }
+            else if ((Cell(x, y) & foe) != 0)
+            {
+                if (dir == d || (p.Arm == Arm.None && isGen)) return d;
+                cand.Add(d);
+            }
+        }
+        if (cand.Count > 0 && (dir < 0 || rng.Next(10) >= 3)) return cand[rng.Next(cand.Count)];
+        return surround && dir < 0 ? -2 : -1;
+    }
+
+    /// 弓兵 n(by,by2) / v(by,by2)，包围令 r(by,by2)：相邻且正是选定方向 → 射；
+    /// 否则四条直线各扫 range 格找第一个敌人，80% 射。包围令扫到对方武将那格就停。
+    int LineTarget(Piece p, int dir, bool ours, bool surround, int range)
+    {
+        int foe = ours ? 0x80 : 0x40;
+        var g = ours ? theirs[0] : mine[0];
+        for (int d = 0; d < 4; d++)
+        {
+            int x = p.Col + DX[d], y = p.Row + DY[d];
+            if (dir == d && (Cell(x, y) & foe) != 0)
+            {
+                if (surround && g.Col == x && g.Row == y) dir = -1;
+                else return d;
+            }
+        }
+        var cand = new List<int>(4);
+        for (int d = 0; d < 4; d++)
+            for (int k = 1; k <= range; k++)
+            {
+                int x = p.Col + DX[d] * k, y = p.Row + DY[d] * k;
+                if (x < 0 || y < 0 || x >= BattleRules.GridW || y >= BattleRules.GridH) break;
+                if (surround && g.Col == x && g.Row == y) break;
+                if ((Cell(x, y) & foe) != 0) { cand.Add(d); break; }
+            }
+        if (cand.Count > 0 && (dir < 0 || rng.Next(10) >= 2)) return cand[rng.Next(cand.Count)];
+        return surround && dir < 0 ? -2 : -1;
+    }
+
+    /// b.c/d/e/f：往 dir 迈一格。选向函数已经保证那格没墙没自己人；这里再兜一道底，有人就不动。
+    bool Move(List<Piece> side, int i, int dir)
+    {
+        var p = side[i];
+        int nx = p.Col + DX[dir], ny = p.Row + DY[dir];
+        if ((Cell(nx, ny) & 0xE0) != 0) return false;
+        p.Dir = dir; p.Col = nx; p.Row = ny; side[i] = p;
+        return true;
+    }
+
+    /// b.q(by)（我方，向左）/ b.y(by)（敌方，向右）
+    bool Retreat(List<Piece> side, bool ours, int i)
+    {
+        var p = side[i];
+        int edge = ours ? 0 : 15, ahead = ours ? 2 : 3;
+        if (p.Col != edge && (Cell(p.Col + DX[ahead], p.Row) & 0xE0) != 0)
+        {
+            if (!ours) return false;                               // y()：被挡就等
+            int n = 0;
+            if (p.Row > 0 && (Cell(p.Col, p.Row - 1) & 0xE0) == 0) n += 1;
+            if (p.Row < 6 && (Cell(p.Col, p.Row + 1) & 0xE0) == 0) n += 2;
+            if (n == 0) return false;
+            return Move(side, i, n == 3 ? rng.Next(2) : n - 1);
+        }
+        if (p.Col == edge)                                         // 走到边上：出场（兵还在，回武将身边）
+        {
+            p.Off = true; p.Col = -1; p.Row = -1; side[i] = p;
+            return true;
+        }
+        return Move(side, i, ahead);
+    }
+
+    /// b.b(by,dir,·)（近战打相邻）/ b.c(by,dir,·)（弓兵沿直线射第一个）。武将撞武将 → 单挑。
+    bool Attack(List<Piece> side, List<Piece> other, bool ours, int i, int dir, int range)
     {
         var p = side[i];
         var self  = ours ? me : foe;
         var enemy = ours ? foe : me;
-        // 轮到它了才读令。敌方一律前进。
-        int cmd = ours ? orders[(int)p.Arm] : 0;
-        // 咒缚（cd 高 4 位 = 1）：敌方**武将本人**改走 b.v()——只打相邻的，不移动
-        bool bound = !ours && p.Arm == Arm.None && BattleRules.BuffId(cd) == 1;
-        if (cmd == 1) return false;                            // 待机：原地不动，不占节拍
-
-        // b.m(by) 按兵种分派：武将/骑兵/步兵 走近战 m(by,by2)，弓兵走远射 o(by,by2)。
-        // o() 沿上下左右四条直线各扫 by3 = 1..by2-1 格，默认 by2 = 5 → 射程 4 格。
-        int t = p.Arm == Arm.Gong
-              ? FindInRange(other, p, BattleRules.ArrowRange(ours ? cd : 0))
-              : FindAdjacent(other, p);
-        if (t >= 0 && cmd != 2)                                // 撤退的不恋战
+        int t = -1;
+        int reach = p.Arm == Arm.Gong ? range : 1;
+        for (int k = 1; k <= reach && t < 0; k++)
         {
-            var q = other[t];
-            int dmg = BattleRules.Damage(BattleRules.Atk(self, p.Arm),
-                                         BattleRules.Def(enemy), p.Troops, rng,
-                                         ours ? cd : 0, p.Arm);
-            // b.c(boolean)：打人的和挨打的都是武将本人 → aq=1，跳出去单挑
-            // 双方都站着才打得起来；有一方体力已空就不进单挑了，直接算伤害
-            if (p.Arm == Arm.None && q.Arm == Arm.None && me.Hp > 0 && foe.Hp > 0)
-            { OnDuel?.Invoke(); return true; }
-            if (p.Arm == Arm.Gong)                             // 射出去的箭，画一下
-                shots.Add(new Shot { X0 = p.Col, Y0 = p.Row, X1 = q.Col, Y1 = q.Row, At = Time.time,
-                                     Fire = ours && BattleRules.BuffId(cd) == 5 });   // 火矢生效时箭带火
-            if (q.Arm == Arm.None)
-            {
-                if (ours) foe.Hp = Mathf.Max(0, foe.Hp - BattleRules.HpHit(dmg));
-                else      me.Hp  = Mathf.Max(0, me.Hp  - BattleRules.HpHit(dmg));
-                q.HitAt = Time.time; q.HitArm = (int)p.Arm; other[t] = q;
-            }
-            else
-            {
-                q.Troops -= dmg;
-                q.HitAt = Time.time; q.HitArm = (int)p.Arm;
-                if (q.Troops <= 0) { q.Troops = 0; q.Alive = false; }
-                other[t] = q;
-            }
-            return true;
+            int x = p.Col + DX[dir] * k, y = p.Row + DY[dir] * k;
+            for (int j = 0; j < other.Count; j++)
+                if (other[j].Alive && !other[j].Off && other[j].Col == x && other[j].Row == y) { t = j; break; }
         }
-
-        if (bound) return false;                               // 被缚：四周无人就干站着
-        var tgt = Nearest(other, p);
-        if (tgt.x < 0) return false;
-        int dir = cmd == 2 ? -1 : 1;                           // 撤退就反着走
-        int dx = dir * System.Math.Sign(tgt.x - p.Col);
-        int dy = dir * System.Math.Sign(tgt.y - p.Row);
-
-        // 原版 b.l(byte) 的选向：先横后纵，**首选被挡住或已经对齐时往垂直方向侧移**，
-        // 两边都通就掷一次。侧移这一步才是部队会沿走廊绕行、从门挤进去的原因；
-        // 我原先写的是「主轴迈一格，撞墙就原地不动」，攻城时全堵在墙外。
-        int nx = p.Col, ny = p.Row;
-        if (cmd == 3)                                          // 包围：先拉开纵向再压上
+        if (t < 0) return false;
+        var q = other[t];
+        int dmg = BattleRules.Damage(BattleRules.Atk(self, p.Arm),
+                                     BattleRules.Def(enemy), p.Troops, rng,
+                                     ours ? cd : 0, p.Arm);
+        // b.a(0,by,1,by6,·)：打人的和挨打的都是武将本人 → aq=1，跳出去单挑
+        // 双方都站着才打得起来；有一方体力已空就不进单挑了，直接算伤害
+        if (p.Arm == Arm.None && q.Arm == Arm.None && me.Hp > 0 && foe.Hp > 0)
+        { OnDuel?.Invoke(); return true; }
+        if (p.Arm == Arm.Gong)                             // 射出去的箭，画一下
+            shots.Add(new Shot { X0 = p.Col, Y0 = p.Row, X1 = q.Col, Y1 = q.Row, At = Time.time,
+                                 Fire = ours && BattleRules.BuffId(cd) == 5 });   // 火矢生效时箭带火
+        if (q.Arm == Arm.None)
         {
-            ny += tgt.y >= p.Row ? -1 : 1;
-            if (!Free(nx, ny)) { ny = p.Row; nx = p.Col + dx; }
+            if (ours) foe.Hp = Mathf.Max(0, foe.Hp - BattleRules.HpHit(dmg));
+            else      me.Hp  = Mathf.Max(0, me.Hp  - BattleRules.HpHit(dmg));
+            q.HitAt = Time.time; q.HitArm = (int)p.Arm; other[t] = q;
         }
-        else if (dx != 0 && Free(p.Col + dx, p.Row)) nx += dx;
-        else if (dy != 0 && Free(p.Col, p.Row + dy)) ny += dy;
-        else if (dx == 0)                                      // 同列：左右绕
+        else
         {
-            bool l = Free(p.Col - 1, p.Row), r = Free(p.Col + 1, p.Row);
-            if (l && r) nx += rng.Next(2) == 0 ? -1 : 1;
-            else if (r) nx += 1;
-            else if (l) nx -= 1;
+            q.Troops -= dmg;
+            q.HitAt = Time.time; q.HitArm = (int)p.Arm;
+            if (q.Troops <= 0) { q.Troops = 0; q.Alive = false; }
+            other[t] = q;
         }
-        else if (dy == 0)                                      // 同行：上下绕
-        {
-            bool u = Free(p.Col, p.Row - 1), d = Free(p.Col, p.Row + 1);
-            if (u && d) ny += rng.Next(2) == 0 ? -1 : 1;
-            else if (d) ny += 1;
-            else if (u) ny -= 1;
-        }
-
-        if (nx == p.Col && ny == p.Row) return false;
-        if (!Free(nx, ny)) return false;
-        // bX 跟着走向更新：b.c/d/e/f 分别置 0 上 / 1 下 / 2 左 / 3 右
-        if (nx != p.Col) p.Dir = nx > p.Col ? 3 : 2;
-        else if (ny != p.Row) p.Dir = ny > p.Row ? 1 : 0;
-        p.Col = nx; p.Row = ny; side[i] = p;
         return true;
     }
 
-    /// 这一格能不能站人。原版判的是 (bK[r][c] & 0x60) == 0 —— 0x60 = 0x20|0x40，
-    /// 也就是**只有 32（墙体）挡路**，2（竖栅门）和 16（横栅）是能走过去的。
-    /// 我原先把整张 walls 表都当成墙，门也封死，部队根本进不了城。
-    bool Free(int x, int y)
+    // ── 敌方的令：b.h(cG) 每轮刷新 ──────────────────────────────────────
+    // 我方主动开打（cl）→ z(n)：敌方全军待机；被敌方打 → A(n)：敌方武将待机、小兵前进。
+    // 两者共用的先手判断 U()：第 4 轮起，我方小兵合计 >300 且敌方小兵 <100 → 敌方全军撤退（撤退令一旦下了就不改）。
+    readonly int[] enemyOrders = new int[4];
+    void RefreshEnemyOrders()
     {
-        if (x < 0 || y < 0 || x >= BattleRules.GridW || y >= BattleRules.GridH) return false;
-        if (walls.TryGetValue(new Vector2Int(x, y), out int v) && v == 32) return false;
-        return !Occupied(mine, x, y) && !Occupied(theirs, x, y);
+        bool U()
+        {
+            if (enemyOrders[0] == 2) return true;
+            int n = 0, n2 = 0;
+            foreach (var p in mine)   if (p.Alive && p.Arm != Arm.None) n  += p.Troops;
+            foreach (var p in theirs) if (p.Alive && p.Arm != Arm.None) n2 += p.Troops;
+            return n > 300 && n2 < 100;
+        }
+        if (U() && roundNo >= 4) { for (int i = 0; i < 4; i++) enemyOrders[i] = 2; return; }
+        if (weAttack) for (int i = 0; i < 4; i++) enemyOrders[i] = 1;
+        else { enemyOrders[0] = 1; for (int i = 1; i < 4; i++) enemyOrders[i] = 0; }
+    }
+    /// 一边的兵棋全都出了场（撤退走光）→ 这场也就散了
+    static bool AllOff(List<Piece> ps)
+    {
+        bool any = false;
+        foreach (var p in ps) { if (!p.Alive) continue; if (!p.Off) return false; any = true; }
+        return any;
     }
 
     static bool Occupied(List<Piece> ps, int x, int y)
     {
-        foreach (var p in ps) if (p.Alive && p.Col == x && p.Row == y) return true;
+        foreach (var p in ps) if (p.Alive && !p.Off && p.Col == x && p.Row == y) return true;
         return false;
-    }
-    /// o()：沿上下左右四条直线扫，碰到的第一个敌人就是目标
-    static int FindInRange(List<Piece> other, Piece p, int range)
-    {
-        int[] dx = { 0, 0, -1, 1 }, dy = { -1, 1, 0, 0 };
-        for (int d = 0; d < 4; d++)
-            for (int k = 1; k <= range; k++)
-            {
-                int x = p.Col + dx[d] * k, y = p.Row + dy[d] * k;
-                for (int i = 0; i < other.Count; i++)
-                    if (other[i].Alive && other[i].Col == x && other[i].Row == y) return i;
-            }
-        return -1;
-    }
-
-    static int FindAdjacent(List<Piece> other, Piece p)
-    {
-        for (int i = 0; i < other.Count; i++)
-        {
-            var q = other[i];
-            if (q.Alive && Mathf.Abs(q.Col - p.Col) + Mathf.Abs(q.Row - p.Row) == 1) return i;
-        }
-        return -1;
-    }
-    static Vector2Int Nearest(List<Piece> other, Piece p)
-    {
-        var best = new Vector2Int(-1, -1); int bd = 999;
-        foreach (var q in other)
-        {
-            if (!q.Alive) continue;
-            int d = Mathf.Abs(q.Col - p.Col) + Mathf.Abs(q.Row - p.Row);
-            if (d < bd) { bd = d; best = new Vector2Int(q.Col, q.Row); }
-        }
-        return best;
     }
 
     void UseSkill(int i)
@@ -863,7 +1008,7 @@ public class ClashView
         }
         // 呐喊：我方全军脚下一圈仙气（压在兵底下），效果持续期间一直转
         if (BattleRules.BuffId(cd) == 4)
-            foreach (var p in mine) if (p.Alive) AddFx("shout", p.Col, p.Row, 1.5f, true, 0f, C * .18f);
+            foreach (var p in mine) if (p.Alive && !p.Off) AddFx("shout", p.Col, p.Row, 1.5f, true, 0f, C * .18f);
         DrawSide(mine,   true);
         DrawSide(theirs, false);
         // 咒缚：敌将脚下钻出绳索（压在兵上面），效果持续期间一直在
@@ -1037,7 +1182,7 @@ public class ClashView
     {
         foreach (var p in ps)
         {
-            if (!p.Alive) continue;
+            if (!p.Alive || p.Off) continue;
             var im = Node("d", mapRoot).gameObject.AddComponent<Image>();
             Place((RectTransform)im.transform, p.Col * MM + 2, p.Row * MM + 2, MM - 4, MM - 4);
             // 武将实心、其余空心 —— 原版就是靠这个在小地图上认武将
@@ -1258,7 +1403,7 @@ public class ClashView
     {
         foreach (var p in ps)
         {
-            if (!p.Alive) continue;
+            if (!p.Alive || p.Off) continue;
             var im = Node("p", gridRoot).gameObject.AddComponent<Image>();
             Place((RectTransform)im.transform,
                   p.Col * C - (FIG - C) / 2, p.Row * C - (FIG - C), FIG, FIG);
