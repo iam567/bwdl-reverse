@@ -118,7 +118,7 @@ public class BattleField
     void BuildBoard()
     {
         var clip = Node("clip", Root);
-        Place(clip, 0, 76, refW, refH - 76 - 96);
+        Place(clip, 0, TOP_H + 2, refW, refH - TOP_H - 2 - 96);
         var msk = clip.gameObject.AddComponent<Image>();
         msk.color = new Color(.06f, .06f, .07f, 1);
         clip.gameObject.AddComponent<Mask>().showMaskGraphic = true;
@@ -177,11 +177,12 @@ public class BattleField
     }
 
     Image[] cmdImgs;
+    const float TOP_Y = 24, TOP_H = TOP_Y + 66;      // 顶栏往下挪，空出上沿那一条挂城名匾额
     void BuildHud()
     {
         // 顶栏：左我方金粮、中间日数与机动力、右敌方金粮；第二行是提示
         var top = Panel(Root, "top", BattleUi.PlateSp());
-        Place((RectTransform)top.transform, 8, 8, refW - 16, 66);
+        Place((RectTransform)top.transform, 8, TOP_Y, refW - 16, 66);
         var lab = new Color32(0xC8,0xA8,0x60,255);
         Text Col(float x, float w, string t, int size, Color32 c, TextAnchor a)
         {
@@ -196,6 +197,19 @@ public class BattleField
         Place(mpText.rectTransform, 0, 30, refW - 16, 18);
         hintText = Label(top.transform, "", 12, new Color32(0xC8,0xC0,0xA8,255), TextAnchor.MiddleCenter);
         Place(hintText.rectTransform, 12, 46, refW - 40, 18);
+
+        // 城名匾额：挂在顶栏上沿，像钉在城门上的那块匾。两端的云纹翘头是九宫格的「角」，
+        // 中段跟着字数拉伸——两个字和三个字的城名都能兜住。
+        string cn = CityNameNow();
+        float pw = Mathf.Max(112, 58 + cn.Length * 26), ph = 34;
+        var plate = Node("cityplate", Root);
+        Place(plate, (refW - pw) / 2, 2, pw, ph);
+        var pi = plate.gameObject.AddComponent<Image>();
+        pi.sprite = BattleUi.Get("cityplate") ?? BattleUi.PlateSp();
+        pi.type = Image.Type.Sliced; pi.raycastTarget = false;
+        var pt = Label(plate, cn, 19, new Color32(0xF0,0xC8,0x70,255), TextAnchor.MiddleCenter);
+        Place(pt.rectTransform, 0, 1, pw, ph - 4);
+        pt.raycastTarget = false;
 
         cmdBar = Node("cmd", Root);
         Place(cmdBar, 0, refH - 100, refW, 100);

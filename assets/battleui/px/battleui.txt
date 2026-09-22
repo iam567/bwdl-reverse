@@ -3,6 +3,7 @@ btn 2
 portrait 192 191 6 6 180 179
 bar 4
 barfill 2
+cityplate 26 9
 pick_banner 28
 pick_card 6
 pick_card_on 13

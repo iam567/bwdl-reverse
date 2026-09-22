@@ -14,8 +14,8 @@ from PIL import Image
 SRC, OUT = sys.argv[1], sys.argv[2]
 os.makedirs(OUT, exist_ok=True)
 TARGET = {'plate': 192, 'btn': 96, 'portrait': 192, 'mapbg': 192,
-          'bar': 40, 'barfill': 24}
-WIDE = ('btn', 'bar', 'barfill')       # 横条按高度缩，别按最长边
+          'bar': 40, 'barfill': 24, 'cityplate': 40}
+WIDE = ('btn', 'bar', 'barfill', 'cityplate')   # 横条按高度缩，别按最长边
 meta = {}
 
 
@@ -68,6 +68,48 @@ def hole(im):
     return l, t, r - l + 1, b - t + 1
 
 
+def wood_settle(im, vertical=False):
+    """从边往里走，走到「板心木色」稳定下来为止，返回走了多少像素。
+
+       匾额两端是挑出去的云纹翘头，中间还夹着一道铜线和一道内阴影；
+       bronze_extent 只认连续的铜色，翘头的暗部一来就断了，量出来是 6（下限）。
+       edge_thickness 找的是「亮转暗」，会停在翘头内部的暗卷纹上。
+       这里反过来判：连着 10 个像素都落在板心亮度的 ±35% 里，才算进了板面。"""
+    px = im.convert('RGB').load(); a = im.split()[3].load()
+    w, h = im.size
+    lum = lambda p: .299 * p[0] + .587 * p[1] + .114 * p[2]
+    if vertical:
+        cx = w // 2
+        mid = [lum(px[cx, y]) for y in range(int(h * .42), int(h * .58))]
+        get = lambda i: (lum(px[cx, i]), a[cx, i]); n = h
+    else:
+        cy = h // 2
+        mid = [lum(px[x, cy]) for x in range(int(w * .42), int(w * .58))]
+        get = lambda i: (lum(px[i, cy]), a[i, cy]); n = w
+    wood = sorted(mid)[len(mid) // 2]
+    lo, hi = wood * .65, wood * 1.35
+    run = 0
+    for i in range(n // 2):
+        v, al = get(i)
+        if al > 128 and lo <= v <= hi:
+            run += 1
+            if run >= 10: return max(2, i - 9)
+        else:
+            run = 0
+    return max(2, n // 8)
+
+
+def bronze_extent(im):
+    """两端的青铜铺首占多宽：中线从左往右扫，最后一个「铜色」(g >= r*0.85 且不透明) 像素的 x。
+       横向九宫格的 border 必须盖住整个铺首，不然拉伸时兽面会被抻长。"""
+    px = im.convert('RGB').load(); a = im.split()[3].load()
+    w, h = im.size; y = h // 2; last = 0
+    for x in range(int(w * .35)):
+        r, g, b = px[x, y]
+        if a[x, y] > 128 and g >= r * .85 and r < 200: last = x
+    # 灰态整张都低饱和，铜色判定会把木面也算进去——铺首再宽也不会超过两成
+    return max(6, min(last + 2, int(w * .2)))
+
 for k, target in TARGET.items():
     f = os.path.join(SRC, 'bui_%s.png' % k)
     if not os.path.exists(f):
@@ -89,6 +131,11 @@ for k, target in TARGET.items():
                    'hole': [hx, hy, hw, hh]}
     elif k == 'mapbg':
         meta[k] = {'w': im.width, 'h': im.height}
+    elif k == 'cityplate':
+        # 匾额两端是挑出去的云纹翘头，横向 border 得把翘头整个盖住（跟出阵按钮的铺首一个道理），
+        # 竖向按铜边量就行。bronze_extent 是从中线扫的，翘头在中线上，量得到。
+        meta[k] = {'w': im.width, 'h': im.height,
+                   'border': wood_settle(im), 'border_y': wood_settle(im, True)}
     elif k == 'barfill':
         # 填充条整条都是亮的，没有「亮转暗」可量。给 2 像素让两头保住自己的边缘。
         meta[k] = {'w': im.width, 'h': im.height, 'border': 2}
@@ -145,16 +192,6 @@ if os.path.exists(pk):
         c.save(os.path.join(OUT, 'ui_%s.png' % k))
         print('%-13s %dx%-4d %s' % (k, c.width, c.height, meta[k]))
 
-def bronze_extent(im):
-    """两端的青铜铺首占多宽：中线从左往右扫，最后一个「铜色」(g >= r*0.85 且不透明) 像素的 x。
-       横向九宫格的 border 必须盖住整个铺首，不然拉伸时兽面会被抻长。"""
-    px = im.convert('RGB').load(); a = im.split()[3].load()
-    w, h = im.size; y = h // 2; last = 0
-    for x in range(int(w * .35)):
-        r, g, b = px[x, y]
-        if a[x, y] > 128 and g >= r * .85 and r < 200: last = x
-    # 灰态整张都低饱和，铜色判定会把木面也算进去——铺首再宽也不会超过两成
-    return max(6, min(last + 2, int(w * .2)))
 
 
 # 出阵按钮：2×2 → 常态 / 按下 / 不可用 / 铜纹分隔条。三态按钮横向九宫格，
