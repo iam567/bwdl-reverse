@@ -1633,12 +1633,15 @@ public class BattleField
             im.raycastTarget = false;
             marks.Add(im.gameObject);
         }
-        // 按行从上往下画：靠下的那支后画，于是它探出格子的头会压在上面那支的名牌上，
-        // 而不是反过来被人家的名牌盖住脸。原先按名册顺序画，谁先谁后全看运气。
+        // 分两遍画。名牌摆在自己格子的下沿，正好落在下一排武将的身上；人物又画得比格子高一截，
+        // 头探进上一排的格子里。一遍画完必然有一方被盖：先画人就压住名牌，先画名牌就盖住脸。
+        //   第一遍：按行从上往下画人（靠下的后画，前后叠压才对）
+        //   第二遍：所有名牌统一盖在最上层
+        // 因为人物往上长了 16 像素，脸已经抬到了格子上方，名牌只会压到下一排的胸口，不碰脸。
         var order = units.FindAll(u => u.Alive);
         order.Sort((p, q) => p.Draw.y != q.Draw.y ? p.Draw.y.CompareTo(q.Draw.y)
                                                   : p.Draw.x.CompareTo(q.Draw.x));
-        foreach (var u in order)                       // 部队
+        foreach (var u in order)                       // 第一遍：人
         {
             float ux = u.Draw.x * CELL, uy = u.Draw.y * CELL;
 
@@ -1692,20 +1695,6 @@ public class BattleField
                 if (sp != null) tr.sprite = sp; else tr.color = new Color(.6f, .3f, .9f, .45f);
                 tr.raycastTarget = false; marks.Add(tr.gameObject);
             }
-            var np = BattleUi.Get("nameplate");
-            if (np != null)
-            {
-                var pl = Node("np", board).gameObject.AddComponent<Image>();
-                Place((RectTransform)pl.transform, ux - 14, uy + CELL, CELL + 28, 16);
-                pl.sprite = np; pl.type = Image.Type.Sliced; pl.raycastTarget = false;
-                marks.Add(pl.gameObject);
-            }
-            var nm = Label(board, u.O.Name + " " + u.O.Troops, 11, Color.white, TextAnchor.MiddleCenter);
-            Place(nm.rectTransform, ux - 14, uy + CELL, CELL + 28, 16);
-            var ol = nm.gameObject.AddComponent<Outline>();     // 压在地形上不描边看不清
-            ol.effectColor = new Color(0, 0, 0, .95f);
-            ol.effectDistance = new Vector2(1.2f, 1.2f);
-            marks.Add(nm.gameObject);
             if (mode == "attack" && sel != null && !u.Ours && Adjacent(sel, u.X, u.Y))
             {
                 var tg = Node("tg", board).gameObject.AddComponent<Image>();
@@ -1723,6 +1712,33 @@ public class BattleField
                 hl.raycastTarget = false;
                 marks.Add(hl.gameObject);
             }
+        }
+
+        foreach (var u in order)                       // 第二遍：名牌一律盖在最上层
+        {
+            float ux = u.Draw.x * CELL, uy = u.Draw.y * CELL;
+            // 原版战棋层不画名字（176×208 的屏放不下，名字只在底部状态行显示），
+            // 这块名牌是我们加的，所以怎么排由我们定。一格才 44 宽，「诸葛亮 1000」怎么摆都塞不下，
+            // 牌子一加宽又会和左右邻居叠在一起。**兵力数从牌上拿掉**——上面那根条已经表示多少兵，
+            // 精确值看情报——只留名字，牌子正好一格宽，横着挨着站也不再互相压。
+            // 素材两端各有 14 像素的铜钉（battleui.txt 的 border），ppuMultiplier 把九宫格的边缩一半。
+            const float NPW = CELL, NPX = 0, NPPAD = 6;
+            var np = BattleUi.Get("nameplate");
+            if (np != null)
+            {
+                var pl = Node("np", board).gameObject.AddComponent<Image>();
+                Place((RectTransform)pl.transform, ux + NPX, uy + CELL, NPW, 16);
+                pl.sprite = np; pl.type = Image.Type.Sliced;
+                pl.pixelsPerUnitMultiplier = 2f; pl.raycastTarget = false;
+                marks.Add(pl.gameObject);
+            }
+            // 三字名（诸葛亮、司马懿…）按 11 号排会顶到铜钉上，缩一号正好
+            var nm = Label(board, u.O.Name, u.O.Name.Length >= 3 ? 10 : 11, Color.white, TextAnchor.MiddleCenter);
+            Place(nm.rectTransform, ux + NPX + NPPAD, uy + CELL, NPW - NPPAD * 2, 16);
+            var ol = nm.gameObject.AddComponent<Outline>();     // 压在地形上不描边看不清
+            ol.effectColor = new Color(0, 0, 0, .95f);
+            ol.effectDistance = new Vector2(1.2f, 1.2f);
+            marks.Add(nm.gameObject);
         }
 
         Place((RectTransform)cursorImg.transform, curX * CELL - 3, curY * CELL - 3, CELL + 6, CELL + 6);
