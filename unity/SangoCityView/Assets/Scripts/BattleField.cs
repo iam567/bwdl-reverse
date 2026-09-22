@@ -198,6 +198,17 @@ public class BattleField
         hintText = Label(top.transform, "", 12, new Color32(0xC8,0xC0,0xA8,255), TextAnchor.MiddleCenter);
         Place(hintText.rectTransform, 12, 46, refW - 40, 18);
 
+        // 顶上那条：暗青铜的云雷纹饰带，横向平铺铺满整屏，匾额压在它上头，
+        // 顺手把顶栏上沿那条黑边填掉。沿用素材自己的高度，别拉伸变形。
+        var bandSp = BattleUi.Get("topband");
+        if (bandSp != null)
+        {
+            var band = Node("topband", Root);
+            Place(band, 0, 0, refW, bandSp.rect.height);
+            var bim = band.gameObject.AddComponent<Image>();
+            bim.sprite = bandSp; bim.type = Image.Type.Tiled; bim.raycastTarget = false;
+        }
+
         // 城名匾额：挂在顶栏上沿，像钉在城门上的那块匾。两端的云纹翘头是九宫格的「角」，
         // 中段跟着字数拉伸——两个字和三个字的城名都能兜住。
         string cn = CityNameNow();

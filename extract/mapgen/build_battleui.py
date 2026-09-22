@@ -14,8 +14,8 @@ from PIL import Image
 SRC, OUT = sys.argv[1], sys.argv[2]
 os.makedirs(OUT, exist_ok=True)
 TARGET = {'plate': 192, 'btn': 96, 'portrait': 192, 'mapbg': 192,
-          'bar': 40, 'barfill': 24, 'cityplate': 40}
-WIDE = ('btn', 'bar', 'barfill', 'cityplate')   # 横条按高度缩，别按最长边
+          'bar': 40, 'barfill': 24, 'cityplate': 40, 'topband': 26}
+WIDE = ('btn', 'bar', 'barfill', 'cityplate', 'topband')   # 横条按高度缩，别按最长边
 meta = {}
 
 
@@ -131,6 +131,10 @@ for k, target in TARGET.items():
                    'hole': [hx, hy, hw, hh]}
     elif k == 'mapbg':
         meta[k] = {'w': im.width, 'h': im.height}
+    elif k == 'topband':
+        # 纹饰带是横向**平铺**用的，不走九宫格：border 写 0，Unity 那边按 Tiled 铺。
+        # 高度缩到 26 之后宽度约 236，顶栏 375 宽正好铺一遍半。
+        meta[k] = {'w': im.width, 'h': im.height, 'border': 0, 'border_y': 0}
     elif k == 'cityplate':
         # 匾额两端是挑出去的云纹翘头，横向 border 得把翘头整个盖住（跟出阵按钮的铺首一个道理），
         # 竖向按铜边量就行。bronze_extent 是从中线扫的，翘头在中线上，量得到。
