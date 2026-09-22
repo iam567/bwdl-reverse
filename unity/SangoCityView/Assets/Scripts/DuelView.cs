@@ -16,13 +16,19 @@ public class DuelView
     readonly bool prizeArmed;          // b.cB：开打那一刻就定了够不够格拿宝物
     /// 劝降成功要把人收过来，交给外面处理
     public System.Action<Officer> OnRecruit;
+    /// 原版 c.z() 把单挑结局折成 b.cc：1 敌将亡 / 2 我将亡 / 3 敌将被擒（招降成功）/ 4 我方被擒（投降）。
+    /// 0 = 没分出，回阵型战接着打。
+    public int Outcome;
+    /// 逃跑成功的是哪一边（0 我方 1 敌方，-1 没人跑）。原版 d(boolean)：
+    /// 逃掉的那一方**全军（含四个兵种令）一律改成「撤退」**。
+    public int FleeSide = -1;
 
     readonly Officer me, foe;
     readonly float refW, refH;
     readonly System.Random rng = new System.Random();
     int myAtk, myDef, foeAtk, foeDef, cc;
     int round = 1;
-    string report = "", over;
+    string over;
 
     Image figMe, figFoe, barMe, barFoe;
     Text hpMe, hpFoe, msgT;
@@ -331,7 +337,6 @@ public class DuelView
     {
         if (over != null) { if (surrendered && OnSurrender != null) OnSurrender(); else OnDone?.Invoke(); return; }
         if (step >= 0) return;                     // 正在演，别插队
-        report = "";
 
         switch (move)
         {
@@ -341,21 +346,21 @@ public class DuelView
                     // 原版这里用帧 11（立枪）配帧 12（平端），而这两个帧号我做新素材时
                     // 挪用成了奔驰的两帧，手上没有那两个姿势。改成演「归顺」这件事本身：
                     // 降将掉头骑到我方一侧，停下后和我方同向站着。
-                    over = "成功招降!"; StartJoin(); OnRecruit?.Invoke(foe); Refresh(); return;
+                    over = "成功招降!"; Outcome = 3; StartJoin(); OnRecruit?.Invoke(foe); Refresh(); return;
                 }
-                report += "招降失败!\n"; break;
+                break;                             // 原版 2090：招降失败就接着打，不另报数
             case 4:                                // 逃跑：走的是单挑胜负那个公式
                 if (BattleRules.Flee(me, foe, rng))
-                { over = "自军成功撤离!"; StartExit(true); Refresh(); return; }
-                report += "撤退失败...\n"; break;
-            case 5: over = "我方投降!"; surrendered = true; StartExit(true); Refresh(); return;
+                { over = "自军成功撤离!"; FleeSide = 0; StartExit(true); Refresh(); return; }
+                break;                             // 原版 2102：撤退失败照样挨这一下
+            case 5: over = "我方投降!"; Outcome = 4; surrendered = true; StartExit(true); Refresh(); return;
             default: queue.Add(Plan(true, move)); break;
         }
 
         if (over == null)
         {
             int m = BattleRules.DuelDecide(foe, me, rng);
-            if (m == 4) { over = "敌方武将逃窜!"; StartExit(false); }
+            if (m == 4) { over = "敌方武将逃窜!"; FleeSide = 1; StartExit(false); }
             else queue.Add(Plan(false, Mathf.Clamp(m, 0, 2)));
         }
         if (queue.Count > 0) { step = 0; stepT = 0; menu.gameObject.SetActive(false); }
@@ -385,12 +390,11 @@ public class DuelView
 
     void Land(Blow b)
     {
-        report += b.Line + "\n";
         var o = b.Mine ? me : foe;
         if (b.SelfHurt)                            // 「全力」落空：自伤
         {
             o.Hp = Mathf.Max(0, o.Hp + b.Dmg);
-            if (o.Hp == 0) over = (b.Mine ? me.Name : foe.Name) + "战亡沙场.";
+            if (o.Hp == 0) { over = (b.Mine ? me.Name : foe.Name) + "战亡沙场."; Outcome = b.Mine ? 2 : 1; }
             return;
         }
         if (b.Dmg == 0) return;
@@ -399,6 +403,7 @@ public class DuelView
         if (tgt.Hp == 0)
         {
             over = (b.Mine ? foe.Name : me.Name) + "战亡沙场.";
+            Outcome = b.Mine ? 1 : 2;
             // 原版 c.java 2023：我方把敌将打死那一下才调 b.af() 发宝物
             if (b.Mine && prizeArmed)
             {

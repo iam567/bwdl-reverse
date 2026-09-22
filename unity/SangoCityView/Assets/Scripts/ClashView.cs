@@ -16,7 +16,7 @@ public class ClashView
     public System.Action OnDuel;                  // 双方武将碰上了
     public int Scene => scene;
 
-    readonly float refW, refH;
+    float refW, refH;
     readonly Officer me, foe;
     readonly bool siege, weAttack;
     readonly int scene;                            // 0 平原 1 水 2 山林 3 攻城
@@ -52,6 +52,23 @@ public class ClashView
         var bg = Node("bg", Root).gameObject.AddComponent<Image>();
         Fill((RectTransform)bg.transform); bg.color = new Color(.04f, .04f, .05f, 1);
         BuildPick();
+    }
+
+    /// 桌面窗口被拖动改了大小：把这一屏整个重搭。兵棋、令、回合这些状态都在字段里，
+    /// 只有画面节点要重建；阵型还没选就退回选择屏，选完了就重搭战场。
+    public void Relayout(float w, float h)
+    {
+        if (Mathf.Abs(w - refW) < .5f && Mathf.Abs(h - refH) < .5f) return;
+        refW = w; refH = h;
+        bool started = mine != null;
+        CloseCmd();
+        var parent = (RectTransform)Root.parent;
+        Object.Destroy(Root.gameObject);
+        Root = Node("Clash", parent); Fill(Root);
+        var bg2 = Node("bg", Root).gameObject.AddComponent<Image>();
+        Fill((RectTransform)bg2.transform); bg2.color = new Color(.04f, .04f, .05f, 1);
+        mapRoot = null; mapView = null; tmp.Clear(); mapTmp.Clear();
+        if (started) { BuildField(); Redraw(); } else BuildPick();
     }
 
     // 底图与量出来的尺寸都在 BattleUi 里，单挑那屏也要用。
@@ -263,6 +280,20 @@ public class ClashView
     public void FinishForTest() { Finish(); }
     /// 单挑里投降：原版 b.b(s,true) 置 aq=2，整场阵型战到此为止
     public void Surrender() { Cc = 4; over = me.Name + " 投降"; Finish(); }
+    /// 单挑回来：原版 c.z() 把结局折成 b.cc（1 敌将亡 / 2 我将亡 / 3 敌将被擒 / 4 我方被擒），
+    /// cc 一落定这一场阵型战就到此为止；0 就是没分出，回来接着打。
+    public void AfterDuel(int outcome, int fleeSide)
+    {
+        if (fleeSide >= 0) SetAllOrders(fleeSide, 2);     // b.d(boolean)：逃掉的那一方全军改撤退令
+        if (outcome == 0) return;
+        Cc = outcome; over = CcText(); Finish();
+    }
+    /// b.d(boolean)：把一方四个兵种的令一律改成某一条（逃跑成功之后改「撤退」）
+    public void SetAllOrders(int side, int order)
+    {
+        if (side == 0) { for (int i = 0; i < 4; i++) orders[i] = order; }
+        else           { for (int i = 0; i < 4; i++) enemyOrders[i] = order; }
+    }
     /// 自检：把我方四枚兵棋挪到敌将四周、把他打成残血，看围捕判定
     public void SurroundForTest()
     {

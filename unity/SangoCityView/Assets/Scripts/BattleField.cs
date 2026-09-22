@@ -891,6 +891,7 @@ public class BattleField
     readonly int[] supply0;
     bool over, captured, retreating;
     string endMsg;                         // 逐将撤完之后报哪一句
+    bool loseCityAfterRetreat;
     readonly Queue<Unit> retreatQ = new Queue<Unit>();
     RectTransform overPop;
     int AliveCount(bool ours) { int n = 0; foreach (var u in units) if (u.Ours == ours && u.Alive) n++; return n; }
@@ -898,8 +899,16 @@ public class BattleField
     {
         if (over || retreating) return;
         string cn = BattleRules.CityName(Path.Combine(BattleGame.BattleDir, "city-adjacency.json"), cityId);
-        if (AliveCount(false) == 0) ShowOver(WeAttack ? "我军攻占了 " + cn + "!" : "敌军攻打 " + cn + " 失败了!");
-        else if (AliveCount(true) == 0) ShowOver(WeAttack ? "我军攻打 " + cn + " 失败了!" : "敌军占领了 " + cn + "!");
+        if (AliveCount(false) == 0)
+        {
+            if (WeAttack) SettleCity(true, "我军攻占了 " + cn + "!");     // 攻方全歼守军 → L()
+            else ShowOver("敌军攻打 " + cn + " 失败了!");                 // 守住了，城本来就是我方的
+        }
+        else if (AliveCount(true) == 0)
+        {
+            if (WeAttack) ShowOver("我军攻打 " + cn + " 失败了!");
+            else SettleCity(false, "敌军占领了 " + cn + "!");              // 我方守军打光 → D()
+        }
     }
     void ShowOver(string msg)
     {
@@ -916,10 +925,7 @@ public class BattleField
     /// 敌军踩上城池格：城易主，我方余将一个一个选退路
     void Captured()
     {
-        captured = true; enemyTurn = false; plans = null;
-        cityRuler.TryGetValue(cityId, out int old);
-        int foeRuler = 0; foreach (var u in units) if (!u.Ours && u.Alive && rulerIds.Contains(u.O.Id)) foeRuler = u.O.Id;
-        cityRuler[cityId] = foeRuler != 0 ? foeRuler : old;                           // 谁来占的就归谁；演示里认不出主公就不改
+        captured = true; enemyTurn = false; plans = null;   // 城的归属等余将撤完了由 SettleCity 一并办
         ForceRetreatAll("敌军占领我方城池!", "敌军占领了 " + CityNameNow() + "!");      // W == 21
     }
     string CityNameNow() => BattleRules.CityName(Path.Combine(BattleGame.BattleDir, "city-adjacency.json"), cityId);
@@ -927,6 +933,7 @@ public class BattleField
     void ForceRetreatAll(string reason, string end)
     {
         retreating = true; enemyTurn = false; plans = null; endMsg = end;
+        loseCityAfterRetreat = !WeAttack || captured;     // 我方是守方、或城已被踩：人走光了城就归对面
         sel = null; mode = ""; reach.Clear();
         CloseAsk(); CloseInfo(); ClosePlotMenu();
         hintText.text = reason;
@@ -945,6 +952,7 @@ public class BattleField
             return;
         }
         retreating = false;
+        if (loseCityAfterRetreat) { loseCityAfterRetreat = false; SettleCity(false, endMsg); return; }
         ShowOver(endMsg ?? "敌军占领了 " + CityNameNow() + "!");
     }
     void AfterRetreat() { if (retreating) NextRetreat(); }
@@ -1052,13 +1060,43 @@ public class BattleField
             }
         return new Vector2Int(x, y);
     }
-    /// 敌方主将倒了：W=5 → L()，城归我方
-    void TakeCity()
+    /// 原版 L() + K()：城易主的善后。
+    ///   L()：城主改成得城一方的主公、太守 j[城] 记成他家第一员；原势力城数 −1、得城方 +1，
+    ///        原势力归零 → bG = 4（势力灭亡）。势力的城数组我们没有，只改城主和太守。
+    ///   K() 3322：守军**第一个撤走的把城库里的金粮一起带走**，但只在 bl 为假时——
+    ///        也就是守将还活着、而且真有城可退；守将倒了或无城可退，金粮就留给了攻方。
+    ///   K() 3262：活着的部队进城，算这座城的驻军 r[城]。
+    void SettleCity(bool oursTakes, string msg)
     {
         LoadCityData();
-        int r = OurRuler(); if (r > 0) cityRuler[cityId] = r;
-        ShowOver("敌方全军逃窜! 我军攻占了 " + CityNameNow() + "!");
+        bool kept;                                       // 守方把库里的金粮带走了没有
+        if (oursTakes)
+        {
+            int r = OurRuler(); if (r > 0) cityRuler[cityId] = r;
+            var c0 = OurCommander0(); governorId = c0 != null ? c0.O.Id : 0;
+            kept = AliveCount(false) > 0 && EnemyCanRetreat();
+            if (!kept) { supply[0] += supply[2]; supply[1] += supply[3]; }
+            supply[2] = supply[3] = 0;
+            cityCount[cityId] = Mathf.Max(1, AliveCount(true));
+        }
+        else
+        {
+            int foeRuler = 0;
+            foreach (var u in units) if (!u.Ours && u.Alive && rulerIds.Contains(u.O.Id)) foeRuler = u.O.Id;
+            if (foeRuler != 0) cityRuler[cityId] = foeRuler;
+            var f0 = FoeCommander0(); governorId = f0 != null ? f0.O.Id : 0;
+            kept = AliveCount(true) > 0 && RetreatCities().Count > 0;
+            if (!kept) { supply[2] += supply[0]; supply[3] += supply[1]; }
+            supply[0] = supply[1] = 0;
+            cityCount[cityId] = Mathf.Max(1, AliveCount(false));
+        }
+        RefreshTop();
+        ShowOver(msg + (kept ? "  (守军带走了库中金粮)"
+                             : "  入库 金 " + (oursTakes ? supply[0] : supply[2])
+                               + " 粮 " + (oursTakes ? supply[1] : supply[3])));
     }
+    int governorId;                                      // j[城]：这座城的太守
+    void TakeCity() => SettleCity(true, "敌方全军逃窜! 我军攻占了 " + CityNameNow() + "!");
 
     void EndDay()
     {

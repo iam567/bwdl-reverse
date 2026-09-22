@@ -63,7 +63,11 @@ public class BattleGame : MonoBehaviour
         if (Screen.width != lastW || Screen.height != lastH)
         {
             ApplyScale();
-            if (clash == null && duel == null) field?.Relayout(refW, refH);
+            if (duel == null)                        // 单挑是一段短动画，演完回阵型战自然就是新尺寸
+            {
+                if (clash != null) clash.Relayout(refW, refH);
+                else field?.Relayout(refW, refH);
+            }
         }
         duel?.Tick(); if (duel == null) clash?.Tick(); if (clash == null && duel == null) { field?.Tick(); field?.PlotPopTick(); }
     }
@@ -313,8 +317,10 @@ public class BattleGame : MonoBehaviour
                 duel = new DuelView(root, me.O, foe.O, clash.Scene, refW, refH, ThemeOf(CITY), CITY);
                 duel.OnDone = () =>
                 {
+                    int oc = duel.Outcome, fs = duel.FleeSide;
                     Object.Destroy(duel.Root.gameObject); duel = null;
                     clash.Root.gameObject.SetActive(true);   // 单挑打完回阵型战接着打
+                    clash.AfterDuel(oc, fs);                 // 有结局就把这一场也收了（原版 c.z()）
                 };
                 // 投降：原版 b.b(s,true) 置 aq=2 整场结束、主将 bu=2 退出，其余部队逐一选城撤退。
                 // 我们改成：整场结束，回战棋层，给投降的这支部队弹「退往何处」（城 / 下野），记 HOUSE_RULES。
