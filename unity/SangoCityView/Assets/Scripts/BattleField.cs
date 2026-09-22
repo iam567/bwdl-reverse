@@ -893,11 +893,12 @@ public class BattleField
         // 下半：五项属性做成条——槽 + 染色填充，数字压在槽里右端
         // 经验这一行的条画的是「本级已走了多少」，不是 0..30000——
         // 满级 30000 的条上，一级的跨度只有几个像素，看不出进度。
-        int expFloor = BattleRules.ExpFloor(o.Exp), expNext = BattleRules.ExpToNext(o.Exp);
+        int expFloor = BattleRules.ExpFloor(o.Lv), expNext = BattleRules.ExpToNext(o.Exp, o.Lv);
         string[] tags = { "武", "智", "体", "德", "忠", "经" };
-        int[] vals = { o.Might, o.Int, o.Hp, o.Virtue, o.Loyal, o.Exp - expFloor };
+        int[] vals = { o.Might, o.Int, o.Hp, o.Virtue, o.Loyal,
+                       expNext > 0 ? o.Exp - expFloor : 1 };               // 满级条拉满
         int[] maxs = { 100, 100, Mathf.Max(o.HpMax, 1), 100, 100,
-                       Mathf.Max(1, expNext > 0 ? o.Exp - expFloor + expNext : 1) };
+                       expNext > 0 ? Mathf.Max(1, o.Exp - expFloor + expNext) : 1 };
         Color[] cols = { new Color(1f, .45f, .35f), new Color(.45f, .7f, 1f), new Color(.5f, .9f, .5f),
                          new Color(1f, .85f, .45f), new Color(.85f, .6f, 1f), new Color(1f, .72f, .30f) };
         float y0 = ay + ah + 20; const float BW = 206f, BH = 20f, ROW = 32f;

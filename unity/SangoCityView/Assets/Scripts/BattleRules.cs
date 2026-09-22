@@ -509,18 +509,18 @@ public static class BattleRules
         for (int i = 0; i < ExpTier.Length; i++) if (exp < ExpTier[i]) return i + 1;
         return 8;
     }
+    // 下面两个按**武将当前的 Lv** 取档，不拿经验反推。
+    // 两者平时一致，只有侯成一个例外：原版数据给他 Lv1，经验却正好是 2000
+    // （已经够 Lv2 的线）。原版读档只照搬数据里的 Lv，要等他第一次拿到经验、
+    // f() 跑起来才会跳到 Lv2，所以开局他确实是 Lv1。
+    // 这时候拿经验反推会写成「升级还差 2000」，其实差 1 点。
+
     /// 升到下一级还差多少经验；已经满级返回 0
-    public static int ExpToNext(int exp)
-    {
-        int lv = LevelOf(exp);
-        return lv >= 8 ? 0 : ExpTier[lv - 1] - exp;
-    }
+    public static int ExpToNext(int exp, int lv)
+        => lv >= 8 ? 0 : Mathf.Max(1, ExpTier[Mathf.Clamp(lv, 1, 7) - 1] - exp);
     /// 这一级的起点经验（画进度条用）
-    public static int ExpFloor(int exp)
-    {
-        int lv = LevelOf(exp);
-        return lv <= 1 ? 0 : ExpTier[lv - 2];
-    }
+    public static int ExpFloor(int lv)
+        => lv <= 1 ? 0 : ExpTier[Mathf.Clamp(lv, 2, 8) - 2];
 
     /// 给经验并按档位升级。返回是不是升了。
     /// 原版三处都是这个写法：Q[施加方] += 对方掉的兵，然后 f()。
