@@ -25,6 +25,9 @@ public class Officer
     public int ArmLv;       // R[]  兵种×等级 0–23
     public int SubLv;       // S[]  副属性 24–31
     public int City;        // U[]  所在城市，0 = 不登场
+    public int Year;        // T[]  登场年份。b.java:7228 只收 189（中平六年）这一批，
+                            //      190~193 的要到后面年份才出场，202 以上是管辂南斗这类特殊角色
+    public bool Serving;    // 第 15 列：1 = 仕官（进城池的 A[]），0 = 在野（进 B[]，得靠搜索）
 }
 
 public static class BattleRules
@@ -619,7 +622,7 @@ public static class BattleRules
                 // 不乘的话 228 人里有 186 人的等级和数据对不上；乘了只差侯成一个
                 // （他的经验正好卡在 2000 这个档位线上，原版也是照数据里的 Lv 走，只升不降）。
                 Virtue = I(8), Loyal = I(9), Exp = Mathf.Min(I(10) * 100, 30000), ArmLv = I(11), SubLv = I(12),
-                City = I(14),
+                Year = I(13), City = I(14), Serving = I(15) == 1,
             };
             StartLevelHouseRule(o);
             if (o.Id > 0) d[o.Id] = o;

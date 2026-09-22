@@ -26,6 +26,8 @@ public class CityView
     Image popBg; Transform popCmds;
     Text hName, hTier, hOwner, hTok;
     RectTransform statGrid; Sprite panelSprite, plaqueSprite, btnSprite;
+    public Sprite PanelSprite => panelSprite;
+    public Sprite BtnSprite => btnSprite;
     readonly Dictionary<string,Texture2D> hlCache = new();
     readonly Dictionary<string,(Image plate,Text nm,Text fn)> plaques = new();
     string cur; float f; float screenW, screenH;
@@ -131,11 +133,22 @@ public class CityView
         st = s;
         hName.text = s.name; hTier.text = s.tierName;
         hOwner.text = "◼ " + Ruler(s.owner); hTok.text = s.令牌.ToString();
+        Refresh();
+        Select(null);
+        Root.gameObject.SetActive(true);
+    }
+
+    /// 内政改完数值就地重画。字段名沿用 map.json 的，显示用原版的叫法：
+    /// 治安→统治 k[]、商业→工业 o[]、治水→防灾 q[]。
+    public void Refresh()
+    {
+        var s = st;
+        if (s == null) return;
         foreach (Transform t in statGrid) Object.Destroy(t.gameObject);
         string[,] rows = {{"君主",s.ruler},{"太守",s.governor},{"武将",s.武将.ToString()},
-            {"人口",Wan(s.人口)},{"兵力",Wan(s.兵力)},{"治安",s.治安.ToString()},
-            {"农业",s.农业.ToString()},{"商业",s.商业.ToString()},{"治水",s.治水.ToString()},
-            {"黄金",s.黄金.ToString()},{"粮草",s.粮草.ToString()},{"规模",s.tierName}};
+            {"人口",Wan(s.人口)},{"兵力",Wan(s.兵力)},{"统治",s.治安.ToString()},
+            {"农业",s.农业.ToString()},{"工业",s.商业.ToString()},{"防灾",s.治水.ToString()},
+            {"金子",s.黄金.ToString()},{"粮食",s.粮草.ToString()},{"规模",s.tierName}};
         float W = statGrid.sizeDelta.x, cw = (W-22)/3f, rh = (145-22)/4f;
         for (int i = 0; i < 12; i++)
         {
@@ -144,8 +157,6 @@ public class CityView
             Place(Label(cell,rows[i,0],11,new Color32(0x6B,0x52,0x30,255),TextAnchor.MiddleRight,FontStyle.Bold).rectTransform,0,0,cw*.42f,rh);
             Place(Label(cell,rows[i,1],15,new Color32(0x2E,0x21,0x10,255),TextAnchor.MiddleLeft,FontStyle.Bold).rectTransform,cw*.47f,0,cw*.53f,rh);
         }
-        Select(null);
-        Root.gameObject.SetActive(true);
     }
 
     public void Update()
