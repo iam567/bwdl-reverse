@@ -51,7 +51,7 @@
 
 **战斗层**（`BattleField.cs` 战棋层 / `ClashView.cs` 阵型战 / `DuelView.cs` 单挑）
 
-全部照原版 `b.java` / `c.java` 逐行移植：战棋层玩家逐格走（`c.java 5180` O/P/Q/R，`b.h` 地形消耗）、
+全部照原版 `b.java` / `c.java` 逐行移植：战棋层玩家移动按 `b.h` 地形消耗亮可达范围（原版是方向键逐格走，触屏改法见 HOUSE_RULES）、
 敌军回合贪心寻路（`b.a` 3436，每轮只走第一步）、阵型战四种令（前进 `l()`/待机/撤退/包围，敌方镜像 `t()`）、
 敌方兵种令按 `h(cG)` 每轮刷新。16 种计策、情报、撤退、村庄、投降都接上了。
 自检：`SangoBattle -shots <dir> -skipduel`；加 `-trace` 把阵型战每一步写进 Player.log。

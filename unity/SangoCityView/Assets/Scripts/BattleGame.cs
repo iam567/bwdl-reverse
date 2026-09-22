@@ -59,9 +59,8 @@ public class BattleGame : MonoBehaviour
         Directory.CreateDirectory(dir);
         yield return Shot(dir, "1_战棋层");
 
-        var mv = FindUnit(true);                   // 按「移动」点远处一格：照原版贪心路一格一格走过去，扣机动力
-        field.MoveForTest(mv, mv.X + 4, mv.Y + 2);
-        yield return Shot(dir, "1b_移动");
+        field.MoveForTest(FindUnit(true));        // 按「移动」：亮出按原版消耗算出来的可达范围
+        yield return Shot(dir, "1b_移动范围");
 
         // 把我方一支挪到敌方旁边，直接触发攻击，省得模拟点击
         var me = FindUnit(true); var foe = FindUnit(false);

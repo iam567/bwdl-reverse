@@ -245,8 +245,8 @@ public class BattleField
     public void AskYesForTest() { var b = askPop != null ? askPop.Find("b是") : null; b?.GetComponent<Button>().onClick.Invoke(); }
     public void RetreatMenuForTest(Unit u) { CloseInfo(); sel = u; mode = ""; OpenRetreatMenu(); Refresh(); }
     public void InfoForTest(Unit u, Unit tgt) { ClosePlotPop(); sel = u; mode = "info"; ShowInfo(tgt); Refresh(); }   // 先收上一步的计策弹框
-    /// 自检：按「移动」再点一格（相邻 = 走一步；远处 = 照原版贪心路连着走），留在移动态好看四邻的高亮
-    public void MoveForTest(Unit u, int x, int y) { CloseAsk(); sel = u; mode = "move"; ComputeSteps(); MoveTap(x, y); curX = u.X; curY = u.Y; Refresh(); }
+    /// 自检：按「移动」，亮出可达范围
+    public void MoveForTest(Unit u) { CloseAsk(); sel = u; mode = "move"; ComputeReach(); curX = u.X; curY = u.Y; Refresh(); }
     public void CommandForTest(Unit u, int k) { sel = u; mode = ""; Command(k); CenterOn(u.X, u.Y); curX = u.X; curY = u.Y; Refresh(); }
 
     // ── 素材 ───────────────────────────────────────────────────────────
@@ -309,11 +309,7 @@ public class BattleField
 
         var here = At(x, y);
         if (mode == "plot" && sel != null) { DoPlot(x, y); }
-        else if (mode == "move" && sel != null)
-        {
-            if (here != null && here.Ours && here != sel) { EndMove(); sel = here; }   // 换人 = 先确定
-            else MoveTap(x, y);
-        }
+        else if (mode == "move" && sel != null && reach.Contains(y * W + x)) { DoMove(x, y); }
         else if (mode == "attack" && sel != null && here != null && !here.Ours && Adjacent(sel, x, y)) { DoAttack(here); }
         else if (mode == "info" && here != null) { ShowInfo(here); }
         else if (here != null && here.Ours && here.Trapped == 0) { sel = here; mode = ""; }   // 原版 4631：只过滤 bu 状态，没有"已行动"锁
@@ -328,7 +324,7 @@ public class BattleField
         switch (i)
         {
             case 0:                                  // 移动
-                mode = "move"; ComputeSteps(); break;
+                mode = "move"; ComputeReach(); break;
             case 1:                                  // 计策：原版 b.d(X) 算出可用几种，弹单选
                 mode = ""; OpenPlotMenu(); break;
             case 2:                                  // 攻击
@@ -1022,57 +1018,49 @@ public class BattleField
     }
 
     // ── 计算 ───────────────────────────────────────────────────────────
-    // ── 移动：原版 c.java 5180-5262 O/P/Q/R —— 方向键按一下走一格 ──
-    //   那格 f()==0（没站人）且 h(格,兵种) ≤ 机动力 → 扣掉、挪过去。原版没有"可达范围"，也没有一次走多格；
-    //   走完按确定（E()）：落到建筑格问要不要进村，然后菜单回来，机动力还有就还能再动（同一将也行）。
-    //   触屏没有方向键：点相邻格 = 按一下方向键；点远处的格 = 连着按，顺序照原版 AI 寻路 b.a() 那套
-    //   （先走长轴、横向被挡改纵向、最多 16 步），走到机动力不够或被挡为止；点武将自己 = 确定。
+    // ── 移动 ──
+    //   原版 c.java 5180-5262 O/P/Q/R：方向键按一下走一格，那格没人且 h(格,兵种) ≤ 机动力才走，
+    //   按确定 E() 收尾（落到建筑格问进村），机动力还剩就还能再动。
+    //   iPhone 没方向键，一格一格点太累，所以把"方向键能走到的所有格"一次算出来亮给玩家：
+    //   规则还是原版的（每格 b.h 消耗、有人的格过不去、总消耗 ≤ 机动力），点哪格就按最省的路走过去扣机动力。
     static readonly int[] DX = { 0, 0, -1, 1 }, DY = { -1, 1, 0, 0 };   // 0 上 1 下 2 左 3 右
-    void ComputeSteps()
+    readonly Dictionary<int, int> costTo = new Dictionary<int, int>();
+    void ComputeReach()
     {
-        reach.Clear();
-        for (int d = 0; d < 4; d++)
+        reach.Clear(); costTo.Clear();
+        var q = new Queue<int>();
+        int s = sel.Y * W + sel.X;
+        costTo[s] = 0; q.Enqueue(s);
+        while (q.Count > 0)
         {
-            int nx = sel.X + DX[d], ny = sel.Y + DY[d];
-            if (CanStep(sel, nx, ny)) reach.Add(ny * W + nx);
+            int cur = q.Dequeue(); int cx = cur % W, cy = cur / W, cc = costTo[cur];
+            for (int d = 0; d < 4; d++)
+            {
+                int nx = cx + DX[d], ny = cy + DY[d];
+                if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+                int nc = cc + StepCost(sel, nx, ny);
+                if (nc > mp) continue;
+                int key = ny * W + nx;
+                if (costTo.TryGetValue(key, out var old) && old <= nc) continue;
+                costTo[key] = nc; reach.Add(key); q.Enqueue(key);
+            }
         }
-        hintText.text = "武将移动 · 点相邻格走一步，点自己确定 · 机动力 " + mp;
+        reach.Remove(s);
+        hintText.text = "武将移动 · 亮格可达 · 机动力 " + mp;
     }
     /// b.h(格,兵种)：有人站着算 100（走不了）
     int StepCost(Unit u, int nx, int ny) => At(nx, ny) != null ? 100 : BattleRules.MoveCost(grid[ny, nx] & 0xF, u.O.Kind);
-    bool CanStep(Unit u, int nx, int ny) =>
-        nx >= 0 && ny >= 0 && nx < W && ny < H && StepCost(u, nx, ny) <= mp;
-    bool StepTo(Unit u, int nx, int ny)
+    void DoMove(int x, int y)
     {
-        if (!CanStep(u, nx, ny)) return false;
-        mp -= StepCost(u, nx, ny); moved = true;
-        u.Dir = nx != u.X ? "e" : (ny > u.Y ? "s" : "n");
-        u.Flip = nx < u.X;
-        u.X = nx; u.Y = ny;
-        return true;
-    }
-    void MoveTap(int x, int y)
-    {
-        if (x == sel.X && y == sel.Y) { EndMove(); return; }
-        if (Adjacent(sel, x, y))
-        {
-            if (!StepTo(sel, x, y))
-            {
-                hintText.text = At(x, y) != null ? "那格有人" : "机动力不足";
-                Refresh(); return;
-            }
-        }
-        else
-        {
-            int n = 0;
-            foreach (int d in GreedyPath(sel.X, sel.Y, x, y, At(x, y) != null))
-            {
-                if (!StepTo(sel, sel.X + DX[d], sel.Y + DY[d])) break;
-                n++;
-            }
-            if (n == 0) { hintText.text = "走不过去"; Refresh(); return; }
-        }
-        ComputeSteps(); CenterOn(sel.X, sel.Y);
+        int cost = costTo.TryGetValue(y * W + x, out var c) ? c : 0;
+        mp -= cost;
+        int dx = x - sel.X, dy = y - sel.Y;
+        sel.Dir = Mathf.Abs(dx) > Mathf.Abs(dy) ? "e" : (dy > 0 ? "s" : "n");
+        sel.Flip = dx < 0;
+        sel.X = x; sel.Y = y;
+        CenterOn(x, y);
+        moved = true; EndMove();
+        hintText.text = "移动消耗 " + cost + " 点 · 机动力 " + mp;
     }
     /// 原版 E()：确定。落到建筑格问「是否进入村庄?」，回到「选择武将下命令」
     bool moved;
