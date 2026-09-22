@@ -361,6 +361,6 @@ public class BattleGame : MonoBehaviour
     static Officer Clone(Officer o) => new Officer {
         Id = o.Id, Name = o.Name, Lv = o.Lv, Kind = o.Kind, Troops = o.Troops,
         HpMax = o.HpMax, Hp = o.Hp, Int = o.Int, Might = o.Might, Virtue = o.Virtue,
-        Loyal = o.Loyal, Plots = o.Plots, ArmLv = o.ArmLv, SubLv = o.SubLv,
+        Loyal = o.Loyal, Exp = o.Exp, ArmLv = o.ArmLv, SubLv = o.SubLv,
     };
 }

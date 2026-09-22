@@ -687,7 +687,9 @@ public class BattleField
         var r = BattleRules.PlotRoll(plot, sel.O, tgt.O, supply[3], rng);
         mp -= cost;                                                            // 成不成都扣（原版 4939）
         string msg = r.Ok ? BattleRules.PlotMessage(plot, r) : "计策实施失败!";
+        int before = tgt.O.Troops;                                             // 原版 4931 先记下目标兵力
         if (r.Ok) ApplyPlot(plot, r, tgt);
+        BattleRules.GainExp(sel.O, before - tgt.O.Troops);                     // 4934：差额进施计者的经验，再 f() 升级
         hintText.text = sel.O.Name + " 对 " + tgt.O.Name + " 使用计策: " + BattleRules.PlotName[plot];
         ShowPlotPop(plot, msg, sel, tgt);                                      // 原版 P 在 roll 之前就置 true：失败也弹图
         sel.Acted = true; sel = null;
@@ -845,13 +847,21 @@ public class BattleField
         CloseInfo(); mode = "";
         hintText.text = "武将信息";
         var o = u.O;
-        float w = 340, h = 482;                       // 卡牌整张立在左上，属性条在下
+        float w = 340, h = 514;                       // 卡牌整张立在左上，属性条在下（经验多占一行）
         infoPop = Node("info", Root);
         Place(infoPop, (refW - w) / 2, (refH - h) / 2 - 36, w, h);
         var bg = Panel(infoPop, "bg", BattleUi.PlateSp()); Fill((RectTransform)bg.transform);
         bg.raycastTarget = true;
         var bt = infoPop.gameObject.AddComponent<Button>(); bt.transition = Selectable.Transition.None;
         bt.onClick.AddListener(() => { CloseInfo(); Refresh(); });
+        // 点卡面任何地方都能收，但没人一眼看得出来，右上角再放一个明的关闭键
+        var cb = Node("close", infoPop).gameObject.AddComponent<Image>();
+        Place((RectTransform)cb.transform, w - 40, 8, 32, 32);
+        cb.sprite = BattleUi.BtnSp(); cb.type = Image.Type.Sliced; cb.raycastTarget = true;
+        var cl = Label(infoPop, "×", 22, new Color32(0xF0,0xC8,0x70,255), TextAnchor.MiddleCenter, FontStyle.Bold);
+        Place(cl.rectTransform, w - 40, 6, 32, 32);
+        var cbt = cb.gameObject.AddComponent<Button>(); cbt.transition = Selectable.Transition.None;
+        cbt.onClick.AddListener(() => { CloseInfo(); Refresh(); });
 
         // 上半：整张卡牌不裁，立在左边（150×225，1024×1536 的比例），錾金框套在卡外；
         // 右边是名、LV、兵种、兵力。原来 cover 裁上半身，看不全。
@@ -881,13 +891,18 @@ public class BattleField
         }
 
         // 下半：五项属性做成条——槽 + 染色填充，数字压在槽里右端
-        string[] tags = { "武", "智", "体", "德", "忠" };
-        int[] vals = { o.Might, o.Int, o.Hp, o.Virtue, o.Loyal };
-        int[] maxs = { 100, 100, Mathf.Max(o.HpMax, 1), 100, 100 };
-        Color[] cols = { new Color(1f, .45f, .35f), new Color(.45f, .7f, 1f), new Color(.5f, .9f, .5f), new Color(1f, .85f, .45f), new Color(.85f, .6f, 1f) };
+        // 经验这一行的条画的是「本级已走了多少」，不是 0..30000——
+        // 满级 30000 的条上，一级的跨度只有几个像素，看不出进度。
+        int expFloor = BattleRules.ExpFloor(o.Exp), expNext = BattleRules.ExpToNext(o.Exp);
+        string[] tags = { "武", "智", "体", "德", "忠", "经" };
+        int[] vals = { o.Might, o.Int, o.Hp, o.Virtue, o.Loyal, o.Exp - expFloor };
+        int[] maxs = { 100, 100, Mathf.Max(o.HpMax, 1), 100, 100,
+                       Mathf.Max(1, expNext > 0 ? o.Exp - expFloor + expNext : 1) };
+        Color[] cols = { new Color(1f, .45f, .35f), new Color(.45f, .7f, 1f), new Color(.5f, .9f, .5f),
+                         new Color(1f, .85f, .45f), new Color(.85f, .6f, 1f), new Color(1f, .72f, .30f) };
         float y0 = ay + ah + 20; const float BW = 206f, BH = 20f, ROW = 32f;
         var gm = BattleUi.Metric("bar"); float pad = gm != null && gm.Length > 0 ? Mathf.Max(2, gm[0] * .6f) : 3f;
-        for (int r = 0; r < 5; r++)
+        for (int r = 0; r < 6; r++)
         {
             float yy = y0 + r * ROW;
             var tag = Node("tg", infoPop).gameObject.AddComponent<Image>();
@@ -903,12 +918,15 @@ public class BattleField
             Place((RectTransform)fill.transform, bx + pad, yy + pad, (BW - pad * 2) * frac, BH - pad * 2);
             var fs = BattleUi.Get("barfill"); if (fs != null) { fill.sprite = fs; fill.type = Image.Type.Sliced; }
             fill.color = cols[r]; fill.raycastTarget = false;
-            var vt = Label(infoPop, vals[r].ToString() + (r == 2 ? "/" + o.HpMax : ""), 14, Color.white, TextAnchor.MiddleRight);
+            string vs2 = r == 2 ? o.Hp + "/" + o.HpMax
+                       : r == 5 ? (expNext > 0 ? o.Exp + "   升级还差 " + expNext : o.Exp + "   已满级")
+                       : vals[r].ToString();
+            var vt = Label(infoPop, vs2, 14, Color.white, TextAnchor.MiddleRight);
             Place(vt.rectTransform, bx, yy, BW - 8, BH);
             var vs = vt.gameObject.AddComponent<Shadow>(); vs.effectColor = new Color(0, 0, 0, .9f); vs.effectDistance = new Vector2(1, -1);
         }
         // 武器 / 防具
-        float ey = y0 + 5 * ROW + 6;
+        float ey = y0 + 6 * ROW + 6;
         string[][] eq = { new[] { "武器", BattleRules.WeaponOf(o) }, new[] { "防具", BattleRules.ArmorOf(o) } };
         for (int i = 0; i < 2; i++)
         {
@@ -1086,8 +1104,8 @@ public class BattleField
 
     public void AfterClash(Unit ours, Unit foe, int cc, int killed, int lost)
     {
-        BattleRules.GainPlots(ours.O, killed);                      // b.aa() → f()：歼敌数进 Q[]，够档位就升 Lv
-        BattleRules.GainPlots(foe.O, lost);
+        BattleRules.GainExp(ours.O, killed);                        // b.aa() 5463 → f()：对方掉的兵进 Q[]，够档位就升 Lv
+        BattleRules.GainExp(foe.O, lost);
         var ourCmd = OurCommander0(); var foeCmd = FoeCommander0();
         string msg = null;
         switch (cc)
@@ -1447,7 +1465,10 @@ public class BattleField
                 enemyMp -= BattleRules.CostOfPlot(plot);
                 var r = BattleRules.PlotRoll(plot, e.O, t.O, supply[1], rng);
                 string msg = r.Ok ? BattleRules.PlotMessage(plot, r) : "计策失败！";
+                int before = t.O.Troops;                                       // 原版 3727
                 if (r.Ok) ApplyPlot(plot, r, t, false);
+                BattleRules.GainExp(e.O, before - t.O.Troops);                 // 3730
+
                 hintText.text = e.O.Name + " 对 " + t.O.Name + " 使用计策: " + BattleRules.PlotName[plot];
                 ShowPlotPop(plot, msg, e, t);
                 acting = e; CenterOn(t.X, t.Y);

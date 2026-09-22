@@ -21,7 +21,7 @@ public class Officer
     public int Might;       // M[]  武力
     public int Virtue;      // O[]  德
     public int Loyal;       // P[]  忠诚
-    public int Plots;       // Q[]  计策点
+    public int Exp;         // Q[]  经验，0–30000。等级由它换算（b.f(short) 2721），只升不降
     public int ArmLv;       // R[]  兵种×等级 0–23
     public int SubLv;       // S[]  副属性 24–31
     public int City;        // U[]  所在城市，0 = 不登场
@@ -500,26 +500,51 @@ public static class BattleRules
         return Mathf.Clamp(n + n2, 0, 100);
     }
 
-    /// b.f(short) 2721：累积的计策点 Q[] 换算成等级 H[]（= Lv），**只升不降**，Q 封顶 30000。
+    /// b.f(short) 2721：经验 Q[] 换算成等级 H[]（= Lv），**只升不降**，Q 封顶 30000。
     /// Lv 决定阵型战里骑 / 弓 / 步怎么配比，所以打得越多，带的兵越成形。
-    public static int PlotLevel(int plots)
+    /// （原版 Q 是 short，溢出成负数时 f() 直接把它按 30000 算——我们夹在 0..30000，等价。）
+    public static readonly int[] ExpTier = { 2000, 4000, 7000, 10000, 15000, 20000, 30000 };
+    public static int LevelOf(int exp)
     {
-        if (plots < 2000) return 1;
-        if (plots < 4000) return 2;
-        if (plots < 7000) return 3;
-        if (plots < 10000) return 4;
-        if (plots < 15000) return 5;
-        if (plots < 20000) return 6;
-        if (plots < 30000) return 7;
+        for (int i = 0; i < ExpTier.Length; i++) if (exp < ExpTier[i]) return i + 1;
         return 8;
     }
-    /// 战后：歼敌数记进 Q[]，够档位就升级。返回是不是升了
-    public static bool GainPlots(Officer o, int killed)
+    /// 升到下一级还差多少经验；已经满级返回 0
+    public static int ExpToNext(int exp)
     {
-        o.Plots = Mathf.Clamp(o.Plots + Mathf.Max(0, killed), 0, 30000);
-        int lv = PlotLevel(o.Plots);
-        if (lv > o.Lv) { o.Lv = lv; return true; }
+        int lv = LevelOf(exp);
+        return lv >= 8 ? 0 : ExpTier[lv - 1] - exp;
+    }
+    /// 这一级的起点经验（画进度条用）
+    public static int ExpFloor(int exp)
+    {
+        int lv = LevelOf(exp);
+        return lv <= 1 ? 0 : ExpTier[lv - 2];
+    }
+
+    /// 给经验并按档位升级。返回是不是升了。
+    /// 原版三处都是这个写法：Q[施加方] += 对方掉的兵，然后 f()。
+    ///   b.aa() 5463  阵型战结算，两边主将各拿对方的损失
+    ///   c.java 4934  我方放计策
+    ///   b.java 3730  敌方放计策
+    /// 注意进的是**兵力损失**：陷阱只掉体力、火箭烧粮、笼络转阵营，这三种一点经验都不给。
+    public static bool GainExp(Officer o, int troopsLost)
+    {
+        if (o == null || troopsLost <= 0) return false;
+        o.Exp = Mathf.Clamp(o.Exp + troopsLost, 0, 30000);
+        int lv = LevelOf(o.Exp);
+        if (lv > o.Lv) { o.Lv = lv; LevelUpGrowth(o); return true; }            // 原版 f() 升级后紧接着 e(s)
         return false;
+    }
+
+    /// b.e(short) 2690：升级涨武力，涨多少看当前武力在哪一档——越强涨得越少。
+    /// 跳级只涨一次（原版 f() 把 H 一步顶到目标等级，e() 只调一遍）。
+    /// 原版 M[] 是 signed byte，武力 122 以上再涨会溢出成负数；能升级的都到不了那个数，
+    /// 而且我们用 int，不复刻这个溢出。
+    public static void LevelUpGrowth(Officer o)
+    {
+        int t = o.Might / 10;
+        o.Might += t == 9 ? 0 : t == 8 ? 2 : t == 7 ? 3 : t == 6 ? 4 : t == 5 ? 5 : 6;
     }
 
     /// b.a(short,short)：计策成功率。挂了很久的那条，终于对上了。
@@ -590,7 +615,10 @@ public static class BattleRules
             var o = new Officer {
                 Id = I(0), Name = c[1], Lv = I(2), Kind = (Kind)Mathf.Clamp(I(3), 1, 3),
                 Troops = I(4), HpMax = I(5), Hp = I(5), Int = I(6), Might = I(7),
-                Virtue = I(8), Loyal = I(9), Plots = I(10), ArmLv = I(11), SubLv = I(12),
+                // 第 10 列是经验，原版 b.java:7208 读进来要 ×100。
+                // 不乘的话 228 人里有 186 人的等级和数据对不上；乘了只差侯成一个
+                // （他的经验正好卡在 2000 这个档位线上，原版也是照数据里的 Lv 走，只升不降）。
+                Virtue = I(8), Loyal = I(9), Exp = Mathf.Min(I(10) * 100, 30000), ArmLv = I(11), SubLv = I(12),
                 City = I(14),
             };
             if (o.Id > 0) d[o.Id] = o;
