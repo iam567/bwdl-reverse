@@ -50,7 +50,7 @@ public class BattleField
     string mode = "";             // "" / "move" / "attack" / "info"
     HashSet<int> reach = new HashSet<int>();
     readonly System.Random rng = new System.Random(20260921);
-    readonly float refW, refH;
+    float refW, refH;
 
     static readonly string[] CMD = { "移动", "计策", "攻击", "情报", "撤退", "待机" };
 
@@ -177,6 +177,22 @@ public class BattleField
     }
 
     Image[] cmdImgs;
+    /// 桌面窗口被拖动改了大小：整屏重排一次。棋子、日程、机动力这些状态都在 units / 字段里，
+    /// 只有画面节点要重建，所以直接把 Root 整棵拆了重搭。手机上只有转屏会走到这儿。
+    public void Relayout(float w, float h)
+    {
+        if (Mathf.Abs(w - refW) < .5f && Mathf.Abs(h - refH) < .5f) return;
+        refW = w; refH = h;
+        askPop = retreatPop = infoPop = overPop = plotPop = null;
+        plotMenu = null; plotFrames = null; cmdSel = null;
+        marks.Clear();
+        var parent = (RectTransform)Root.parent;
+        Object.Destroy(Root.gameObject);
+        Root = Node("BattleField", parent); Fill(Root);
+        BuildBoard(); BuildHud();
+        RefreshTop(); CenterOn(curX, curY); Refresh();
+    }
+
     const float TOP_Y = 24, TOP_H = TOP_Y + 66;      // 顶栏往下挪，空出上沿那一条挂城名匾额
     void BuildHud()
     {

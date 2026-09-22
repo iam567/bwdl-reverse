@@ -36,17 +36,48 @@ public class BattleGame : MonoBehaviour
         return null;
     }
 
-    void Update() { duel?.Tick(); if (duel == null) clash?.Tick(); if (clash == null && duel == null) { field?.Tick(); field?.PlotPopTick(); } }
+    // ── 屏幕自适应 ─────────────────────────────────────────────────────
+    //   基准是 375 × 812（iPhone X 那一档，19.5:9）。真机比例五花八门，
+    //   一律按宽度对齐（matchWidthOrHeight = 0）的话，**比基准矮的屏**（16:9 的 SE、4:3 的平板）
+    //   画布高度会掉到 667 甚至 500，而代码是照着 812 排版的 —— 底下那条指令栏直接跑到屏幕外。
+    //   所以分两头走：
+    //     屏幕比基准更瘦长 → 按宽度对齐，宽恒为 375，多出来的高度全给地图；
+    //     屏幕比基准矮胖   → 改按高度对齐，高恒为 812，画面横向变宽（整体等比缩小一点）。
+    //   这样 refW ≥ 375、refH ≥ 812 两条同时成立，排版里不会再有东西被挤出屏幕。
+    CanvasScaler scaler;
+    static float refW = REF_W, refH = REF_H;
+    int lastW, lastH;
+    void ApplyScale()
+    {
+        lastW = Screen.width; lastH = Screen.height;
+        float aspect = Screen.height / (float)Screen.width;      // 屏幕有多瘦长
+        if (aspect >= REF_H / (float)REF_W)
+        { scaler.matchWidthOrHeight = 0; refW = REF_W; refH = REF_W * aspect; }
+        else
+        { scaler.matchWidthOrHeight = 1; refH = REF_H; refW = REF_H / aspect; }
+    }
+
+    void Update()
+    {
+        // 桌面窗口被拖动改大小时重排一次。手机上只有转屏会走到这儿。
+        if (Screen.width != lastW || Screen.height != lastH)
+        {
+            ApplyScale();
+            if (clash == null && duel == null) field?.Relayout(refW, refH);
+        }
+        duel?.Tick(); if (duel == null) clash?.Tick(); if (clash == null && duel == null) { field?.Tick(); field?.PlotPopTick(); }
+    }
 
     void Start()
     {
         UIFont = font;
         var go = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
         var canvas = go.GetComponent<Canvas>(); canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        var sc = go.GetComponent<CanvasScaler>();
-        sc.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        sc.referenceResolution = new Vector2(REF_W, REF_H); sc.matchWidthOrHeight = 0;
+        scaler = go.GetComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(REF_W, REF_H);
         root = (RectTransform)go.transform;
+        ApplyScale();
 
         book = BattleRules.LoadOfficers(Path.Combine(BattleDir, "officers.csv"));
         OpenField();
@@ -208,7 +239,7 @@ public class BattleGame : MonoBehaviour
         // 演示时压低忠诚，才看得到归顺那一段。
         if (foeLoyal > 0) b.Loyal = foeLoyal;
         // 演招式这几屏改用攻城场景：那一档才有一城一套的动态背景，顺带一起看了
-        duel = new DuelView(root, a, b, 3, REF_W, REF_H, ThemeOf(CITY), CITY);
+        duel = new DuelView(root, a, b, 3, refW, refH, ThemeOf(CITY), CITY);
         yield return new WaitForSeconds(.4f);
         duel.PickForTest(move);
         for (int i = 0; i < shots; i++)
@@ -260,17 +291,17 @@ public class BattleGame : MonoBehaviour
         var adj = BattleRules.AdjacentCities(Path.Combine(BattleDir, "city-adjacency.json"), CITY);
         int atkCity = adj.Length > 0 ? adj[0] : CITY;
         supply.TryGetValue(atkCity, out var mine); supply.TryGetValue(CITY, out var theirs);
-        field = new BattleField(root, CITY, ThemeOf(CITY), roster, REF_W, REF_H,
+        field = new BattleField(root, CITY, ThemeOf(CITY), roster, refW, refH,
                                 new[] { mine.gold, mine.food, theirs.gold, theirs.food }, 3);   // 我方君主刘备
         field.OnClash = (me, foe, weAttack) =>
         {
             field.Root.gameObject.SetActive(false);
             int terrain = TerrainUnder(weAttack ? foe : me);   // 场景看守方脚下那格
-            clash = new ClashView(root, me.O, foe.O, terrain, weAttack, REF_W, REF_H, ThemeOf(CITY), CITY);
+            clash = new ClashView(root, me.O, foe.O, terrain, weAttack, refW, refH, ThemeOf(CITY), CITY);
             clash.OnDuel = () =>
             {
                 clash.Root.gameObject.SetActive(false);
-                duel = new DuelView(root, me.O, foe.O, clash.Scene, REF_W, REF_H, ThemeOf(CITY), CITY);
+                duel = new DuelView(root, me.O, foe.O, clash.Scene, refW, refH, ThemeOf(CITY), CITY);
                 duel.OnDone = () =>
                 {
                     Object.Destroy(duel.Root.gameObject); duel = null;

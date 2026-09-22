@@ -359,10 +359,13 @@ public class ClashView
     const int C = 64;                      // 阵型格一格多大
     const int FIG = C + 14;                // 棋子画多大：比格子高出一截，脚仍落在格底
     const int VIEW_Y = 44;
-    static int VIEW_H => BattleRules.GridH * C;   // 7 × 64 = 448，占竖屏的五成五
-    // 下面三栏挨着场地往下排。写死绝对 Y 的话，C 一改就会撞在一起。
-    static int INFO_Y  => VIEW_Y + VIEW_H + 14;
-    static int MAP_Y   => INFO_Y + 124 + 10;   // 小地图。底下原来是指令栏和计策栏，都拆了
+    // 底下两栏（双方兵数 124、小地图 24+7×20）贴着屏幕下沿往上排，
+    // **场地视窗吃掉中间剩下的全部高度** —— 屏幕矮就少看几行（能拖能缩，不影响操作），
+    // 屏幕高就多留一点余量，场地在视窗里居中。写死 448 的话矮屏上小地图会被挤出屏幕。
+    int MAP_H  => 24 + BattleRules.GridH * MM;
+    int MAP_Y  => (int)refH - MAP_H - 8;
+    int INFO_Y => MAP_Y - 10 - 124;
+    int VIEW_H => Mathf.Max(120, INFO_Y - 14 - VIEW_Y);
     const int MM = 20;                         // 小地图一格多大（原版是 3 像素）
     void BuildField()
     {
@@ -1257,8 +1260,7 @@ public class ClashView
     {
         var panel = Panel(field, "mm", UiPlate());
         int pw = 24 + BattleRules.GridW * MM;
-        Place((RectTransform)panel.transform, (refW - pw) / 2, MAP_Y,
-              pw, 24 + BattleRules.GridH * MM);
+        Place((RectTransform)panel.transform, (refW - pw) / 2, MAP_Y, pw, MAP_H);
 
         mapRoot = Node("mmg", panel.transform);
         Place(mapRoot, 12, 12, BattleRules.GridW * MM, BattleRules.GridH * MM);
