@@ -294,6 +294,60 @@ function castlePrompt(theme) {
     '地域特征：' + T.castleHint + '，这一条只改材质与气候痕迹。';
 }
 
+/* ---------- 地形四格表（一张图出四格，切开用） ----------
+   为什么合成一张：一个地形一张图，五个主题就是几十张，烧钱且风格难统一。
+   合成一张还有个好处——四格共用一套色板是写在同一张画面里的硬约束，
+   模型没法让平地和山地各走各的色调。
+
+   画法分两类，这是这一版最要紧的改动：
+     平地、水  —— **满铺无缝**，纹理铺到四边、自己和自己能接上；
+     山、林    —— **画在平地上**，四条边留着和平地一样的素地面，特征只占中间六七成。
+   原版就是后一种（山是「绿地上拱起一个黑三角」、林是「土地上长一棵树」），
+   所以原版的格子拼起来边缘是连着的；我们原先四张全是满铺纹理，
+   各画各的色调，拼一起就是一道道硬边。 */
+const SHEET_CELLS = [
+  ['grass',  '平地', 'seamless'],
+  ['water',  '水',   'seamless'],
+  ['rock',   '山地', 'feature'],
+  ['ambush', '林地', 'feature'],
+];
+
+function sheetPrompt(theme) {
+  const T = THEMES[theme];
+  const list = SHEET_CELLS.map(([slot, name], i) =>
+    `${i + 1}. ${name}：${T[slot]}`).join('\n');
+  return '像素画（pixel art）风格的**战场地块表**，用于中式历史策略游戏的战棋战场。\n' +
+    '**画面严格划分成 2 列 × 2 行、共 4 个等大的方格**，每格 512×512，' +
+    '格与格之间不画边框线、不画分隔线、不留缝。\n\n' +
+    '【四格，从左到右、从上到下】\n' + list + '\n\n' +
+    '【四格共同的画法】\n' +
+    '**严格的像素网格**：每个像素都是清晰的方块，边缘硬阶梯状，' +
+    '绝不抗锯齿、不柔化、不做渐变。正俯视正投影，没有透视也没有立体侧面。\n' +
+    '**四格共用同一套受限色板**（整张表 12~16 色）——这是硬要求：' +
+    '四种地形是要挨着铺在同一张地图上的，色调各走各的就会拼出一道道硬边。\n' +
+    '**第 1、2 格（平地、水）满铺**：纹理一直画到四边，而且左右边缘、上下边缘要能' +
+    '严丝合缝地自己接上自己（同一张图平铺时看不出接缝），所以不要居中的大图案。\n' +
+    '**第 3、4 格（山地、林地）不要满铺，要「画在平地上」**：' +
+    '这两格的**四条边必须和第 1 格的平地长得一模一样**（同样的土色草色、同样的疏密），' +
+    '只有**中间六到七成**画山峰 / 树丛。' +
+    '山脚与树根和地面之间要有过渡（碎石、落叶、矮草），不要硬切出一个孤立的物件。\n' +
+    '（上面第 3、4 格的文字描述里如果有「占满整格」「占了大半格」之类的说法，' +
+    '一律以本条为准：**只画中间六到七成，四边留素地面**。）\n' +
+    '**山和林要一眼分得开**：山是**暗色、尖棱、明度低**；林是**亮绿、圆树冠、明度高**。\n' +
+    '绝对禁止：抗锯齿、模糊、渐变、柔和阴影、写实、厚涂、3D、等距斜视角、透视、' +
+    '贯穿整格的方向性笔触（斜纹、平行长条、统一朝向的排线——一格看着还行，' +
+    '铺几十格就连成一片布纹）。也不要把整格打成均匀碎噪点，该有大色块的地方要有。\n' +
+    '画面中不得出现任何文字、字母、汉字、数字、签名、水印、边框、外阴影。';
+}
+
+const buildThemeSheet = theme => ({
+  id: 'bts_' + theme, category: 'battletile',
+  label: '战场地块表·' + THEMES[theme].name + '·四格（2×2）',
+  meta: { 主题: THEMES[theme].name, 格数: 4, 槽位: SHEET_CELLS.map(c => c[0]).join('/') },
+  source: null, size: '1024x1024',
+  prompt: sheetPrompt(theme), status: 'idle', attempts: 0,
+});
+
 function buildThemeTiles(theme) {
   const T = THEMES[theme];
   return SLOTS.map(([code, slot, label]) => ({
@@ -307,4 +361,5 @@ function buildThemeTiles(theme) {
   }));
 }
 
-module.exports = { CITY_THEME, PX_ANCHOR, PX_NEG, SLOTS, THEMES, buildTestTiles, buildThemeTiles };
+module.exports = { CITY_THEME, PX_ANCHOR, PX_NEG, SLOTS, THEMES, SHEET_CELLS,
+                   buildTestTiles, buildThemeTiles, buildThemeSheet, sheetPrompt };
