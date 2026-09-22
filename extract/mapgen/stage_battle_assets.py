@@ -61,9 +61,19 @@ for f in glob.glob(os.path.join(ROOT, 'assets/clash/px/*.png')):
 print('小兵  %d 张（新）' % n)
 
 # 武将卡牌立绘，给情报面板当底。1024×1536 一张 365KB，228 张太重，缩到 192×288 q80（约 30KB）
-n = 0; seen = {}
-for f in sorted(glob.glob(os.path.join(ROOT, 'assets/card/card_*.jpg')), key=os.path.getmtime):
-    oid = os.path.basename(f).split('_')[1]; seen[oid] = f            # 同一人多版取最新
+# 同一人可能生成过好几版。文件名后缀是平台的条目 id，头 8 位是 Date.now() 的 36 进制，
+# 所以**按后缀取最大**就是最新的那一版。原先按 mtime 取，三版同一秒落盘时顺序是随机的，
+# 献帝就这么取到了中间那版大叔（平台上早换成少年了）。按后缀选，456 张和平台逐条对得上。
+def newest(pattern):
+    seen = {}
+    for f in glob.glob(pattern):
+        parts = os.path.basename(f).split('_')
+        oid, suf = parts[1], parts[2].rsplit('.', 1)[0]
+        if oid not in seen or suf > seen[oid][0]: seen[oid] = (suf, f)
+    return {k: v[1] for k, v in seen.items()}
+
+n = 0
+seen = newest(os.path.join(ROOT, 'assets/card/card_*.jpg'))
 for oid, f in seen.items():
     Image.open(f).convert('RGB').resize((192, 288), Image.LANCZOS).save(os.path.join(DST, 'card', oid + '.jpg'), quality=80); n += 1
 print('卡牌  %d 张（缩版）' % n)
@@ -108,8 +118,7 @@ shutil.copy2(os.path.join(ROOT, 'extract/data/city-adjacency.json'), os.path.joi
 rows = list(csv.reader(open(os.path.join(ROOT, 'extract/data/officers.csv'), encoding='utf-8')))
 ids = {r[0] for r in rows}
 n = 0
-for f in glob.glob(os.path.join(ROOT, 'assets/avatar/avatar_*.jpg')):
-    oid = os.path.basename(f).split('_')[1]
+for oid, f in newest(os.path.join(ROOT, 'assets/avatar/avatar_*.jpg')).items():
     if oid in ids:
         im = Image.open(f).convert('RGB')
         if max(im.size) > 256: im = im.resize((256, 256), Image.LANCZOS)
