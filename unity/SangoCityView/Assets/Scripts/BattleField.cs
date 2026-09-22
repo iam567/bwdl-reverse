@@ -613,11 +613,18 @@ public class BattleField
     }
     void ClosePlotPop() { if (plotPop != null) Object.Destroy(plotPop.gameObject); plotPop = null; plotFrames = null; }
     /// 每帧：弹框里的图循环播（第八帧接回第一帧）
+    /// 原版放完计策是弹一句 bD 停在那儿等按键（W=100 → aq=1）。我们照着停，
+    /// 但触屏上不能指望玩家知道要点一下，所以到点自己收；想提前跳过就点一下。
+    const float PLOT_POP_HOLD = 2.6f;
     public void PlotPopTick()
     {
-        if (plotPop == null || plotFrames == null) return;
-        var sp = plotFrames[(int)((Time.time - plotT0) / PLOT_FRAME) % 8];
-        if (sp != null && plotPic.sprite != sp) plotPic.sprite = sp;
+        if (plotPop == null) return;
+        if (plotFrames != null)
+        {
+            var sp = plotFrames[(int)((Time.time - plotT0) / PLOT_FRAME) % 8];
+            if (sp != null && plotPic.sprite != sp) plotPic.sprite = sp;
+        }
+        if (Time.time - plotT0 > PLOT_POP_HOLD) { ClosePlotPop(); Refresh(); }
     }
 
     int TerrainAt(int x, int y) => grid[y, x] & 0x1F;
@@ -1152,6 +1159,7 @@ public class BattleField
     void StartOurDay()
     {
         enemyTurn = false;
+        ClosePlotPop();                                // 兜底：别把敌军回合的弹框留到我方回合
         if (EndRoundSupply()) return;                  // 粮尽：这场到此为止，不再开新的一日
         day++;
         if (day > MAX_DAY)                             // 原版 while (bA != 30)
@@ -1208,6 +1216,9 @@ public class BattleField
             else board.anchoredPosition = camTarget;
         }
 
+        // 计策弹框还在，敌军就停着等——不然它一边放计策一边继续走，
+        // 玩家既看不清结果，框还会一直挂到我方回合。原版是停在消息上等按键。
+        if (plotPop != null) { stepAt = Time.time + STEP; return; }
         if (enemyTurn && Time.time >= stepAt)
         {
             stepAt = Time.time + STEP;
