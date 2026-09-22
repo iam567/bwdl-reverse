@@ -254,7 +254,12 @@ public class ClashView
         gridRoot.anchoredPosition = camTarget;        // 自检不等镜头滑，直接到位
         OpenCmd((int)arm, mine[i].Col, mine[i].Row);
     }
-    public void AdvanceForTest(int n = 120) { CloseCmd(); for (int i = 0; i < n; i++) { tickAt = 0; Tick(); } }
+    /// keepPop = true 时不收菜单：用来验「菜单开着推几拍，谁都不动」
+    public void AdvanceForTest(int n = 120, bool keepPop = false)
+    {
+        if (!keepPop) CloseCmd();
+        for (int i = 0; i < n; i++) { tickAt = 0; Tick(); }
+    }
     public void FinishForTest() { Finish(); }
     /// 单挑里投降：原版 b.b(s,true) 置 aq=2，整场阵型战到此为止
     public void Surrender() { Cc = 4; over = me.Name + " 投降"; Finish(); }
@@ -524,6 +529,7 @@ public class ClashView
     public int Cc;
     public int Killed, Lost;               // 这一仗歼敌、损兵各多少（b.aa() 换成计策点）
     int idleTicks;
+    bool wasPaused;
     float overAt;                          // 分出胜负那一刻，用来延一小会儿再收场
     public int ActingSide = -1, ActingIdx = -1;
     public static bool Trace;                  // -trace：每一步写进 Player.log，自检用
@@ -537,6 +543,12 @@ public class ClashView
         ShotTick();
         FxTick();
         if (mine == null) return;                 // 还在阵型选择那屏，兵还没摆
+        // 原版 b.ci：1 = 推进中、2 = 暂停。c.B() 里按确定就把 ci 置 2，改完令再按确定或取消才回 1，
+        // 主循环 5515 行 `if (ci == 2) continue;` 把这一拍整个跳过 —— 也就是**菜单一开，全场停住**。
+        // 我们这边菜单是点出来的，所以菜单在就等于暂停；节拍一并往后推，收起来时重新走满一拍。
+        bool paused = cmdPop != null;
+        if (paused != wasPaused) { wasPaused = paused; Redraw(); }   // 进出暂停各重画一次，表头才跟着变
+        if (paused) { tickAt = Time.time + TICK; return; }
         if (over != null)
         {
             // 原版 b.ah()：ac() 的循环一 break 就直接 ab() 结算回战棋层，
@@ -1199,7 +1211,7 @@ public class ClashView
         int bid = BattleRules.BuffId(cd);
         buffT.text = "计策点 " + plotPts
                    + (bid > 0 ? "   " + BattleRules.SkillName[bid - 1] + " 余 " + (cd & 0xF) : "");
-        dayT.text = (over ?? "交战中") + (siege ? "   · 攻城战" : "   · 野战");
+        dayT.text = (over ?? (cmdPop != null ? "暂停" : "交战中")) + (siege ? "   · 攻城战" : "   · 野战");
         DrawMinimap();
     }
 

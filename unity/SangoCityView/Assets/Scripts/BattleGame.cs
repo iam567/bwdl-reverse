@@ -153,6 +153,8 @@ public class BattleGame : MonoBehaviour
 
         clash.CmdPopForTest(Arm.Qi);               // 点一枚骑兵，看它旁边弹出来的令菜单
         yield return Shot(dir, "4c_点兵种下令");
+        clash.AdvanceForTest(6, true);             // 菜单开着推六拍：原版 ci=2，谁都不该动
+        yield return Shot(dir, "4d_菜单开着不动");
 
         clash.AdvanceForTest(45);                  // 120 拍会一路打到武将碰面进单挑，看不到阵型战
         yield return Shot(dir, "5_打了一阵");
