@@ -69,6 +69,10 @@ public class BattleGame : MonoBehaviour
         yield return Shot(dir, "2b_乱水");
         field.InfoForTest(me, foe);                // 情报：点敌将弹武将信息
         yield return Shot(dir, "2c_情报");
+        field.LandForTest(me, 4, 9);               // 关羽放回原位，再跑 14 步敌军回合看 AI 走位
+        field.EnemyTurnForTest(14);
+        yield return Shot(dir, "2h_敌军回合");
+        field.LandForTest(me, foe.X - 1, foe.Y);
         field.LandForTest(me, 5, 5);               // 站到粮仓(码3)上：看压不压住、弹「是否进入村庄?」
         yield return Shot(dir, "2e_村庄");
         field.LandForTest(me, 19, 17);             // 药庐(码4)：进村 → 治疗提示

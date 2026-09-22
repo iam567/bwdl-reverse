@@ -229,6 +229,15 @@ public class BattleField
         DoPlot(tgt.X, tgt.Y); Refresh();
     }
     public Unit UnitOf(int officerId) => units.Find(x => x.O.Id == officerId);
+    /// 自检：同步跑 n 步敌军回合（不等 0.55 秒一步的动画）
+    public void EnemyTurnForTest(int n)
+    {
+        CloseAsk(); CloseInfo(); CloseRetreatMenu(); ClosePlotMenu(); ClosePlotPop();
+        enemyTurn = true; enemyMp = BattleRules.MoveCap(TotalTroops(false)); enemyIdx = 0; plans = null; roundStartMp = -1;
+        for (int i = 0; i < n; i++) if (!EnemyStep()) break;
+        foreach (var u in units) u.Draw = new Vector2(u.X, u.Y);
+        Refresh();
+    }
     /// 单挑投降回来：这支部队退出战场，选附近的城或下野
     public void OpenRetreatFor(Unit u) { sel = u; mode = ""; hintText.text = u.O.Name + " 投降，退出战场"; OpenRetreatMenu(); Refresh(); }
     public void LandForTest(Unit u, int x, int y) { CloseAsk(); CloseInfo(); CloseRetreatMenu(); sel = u; u.X = x; u.Y = y; u.Draw = new Vector2(x, y); CenterOn(x, y); curX = x; curY = y; Refresh(); OnLanded(u); }
@@ -551,24 +560,26 @@ public class BattleField
     }
 
     /// b.a(short,byte[],byte,byte,int,boolean)
-    void ApplyPlot(int plot, BattleRules.PlotResult r, Unit tgt)
+    void ApplyPlot(int plot, BattleRules.PlotResult r, Unit tgt, bool casterOurs = true)
     {
         void Hurt(Unit u, int n) { u.O.Troops = Mathf.Max(0, u.O.Troops - n); if (u.O.Troops <= 0) u.Alive = false; }
+        bool tgtSide = tgt.Ours;                                   // 波及的是目标同一边的相邻部队
+        int foodIdx = casterOurs ? 3 : 1;                          // 火箭减的是对方的粮
         switch (r.Type)
         {
             case 1: Hurt(tgt, r.Troops); break;
             case 2: tgt.O.Hp = Mathf.Max(0, tgt.O.Hp - r.Hp); break;
-            case 3: supply[3] = Mathf.Max(0, supply[3] - r.Troops); break;
+            case 3: supply[foodIdx] = Mathf.Max(0, supply[foodIdx] - r.Troops); RefreshTop(); break;
             case 4: Hurt(tgt, r.Troops); tgt.O.Hp = Mathf.Max(0, tgt.O.Hp - r.Hp); break;
-            case 5: tgt.Ours = true; tgt.Acted = true; tgt.Dir = "s"; break;   // 笼络：整支转到我方
+            case 5: tgt.Ours = casterOurs; tgt.Dir = "s"; break;   // 笼络：整支转到施计的一边
             case 6:
                 Hurt(tgt, r.Troops);
-                foreach (var o in units) if (o != tgt && o.Alive && !o.Ours && o.Trapped == 0 && Adjacent(o, tgt.X, tgt.Y)) Hurt(o, r.Troops);
+                foreach (var o in units) if (o != tgt && o.Alive && o.Ours == tgtSide && o.Trapped == 0 && Adjacent(o, tgt.X, tgt.Y)) Hurt(o, r.Troops);
                 break;
             case 7: tgt.Trapped = TRAP_DAYS; break;
             case 8:
                 tgt.Trapped = TRAP_DAYS;
-                foreach (var o in units) if (o != tgt && o.Alive && !o.Ours && o.Trapped == 0 && Adjacent(o, tgt.X, tgt.Y)) o.Trapped = TRAP_DAYS;
+                foreach (var o in units) if (o != tgt && o.Alive && o.Ours == tgtSide && o.Trapped == 0 && Adjacent(o, tgt.X, tgt.Y)) o.Trapped = TRAP_DAYS;
                 break;
             case 9: tgt.Trapped = TRAP_DAYS; tgt.Cursed = true; break;
         }
@@ -772,7 +783,7 @@ public class BattleField
         if (enemyTurn) return;
         enemyTurn = true;
         enemyMp = BattleRules.MoveCap(TotalTroops(false));
-        enemyIdx = 0;
+        enemyIdx = 0; plans = null; roundStartMp = -1;
         sel = null; mode = ""; reach.Clear();
         hintText.text = "敌军行动中...";
         Refresh();
@@ -841,58 +852,201 @@ public class BattleField
     }
 
     /// 走一步。返回 false 表示敌方这一日到此为止。
+    // ── 敌方回合 AI：照原版 b.bX()（Z=2 默认那套）─────────────────────
+    // 一轮里每支敌军各走**一步**（贴上就打 / 走一格 / 放一条计策 / 撤），
+    // 轮与轮之间重新规划，直到这一轮机动力没变化或池子 < 2 才收。
+    // 规划（每轮一次）：
+    //   主将(0)：F() 兵<100 且体力<40 且有退路 → 整军撤；否则朝我方主将压过去
+    //   其余：y() 有退路且兵<400 且低于全军均值(总兵*2/33) → 这支撤
+    //         我方主将 武≤它 且 兵≤它 且 智<它 → 直冲我方主将
+    //         我方有人进它主将 3 格内 → 扑离自己最近的那支（守主将）
+    //         5 格内有智力比它低、且有合法付得起的计策的我方部队 → 放计策（随机挑）
+    //         都不是 → 原地不动
+    class EnemyPlan { public int Type; public Unit Target; }
+    Dictionary<Unit, EnemyPlan> plans; List<Unit> enemyOrder; int roundStartMp = -1;
+
+    Unit EnemyCommander() { foreach (var u in units) if (!u.Ours && u.Alive) return u; return null; }
+    Unit OurCommander()
+    {
+        int r = OurRuler();
+        foreach (var u in units) if (u.Ours && u.Alive && u.O.Id == r) return u;
+        foreach (var u in units) if (u.Ours && u.Alive) return u;
+        return null;
+    }
+    bool EnemyCanRetreat()
+    {
+        LoadCityData();
+        cityRuler.TryGetValue(cityId, out int er);                 // 守方主公 = 这座城的城主
+        foreach (int c in adjCities)
+        {
+            cityRuler.TryGetValue(c, out int owner); cityCount.TryGetValue(c, out int cnt);
+            if ((owner == er && cnt < 10) || owner == 0) return true;
+        }
+        return false;
+    }
+    int EnemyArmyTotal() { int t = 0; foreach (var u in units) if (!u.Ours && u.Alive) t += 500 + u.O.Troops; return t; }
+
+    void BuildEnemyPlans()
+    {
+        plans = new Dictionary<Unit, EnemyPlan>();
+        enemyOrder = units.FindAll(u => !u.Ours && u.Alive && u.Trapped == 0);
+        var cmd = EnemyCommander(); var ours = OurCommander();
+        if (cmd == null || ours == null) return;
+        bool canRetreat = EnemyCanRetreat();
+        int total = EnemyArmyTotal();
+        foreach (var e in enemyOrder)
+        {
+            var pl = new EnemyPlan();
+            if (e == cmd)
+            {
+                if (canRetreat && e.O.Troops < 100 && e.O.Hp < 40) pl.Type = 4;          // 整军撤
+                else { pl.Type = 1; pl.Target = ours; }
+            }
+            else if (canRetreat && e.O.Troops < 400 && total * 2 / 33 > e.O.Troops) pl.Type = 3;
+            else if (ours.O.Might <= e.O.Might && ours.O.Troops <= e.O.Troops && ours.O.Int < e.O.Int)
+            { pl.Type = 1; pl.Target = ours; }
+            else
+            {
+                Unit near = null; int bd = 100;
+                foreach (var m in units)
+                    if (m.Ours && m.Alive && Mathf.Abs(m.X - cmd.X) <= 3 && Mathf.Abs(m.Y - cmd.Y) <= 3)
+                    {
+                        int d = Mathf.Abs(m.X - e.X) + Mathf.Abs(m.Y - e.Y);
+                        if (d < bd) { bd = d; near = m; }
+                    }
+                if (near != null) { pl.Type = 1; pl.Target = near; }
+                else if (EnemyPlotCandidates(e).Count > 0) pl.Type = 2;
+                else pl.Type = 0;
+            }
+            plans[e] = pl;
+        }
+    }
+    /// 原版 b.c(int,int)：5 格内、智力比它低、有合法且付得起的计策（不含笼络/埋伏；对方没兵时不用火计/要击/乱水）
+    List<(Unit t, int plot)> EnemyPlotCandidates(Unit e)
+    {
+        var list = new List<(Unit, int)>();
+        int n = BattleRules.PlotCount(e.O);
+        foreach (var m in units)
+        {
+            if (!m.Ours || !m.Alive || m.Trapped > 0) continue;
+            if (Mathf.Abs(m.X - e.X) > 5 || Mathf.Abs(m.Y - e.Y) > 5) continue;
+            if (e.O.Int <= m.O.Int) continue;
+            for (int p = 0; p < n; p++)
+            {
+                if (p == 8 || p == 11 || p == 14) continue;
+                if (m.O.Troops == 0 && (p == 0 || p == 3 || p == 4)) continue;
+                if (BattleRules.CostOfPlot(p) > enemyMp) continue;
+                if (BattleRules.PlotLegal(p, e.X, e.Y, m.X, m.Y, TerrainAt(e.X, e.Y), TerrainAt(m.X, m.Y), HasAllyAdjacent(m)))
+                    list.Add((m, p));
+            }
+        }
+        return list;
+    }
+
+    /// 一格一步的最短路（走一格的消耗仍是 b.h(格,兵种)），返回下一格；走不到返回 (-1,-1)
+    Vector2Int NextStepToward(Unit e, int tx, int ty)
+    {
+        var prev = new Dictionary<int, int>(); var q = new Queue<int>();
+        int s0 = e.Y * W + e.X; prev[s0] = -1; q.Enqueue(s0); int found = -1;
+        int[] dx = { 0, 0, -1, 1 }, dy = { -1, 1, 0, 0 };
+        while (q.Count > 0 && found < 0)
+        {
+            int cur = q.Dequeue(); int cx = cur % W, cy = cur / W;
+            for (int i = 0; i < 4; i++)
+            {
+                int nx = cx + dx[i], ny = cy + dy[i];
+                if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+                int k = ny * W + nx;
+                if (prev.ContainsKey(k)) continue;
+                if (nx == tx && ny == ty) { prev[k] = cur; found = k; break; }   // 目标格本身有人，只到它旁边
+                if (At(nx, ny) != null || BattleRules.MoveCost(grid[ny, nx] & 0xF, e.O.Kind) >= 100) continue;
+                prev[k] = cur; q.Enqueue(k);
+            }
+        }
+        if (found < 0) return new Vector2Int(-1, -1);
+        int step = found;
+        while (prev[step] != s0) step = prev[step];
+        return new Vector2Int(step % W, step / W);
+    }
+
     bool EnemyStep()
     {
-        if (enemyMp < 2) return false;
-        for (int guard = 0; guard < 64; guard++)
+        for (int guard = 0; guard < 4; guard++)
         {
-            var list = units.FindAll(u => !u.Ours && u.Alive);
-            if (list.Count == 0) return false;
-            if (enemyIdx >= list.Count) { enemyIdx = 0; return false; }   // 一圈走完就收
-            var e = list[enemyIdx];
-            if (e.Trapped > 0) { enemyIdx++; continue; }   // 被困：这一日不动也不打
-
-            Unit target = null; int bd = 999;
-            foreach (var m in units)
+            if (enemyMp < 2) return false;
+            if (plans == null || enemyIdx >= enemyOrder.Count)
             {
-                if (!m.Ours || !m.Alive) continue;
-                int d = Mathf.Abs(m.X - e.X) + Mathf.Abs(m.Y - e.Y);
-                if (d < bd) { bd = d; target = m; }
+                if (plans != null && enemyMp == roundStartMp) return false;     // 这一轮谁都没花机动力：收
+                BuildEnemyPlans(); enemyIdx = 0; roundStartMp = enemyMp;
+                if (enemyOrder.Count == 0) return false;
+                var cmd = EnemyCommander();
+                if (cmd != null && plans.TryGetValue(cmd, out var cp) && cp.Type == 4)   // 整军撤
+                {
+                    foreach (var u in units) if (!u.Ours) u.Alive = false;
+                    hintText.text = "敌军撤退!"; Refresh(); return false;
+                }
             }
-            if (target == null) return false;
-
-            if (bd == 1)                                   // 贴上了就打，扣 2
+            while (enemyIdx < enemyOrder.Count)
             {
-                if (enemyMp < BattleRules.AttackCost) { enemyIdx++; continue; }
-                enemyMp -= BattleRules.AttackCost;
-                hintText.text = e.O.Name + " 来攻 " + target.O.Name;
-                acting = e; enemyIdx++;
-                OnClash?.Invoke(target, e, false);          // 我方是守方
+                var e = enemyOrder[enemyIdx++];
+                if (!e.Alive || !plans.TryGetValue(e, out var pl)) continue;
+                if (ExecuteEnemy(e, pl)) return true;
+            }
+        }
+        return false;
+    }
+
+    bool ExecuteEnemy(Unit e, EnemyPlan pl)
+    {
+        switch (pl.Type)
+        {
+            case 3:                                            // 这支撤
+                e.Alive = false; hintText.text = e.O.Name + " 撤退"; acting = null; CenterOn(e.X, e.Y);
+                return true;
+            case 2:                                            // 放计策：原版 c()——随机挑一对（目标, 计策）
+            {
+                var cs = EnemyPlotCandidates(e);
+                if (cs.Count == 0) return false;
+                var (t, plot) = cs[rng.Next(cs.Count)];
+                enemyMp -= BattleRules.CostOfPlot(plot);
+                var r = BattleRules.PlotRoll(plot, e.O, t.O, supply[1], rng);
+                string msg = r.Ok ? BattleRules.PlotMessage(plot, r) : "计策失败！";
+                if (r.Ok) ApplyPlot(plot, r, t, false);
+                hintText.text = e.O.Name + " 使用计策: " + BattleRules.PlotName[plot];
+                ShowPlotPop(plot, msg);
+                acting = e; CenterOn(t.X, t.Y);
                 return true;
             }
-
-            int nx = e.X, ny = e.Y;
-            if (Mathf.Abs(target.X - e.X) >= Mathf.Abs(target.Y - e.Y))
-                nx += System.Math.Sign(target.X - e.X);
-            else ny += System.Math.Sign(target.Y - e.Y);
-
-            int cost = (nx < 0 || ny < 0 || nx >= W || ny >= H) ? 100
-                     : (At(nx, ny) != null ? 100 : BattleRules.MoveCost(grid[ny, nx] & 0xF, e.O.Kind));
-            if (cost > enemyMp || cost >= 100) { enemyIdx++; continue; }
-
-            enemyMp -= cost;
-            e.Dir = nx != e.X ? "e" : (ny > e.Y ? "s" : "n");
-            e.Flip = nx < e.X;
-            e.X = nx; e.Y = ny;
-            acting = e; enemyIdx++;
-            CenterOn(e.X, e.Y);                            // 镜头跟着走，看得见是谁在动
-            if (ambush.Remove(ny * W + nx))                // b.java 3703：踩进埋伏格
+            case 1:
             {
-                e.O.Troops = Mathf.Max(0, e.O.Troops - AMBUSH_LOSS);
-                if (e.O.Troops <= 0) e.Alive = false;
-                hintText.text = e.O.Name + " 中计谋十面埋伏";
+                // 贴上任何一支我方就打（原版 3659：扫全部我方，不限定目标）
+                foreach (var m in units)
+                    if (m.Ours && m.Alive && Adjacent(e, m.X, m.Y))
+                    {
+                        if (enemyMp < BattleRules.AttackCost) return false;
+                        enemyMp -= BattleRules.AttackCost;
+                        hintText.text = e.O.Name + " 来攻 " + m.O.Name;
+                        acting = e; OnClash?.Invoke(m, e, false);
+                        return true;
+                    }
+                if (pl.Target == null || !pl.Target.Alive) return false;
+                var nxt = NextStepToward(e, pl.Target.X, pl.Target.Y);
+                if (nxt.x < 0) return false;
+                int cost = BattleRules.MoveCost(grid[nxt.y, nxt.x] & 0xF, e.O.Kind);
+                if (cost > enemyMp) return false;
+                enemyMp -= cost;
+                e.Dir = nxt.x != e.X ? "e" : (nxt.y > e.Y ? "s" : "n");
+                e.Flip = nxt.x < e.X;
+                e.X = nxt.x; e.Y = nxt.y;
+                acting = e; CenterOn(e.X, e.Y);
+                if (ambush.Remove(e.Y * W + e.X))              // b.java 3703：踩进埋伏格
+                {
+                    e.O.Troops = Mathf.Max(0, e.O.Troops - AMBUSH_LOSS);
+                    if (e.O.Troops <= 0) e.Alive = false;
+                    hintText.text = e.O.Name + " 中计谋十面埋伏";
+                }
+                return true;
             }
-            return true;
         }
         return false;
     }
