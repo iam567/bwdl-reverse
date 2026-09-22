@@ -1029,7 +1029,8 @@ public class BattleField
         }
         return false;
     }
-    int EnemyArmyTotal() { int t = 0; foreach (var u in units) if (!u.Ours && u.Alive) t += 500 + u.O.Troops; return t; }
+    int EnemyArmyTotal() { int t = 0; foreach (var u in units) if (!u.Ours && u.Alive) t += 500 + u.O.Troops; return t; }   // b.H()
+    int OurArmyTotal()   { int t = 0; foreach (var u in units) if (u.Ours  && u.Alive) t += 500 + u.O.Troops; return t; }   // b.G()
 
     void BuildEnemyPlans()
     {
@@ -1044,8 +1045,13 @@ public class BattleField
             var pl = new EnemyPlan();
             if (e == cmd)
             {
-                if (canRetreat && e.O.Troops < 100 && e.O.Hp < 40) pl.Type = 4;          // 整军撤
-                else { pl.Type = 1; pl.Target = ours; }
+                // 原版 b.a(byte[],…) 3173 + bW() 10913：太守只有三种计划，**没有"冲上来"这一条**——
+                //   有退路 且（敌方总战力 < 我方总战力 ⁄ 4  或  兵 < 100 且体力 < 40）→ 整军逃窜（我方赢）
+                //   否则 5 格内有能放的计策 → 放计策
+                //   否则 计划 0 —— 原地不动。太守就是这么守在城里的。
+                if (canRetreat && (total < OurArmyTotal() / 4 || (e.O.Troops < 100 && e.O.Hp < 40))) pl.Type = 5;
+                else if (EnemyPlotCandidates(e).Count > 0) pl.Type = 2;
+                else pl.Type = 0;
             }
             else if (canRetreat && e.O.Troops < 400 && total * 2 / 33 > e.O.Troops) pl.Type = 3;
             else if (ours.O.Might <= e.O.Might && ours.O.Troops <= e.O.Troops && ours.O.Int < e.O.Int)
@@ -1119,8 +1125,11 @@ public class BattleField
     {
         switch (pl.Type)
         {
-            case 3:                                            // 这支撤
-                e.Alive = false; hintText.text = e.O.Name + " 撤退"; acting = null; CenterOn(e.X, e.Y);
+            case 5:                                            // 太守整军逃窜：原版 W=5 → L()，整场我方赢
+                ShowOver("敌方全军逃窜!");
+                return true;
+            case 3:                                            // 这支遁逃（原版 W=3）
+                e.Alive = false; hintText.text = "敌将遁逃!"; acting = null; CenterOn(e.X, e.Y);
                 return true;
             case 2:                                            // 放计策：原版 c()——随机挑一对（目标, 计策）
             {
