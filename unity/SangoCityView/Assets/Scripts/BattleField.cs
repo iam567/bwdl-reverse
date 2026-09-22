@@ -351,10 +351,27 @@ public class BattleField
         int code = TerrainAt(u.X, u.Y) & 0xF;
         if (code != 1 && code != 3 && code != 4) return;
         Ask("是否进入村庄?", () => {
-            if (code == 4) HealPrompt(u);
-            // 1 / 3：原版无事发生
+            if (code == 4) { HealPrompt(u); return; }
+            // 1 / 3：原版无事发生。这里按「其他版本是武器店 / 金粮店」补一版战场里说得通的（HOUSE_RULES）：
+            // 一座建筑一场仗只能用一次。
+            int key = u.Y * W + u.X;
+            if (usedBuildings.Contains(key)) { hintText.text = "村中已空"; return; }
+            usedBuildings.Add(key);
+            if (code == 3)
+            {
+                int n = 100 + rng.Next(201);                        // 征得粮草：100~300
+                supply[1] += n; hintText.text = "征得粮草: " + n; RefreshTop();
+            }
+            else
+            {
+                // 武库：兵器升一档（原版 R[] 0–23 是兵器表下标）
+                if (u.O.ArmLv < 23) { u.O.ArmLv++; hintText.text = "获得兵器 " + BattleRules.WeaponOf(u.O); }
+                else hintText.text = "库中兵器不及手中之物";
+            }
+            Refresh();
         });
     }
+    readonly HashSet<int> usedBuildings = new HashSet<int>();
     void HealPrompt(Unit u)
     {
         if (u.O.Hp >= u.O.HpMax) { hintText.text = "当前武将毋需治疗!"; return; }
