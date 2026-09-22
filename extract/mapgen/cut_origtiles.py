@@ -70,12 +70,15 @@ def seamless(im):
     return Image.composite(rolled, im, mask)
 
 
-n = 0
-for theme, slots in THEME_BLOCKS.items():
-    for slot, block in slots.items():
-        im = cell(block)
-        if slot in SEAMLESS:
-            im = seamless(im)
-        im.resize((N, N), Image.BOX).save(os.path.join(OUT, 'bt_%s_%s.png' % (theme, slot)))
-        n += 1
-print('地块 %d 张（%d 主题 × %d 槽位）→ %s' % (n, len(THEME_BLOCKS), len(next(iter(THEME_BLOCKS.values()))), OUT))
+
+if __name__ == '__main__':
+
+    n = 0
+    for theme, slots in THEME_BLOCKS.items():
+        for slot, block in slots.items():
+            im = cell(block)
+            if slot in SEAMLESS:
+                im = seamless(im)
+            im.resize((N, N), Image.BOX).save(os.path.join(OUT, 'bt_%s_%s.png' % (theme, slot)))
+            n += 1
+    print('地块 %d 张（%d 主题 × %d 槽位）→ %s' % (n, len(THEME_BLOCKS), len(next(iter(THEME_BLOCKS.values()))), OUT))
