@@ -431,6 +431,39 @@ public static class BattleRules
     /// 打到武将本人身上是扣体力，不是扣兵
     public static int HpHit(int damage) => damage / 4 + 1;
 
+    /// b.m(short) 7665：被俘 / 归顺之后重掷忠诚。算下来大致是「100 − 原忠诚」附近——
+    /// 死忠的被抓过来心不甘情不愿（100 → 0~24），本来就不忠的对新主反倒服帖（0 → 75~99）。
+    public static int Rebind(int loyal, System.Random rng)
+    {
+        int n = 100 - loyal, n2 = (n + 50) / 2;
+        if (n == n2) n2 = rng.Next(3) - 1;
+        else if (loyal > 50) n2 = n2 - n > 0 ? rng.Next(n2 - n) : 0;
+        else n = n - n2 > 0 ? rng.Next(n - n2) : 0;
+        return Mathf.Clamp(n + n2, 0, 100);
+    }
+
+    /// b.f(short) 2721：累积的计策点 Q[] 换算成等级 H[]（= Lv），**只升不降**，Q 封顶 30000。
+    /// Lv 决定阵型战里骑 / 弓 / 步怎么配比，所以打得越多，带的兵越成形。
+    public static int PlotLevel(int plots)
+    {
+        if (plots < 2000) return 1;
+        if (plots < 4000) return 2;
+        if (plots < 7000) return 3;
+        if (plots < 10000) return 4;
+        if (plots < 15000) return 5;
+        if (plots < 20000) return 6;
+        if (plots < 30000) return 7;
+        return 8;
+    }
+    /// 战后：歼敌数记进 Q[]，够档位就升级。返回是不是升了
+    public static bool GainPlots(Officer o, int killed)
+    {
+        o.Plots = Mathf.Clamp(o.Plots + Mathf.Max(0, killed), 0, 30000);
+        int lv = PlotLevel(o.Plots);
+        if (lv > o.Lv) { o.Lv = lv; return true; }
+        return false;
+    }
+
     /// b.a(short,short)：计策成功率。挂了很久的那条，终于对上了。
     public static bool PlotHits(Officer me, Officer foe, System.Random rng)
     {

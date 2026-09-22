@@ -352,7 +352,8 @@ public class BattleField
         else if (mode == "move" && sel != null && reach.Contains(y * W + x)) { DoMove(x, y); }
         else if (mode == "attack" && sel != null && here != null && !here.Ours && Adjacent(sel, x, y)) { DoAttack(here); }
         else if (mode == "info" && here != null) { ShowInfo(here); }
-        else if (here != null && here.Ours && here.Trapped == 0) { sel = here; mode = ""; }   // 原版 4631：只过滤 bu 状态，没有"已行动"锁
+        else if (here != null && here.Ours && here.Trapped > 0) hintText.text = "武将中计,无法动弹!";   // W == 19
+        else if (here != null && here.Ours) { sel = here; mode = ""; }   // 原版 4631：只过滤 bu 状态，没有"已行动"锁
         Refresh();
     }
 
@@ -886,8 +887,117 @@ public class BattleField
         ShowOver(endMsg ?? "敌军占领了 " + CityNameNow() + "!");
     }
     void AfterRetreat() { if (retreating) NextRetreat(); }
+    /// 自检：把阵型战的某个结局直接喂给战棋层
+    public void AfterClashForTest(int cc, bool commanders)
+    {
+        CloseAsk(); CloseInfo(); ClosePlotPop(); CloseRetreatMenu();
+        var c0 = OurCommander0(); var f0 = FoeCommander0();
+        Unit ours = c0, foe = f0;
+        if (!commanders)
+        {
+            foreach (var u in units) if (u.Ours  && u.Alive && u != c0) { ours = u; break; }
+            foreach (var u in units) if (!u.Ours && u.Alive && u != f0) { foe  = u; break; }
+        }
+        CenterOn(foe.X, foe.Y); curX = foe.X; curY = foe.Y;
+        AfterClash(ours, foe, cc, 2500, 900);
+    }
+    public void TrapForTest(Unit u) { u.Trapped = 3; sel = null; mode = ""; OnBoardClickForTest(u.X, u.Y); }
+    public void OnBoardClickForTest(int x, int y)
+    {
+        var here = At(x, y);
+        if (here != null && here.Ours && here.Trapped > 0) hintText.text = "武将中计,无法动弹!";
+        CenterOn(x, y); curX = x; curY = y; Refresh();
+    }
     public void CaptureForTest() { CloseAsk(); CloseInfo(); ClosePlotPop(); forceDefend = true; Captured(); }
     public void CaptureResetForTest() { captured = retreating = over = false; forceDefend = false; retreatQ.Clear(); System.Array.Copy(supply0, supply, 4); RefreshTop(); CloseRetreatMenu(); if (overPop != null) Object.Destroy(overPop.gameObject); overPop = null; sel = null; Refresh(); }
+
+    // ── 阵型战散场之后：原版 ai() → a()/b()，再加 aa() 的计策点 ───────────
+    //   cc 1/2 阵亡（体力被打光）、3/4 被擒、5/6 溃走（人还在，带着残兵回战棋层）。
+    //   主将（双方各自的第一员）一旦阵亡或被擒：
+    //     敌方主将没了 → W=5「敌方全军逃窜!」→ L() 城归我方，整场结束
+    //     我方主将没了 → 余将逐一「撤退武将 X」选退路，都走光 → D() 城归敌方
+    //   而且谁的主将倒了，谁手里的俘虏就地放还（原版 a()/b() 里把对方的状态 2 抹回 0）。
+    public Unit OurCommander0()  { foreach (var u in units) if (u.Ours) return u; return null; }
+    public Unit FoeCommander0()  { foreach (var u in units) if (!u.Ours) return u; return null; }
+    readonly List<Unit> tookByUs = new List<Unit>(), tookByFoe = new List<Unit>();
+
+    public void AfterClash(Unit ours, Unit foe, int cc, int killed, int lost)
+    {
+        BattleRules.GainPlots(ours.O, killed);                      // b.aa() → f()：歼敌数进 Q[]，够档位就升 Lv
+        BattleRules.GainPlots(foe.O, lost);
+        var ourCmd = OurCommander0(); var foeCmd = FoeCommander0();
+        string msg = null;
+        switch (cc)
+        {
+            case 1: foe.Alive = false;  msg = foe.O.Name + " 战死"; break;
+            case 2: ours.Alive = false; msg = ours.O.Name + " 战死"; break;
+            case 3: foe.Alive = false;  msg = Capture(foe, ours, true);  break;
+            case 4: ours.Alive = false; msg = Capture(ours, foe, false); break;
+            case 5: msg = foe.O.Name + " 溃走"; break;                // 人还在战棋层，只是这一仗打不下去了
+            case 6: msg = ours.O.Name + " 溃走"; break;
+        }
+        if (msg != null) hintText.text = msg;
+        Refresh();
+        if (cc == 1 || cc == 3)                                     // 敌方谁倒了
+        {
+            Release(tookByFoe, true);                               // 敌方手里的我方俘虏放还
+            if (foe == foeCmd) { TakeCity(); return; }
+        }
+        if (cc == 2 || cc == 4)
+        {
+            Release(tookByUs, false);
+            if (ours == ourCmd)
+            {
+                if (ours.O.Id == OurRuler()) { ShowOver("君主战亡!"); return; }   // W == 8
+                ForceRetreatAll("主将战殁,全军撤退!", "敌军占领了 " + CityNameNow() + "!");
+                return;
+            }
+        }
+        CheckOver();
+    }
+    /// 被擒：换边站，忠诚按 b.m() 重掷。兵跟着人走。
+    string Capture(Unit taken, Unit captor, bool toUs)
+    {
+        taken.Alive = false;
+        var o = taken.O;
+        o.Loyal = BattleRules.Rebind(o.Loyal, rng);
+        var join = new Unit { O = o, Ours = toUs, Alive = true, Dir = "e", Flip = !toUs, Trapped = 0 };
+        var spot = FreeNear(captor.X, captor.Y);
+        join.X = spot.x; join.Y = spot.y; join.Draw = new Vector2(spot.x, spot.y);
+        units.Add(join);
+        (toUs ? tookByUs : tookByFoe).Add(join);
+        return o.Name + " 被擒,归入" + (toUs ? "我军" : "敌军") + " (忠诚 " + o.Loyal + ")";
+    }
+    /// 主将倒了，手里的俘虏放还原主（原版把对方的状态 2 抹回 0）
+    void Release(List<Unit> took, bool backToUs)
+    {
+        foreach (var u in took)
+        {
+            if (!u.Alive) continue;
+            u.Ours = backToUs; u.Flip = !backToUs;
+            u.O.Loyal = BattleRules.Rebind(u.O.Loyal, rng);
+        }
+        took.Clear();
+    }
+    Vector2Int FreeNear(int x, int y)
+    {
+        for (int r = 1; r < 6; r++)
+            for (int d = 0; d < 4; d++)
+            {
+                int nx = x + DX[d] * r, ny = y + DY[d] * r;
+                if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+                if (At(nx, ny) == null && BattleRules.MoveCost(grid[ny, nx] & 0xF, Kind.Ping) < 100)
+                    return new Vector2Int(nx, ny);
+            }
+        return new Vector2Int(x, y);
+    }
+    /// 敌方主将倒了：W=5 → L()，城归我方
+    void TakeCity()
+    {
+        LoadCityData();
+        int r = OurRuler(); if (r > 0) cityRuler[cityId] = r;
+        ShowOver("敌方全军逃窜! 我军攻占了 " + CityNameNow() + "!");
+    }
 
     void EndDay()
     {
@@ -1153,7 +1263,7 @@ public class BattleField
                     {
                         if (enemyMp < BattleRules.AttackCost) return false;
                         enemyMp -= BattleRules.AttackCost;
-                        hintText.text = e.O.Name + " 来攻 " + m.O.Name;
+                        hintText.text = "敌军攻打我军!";           // W == 2
                         acting = e; OnClash?.Invoke(m, e, false);
                         return true;
                     }

@@ -79,6 +79,14 @@ public class BattleGame : MonoBehaviour
         field.CaptureForTest();                    // 硬当守方：敌军踩上城池格 → 「敌军占领我方城池!」→ 逐将选退路
         yield return Shot(dir, "2i_失城逐将撤退");
         field.CaptureResetForTest();
+        field.TrapForTest(FindUnit(true));          // 点被困的部队 → 「武将中计,无法动弹!」
+        yield return Shot(dir, "2k_中计不能动");
+        FindUnit(true).Trapped = 0;
+        field.AfterClashForTest(3, false);          // 敌将被擒 → 忠诚重掷、归入我军
+        yield return Shot(dir, "2l_被擒归我军");
+        field.AfterClashForTest(1, true);           // 敌方主将战死 → 敌方全军逃窜 → 攻占
+        yield return Shot(dir, "2m_攻占");
+        field.CaptureResetForTest();
         field.SupplyForTest(10, 900);              // 我方粮只剩 10，不够一回合的消耗 → 「我军粮草耗竭,全军撤退!」
         yield return Shot(dir, "2j_粮草耗竭");
         field.CaptureResetForTest();               // 演示完复位，后面的截图还当攻方
@@ -99,7 +107,11 @@ public class BattleGame : MonoBehaviour
         field.CommandForTest(me, 2);               // 选中我方、切到攻击模式，看目标标记
         yield return Shot(dir, "2_贴住敌军");
 
-        field.OnClash(me, foe, true);
+        // 太守站在城池格上，打他出来的是攻城战（原版 bH 取守方脚下那格）。
+        // 野战这一组得找**不在城池格上**的守军，正好是第二员曹操。
+        var foe2 = field.UnitOf(61) ?? foe;
+        me.X = foe2.X - 1; me.Y = foe2.Y; field.Refresh();
+        field.OnClash(me, foe2, true);
         yield return Shot(dir, "3_阵型选择");
 
         clash.PickForTest(1);                      // 选楔形
@@ -113,6 +125,12 @@ public class BattleGame : MonoBehaviour
 
         clash.AdvanceForTest(45);                  // 120 拍会一路打到武将碰面进单挑，看不到阵型战
         yield return Shot(dir, "5_打了一阵");
+        clash.SurroundForTest();                   // 四面围住残血的敌将 → 围捕
+        yield return Shot(dir, "5i_围捕");
+        clash.ClashResetForTest(80);
+        clash.RoutForTest();                       // 武将棋子走出战场 → Z() 判溃走 / 阵亡
+        yield return Shot(dir, "5j_溃走");
+        clash.ClashResetForTest(80);
         clash.ZoomForTest(0.2f);                   // 捏到最小：整场 16 列都在视窗里
         yield return Shot(dir, "5h_缩到整场");
         clash.ZoomForTest(1f);
@@ -264,17 +282,16 @@ public class BattleGame : MonoBehaviour
                 {
                     Object.Destroy(duel.Root.gameObject); duel = null;
                     clash.Root.gameObject.SetActive(true);
-                    clash.Surrender();                       // → clash.OnDone → 回战棋层
-                    field.OpenRetreatFor(me);
+                    clash.Surrender();                       // cc = 4 → OnDone → AfterClash 里按原版当「被擒」处理
+
                 };
             };
             clash.OnDone = (mine, theirs) =>
             {
+                int cc = clash.Cc, killed = clash.Killed, lost = clash.Lost;
                 Object.Destroy(clash.Root.gameObject); clash = null;
-                if (me.O.Troops  <= 0 || me.O.Hp  <= 0) me.Alive = false;
-                if (foe.O.Troops <= 0 || foe.O.Hp <= 0) foe.Alive = false;
                 field.Root.gameObject.SetActive(true);
-                field.Refresh();
+                field.AfterClash(me, foe, cc, killed, lost);       // 原版 ai() + aa()
             };
         };
     }

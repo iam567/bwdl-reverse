@@ -257,7 +257,48 @@ public class ClashView
     public void AdvanceForTest(int n = 120) { CloseCmd(); for (int i = 0; i < n; i++) { tickAt = 0; Tick(); } }
     public void FinishForTest() { Finish(); }
     /// 单挑里投降：原版 b.b(s,true) 置 aq=2，整场阵型战到此为止
-    public void Surrender() { over = "我方投降"; Finish(); }
+    public void Surrender() { Cc = 4; over = me.Name + " 投降"; Finish(); }
+    /// 自检：把我方四枚兵棋挪到敌将四周、把他打成残血，看围捕判定
+    public void SurroundForTest()
+    {
+        CloseCmd();
+        var g = theirs[0];
+        foe.Hp = 30; foe.Loyal = 60;
+        int k = 0;
+        for (int i = 1; i < mine.Count && k < 4; i++)
+        {
+            var p = mine[i];
+            if (!p.Alive || p.Off) continue;
+            while (k < 4)
+            {
+                int nx = g.Col + DX[k], ny = g.Row + DY[k];
+                k++;
+                if (nx < 0 || ny < 0 || nx >= BattleRules.GridW || ny >= BattleRules.GridH) continue;
+                p.Col = nx; p.Row = ny; mine[i] = p; break;
+            }
+        }
+        FocusOn(g.Col);
+        if (CaptureCheck()) { Cc = 3; over = CcText(); }
+        Redraw();
+    }
+    /// 自检：把上面两个演示的结局抹掉，接着往下截图
+    public void ClashResetForTest(int hp = 0)
+    {
+        Cc = 0; over = null; overAt = 0f; idleTicks = 0;
+        if (hp > 0) { foe.Hp = hp; me.Hp = hp; }
+        var g = theirs[0]; g.Alive = true; g.Off = false; theirs[0] = g;
+        var m0 = mine[0];
+        if (m0.Off) { m0.Off = false; m0.Col = 1; m0.Row = BattleRules.GridH / 2; }
+        m0.Alive = true; mine[0] = m0;
+        Redraw();
+    }
+    /// 自检：让我方武将的棋子走出战场（撤退令的结局），看 Z() 判溃走还是阵亡
+    public void RoutForTest()
+    {
+        CloseCmd();
+        var p = mine[0]; p.Off = true; p.Col = -1; p.Row = -1; mine[0] = p;
+        RoutCheck(); over = CcText(); Redraw();
+    }
     public void FireForTest() { UseSkill(4); }        // 自检：点火矢，看箭带不带火
     /// 自检：直接挂上咒缚/呐喊。咒缚的绳子在敌将脚下，镜头得滚过去才截得到。
     public void BuffForTest(int skill)
@@ -298,7 +339,10 @@ public class ClashView
         // b.S() 守城那一支末尾：for (n=0;n<4;n++) cj[n] = 1；
         // 守方四个兵种开局全是「待机」——守城本来就该守在原位，不是冲出去。
         if (siege && !weAttack) for (int i = 0; i < 4; i++) orders[i] = 1;
-        roundNo = 0; RefreshEnemyOrders();
+        roundNo = 0; Cc = 0; idleTicks = 0;
+        troops0Me = me.Troops; troops0Foe = foe.Troops;
+        enemyPts = BattleRules.PlotPoints(foe);
+        RefreshEnemyOrders();
         BuildField();
         Redraw();
     }
@@ -468,8 +512,15 @@ public class ClashView
     int turnIdx;
     int extra;                             // cF：这枚棋是不是已经用掉了第二次行动
     int cd;                                // 生效中的增益：高 4 位能力号、低 4 位剩余回合
-    int plotPts;                           // 计策点 Q[]
+    int ce;                                // 敌方的增益，同样的编码（原版 ce）
+    int plotPts;                           // 能力点 bN = 智力 × 13 / 100
+    int enemyPts;                          // 敌方的 bO
     int roundNo;
+    int troops0Me, troops0Foe;             // 开打前双方的兵，散场时用来算歼敌数 → 计策点
+    /// 原版 cc：0 还没分出 / 1 敌将阵亡 / 2 我将阵亡 / 3 敌将被擒 / 4 我将被擒 / 5 敌将溃走 / 6 我将溃走
+    public int Cc;
+    public int Killed, Lost;               // 这一仗歼敌、损兵各多少（b.aa() 换成计策点）
+    int idleTicks;
     float overAt;                          // 分出胜负那一刻，用来延一小会儿再收场
     public int ActingSide = -1, ActingIdx = -1;
     public static bool Trace;                  // -trace：每一步写进 Player.log，自检用
@@ -515,16 +566,26 @@ public class ClashView
                 turnSide = 1 - turnSide;
                 var ns = turnSide == 0 ? mine : theirs;
                 turnIdx = ns.Count > 1 ? 1 : 0;              // cD = bI > 1 ? 1 : 0
-                if (turnSide == 0)                           // 我方又轮了一整圈：cG++，敌方按 h(cG) 重新下令
+                if (turnSide == 1)                           // 我方轮完了一圈（原版 cI 0→1）
                 {
-                    roundNo++; RefreshEnemyOrders();
+                    if (Cc == 0 && CaptureCheck()) Cc = 3;   // Y()：围住了就擒
+                    RefreshEnemyOrders();                    // h(cG)，里头连着 bZ() 给敌方上能力
+                    if (ce != 0)
+                    {
+                        ce = (ce & 0xF0) | Mathf.Max(0, (ce & 0xF) - 1);
+                        if ((ce & 0xF) == 0) ce = 0;
+                    }
+                }
+                else                                         // 敌方也轮完了：cG++
+                {
+                    roundNo++;
                     if (cd != 0)
                     {
                         cd = (cd & 0xF0) | Mathf.Max(0, (cd & 0xF) - 1);
                         if ((cd & 0xF) == 0) cd = 0;
                     }
                 }
-                if (did) { ActingSide = 1 - turnSide; ActingIdx = idx; FocusOn(p.Col); break; }
+                if (did) { ActingSide = 1 - turnSide; ActingIdx = idx; FocusOn(p.Col); idleTicks = 0; break; }
                 continue;
             }
 
@@ -534,13 +595,17 @@ public class ClashView
             if (!p.Alive || p.Off || !twice || extra >= 1) { turnIdx++; extra = 0; }
             else extra++;
 
-            if (did) { ActingSide = turnSide; ActingIdx = idx; FocusOn(p.Col); break; }
+            if (did) { ActingSide = turnSide; ActingIdx = idx; FocusOn(p.Col); idleTicks = 0; break; }
         }
+        if (ActingSide < 0) idleTicks++;
 
-        if (Formation.TotalTroops(theirs) == 0 || foe.Hp <= 0) over = "敌军溃败";
-        else if (Formation.TotalTroops(mine) == 0 || me.Hp <= 0) over = "我军溃败";
-        else if (AllOff(theirs)) over = "敌军撤退";
-        else if (AllOff(mine)) over = "我军撤退";
+        // 原版没有「兵死光了就收」这一说：小兵打完武将自己还在盘上接着打，
+        // 一直打到他的棋子离盘（体力被打光，或者下了撤退令走出边界）——这才有 cc。
+        RoutCheck();
+        if (Cc != 0) over = CcText();
+        else if (AllOff(theirs)) { Cc = 5; over = CcText(); }
+        else if (AllOff(mine))   { Cc = 6; over = CcText(); }
+        else if (idleTicks > 20) over = "双方罢兵";            // 兜底：谁都动不了（原版没有，见 HOUSE_RULES）
         Redraw();
     }
 
@@ -562,7 +627,7 @@ public class ClashView
         int cmd = ours ? orders[(int)p.Arm] : enemyOrders[(int)p.Arm];
         // 咒缚（cd 高 4 位 = 1）：敌方**武将本人**改走 x(0)——待机那一支，只打相邻的，不移动
         if (!ours && p.Arm == Arm.None && BattleRules.BuffId(cd) == 1) cmd = 1;
-        int range = BattleRules.ArrowRange(ours ? cd : 0);
+        int range = BattleRules.ArrowRange(ours ? cd : ce);
 
         switch (cmd)
         {
@@ -762,7 +827,7 @@ public class ClashView
         var q = other[t];
         int dmg = BattleRules.Damage(BattleRules.Atk(self, p.Arm),
                                      BattleRules.Def(enemy), p.Troops, rng,
-                                     ours ? cd : 0, p.Arm);
+                                     ours ? cd : ce, p.Arm);
         // b.a(0,by,1,by6,·)：打人的和挨打的都是武将本人 → aq=1，跳出去单挑
         // 双方都站着才打得起来；有一方体力已空就不进单挑了，直接算伤害
         if (p.Arm == Arm.None && q.Arm == Arm.None && me.Hp > 0 && foe.Hp > 0)
@@ -772,9 +837,13 @@ public class ClashView
                                  Fire = ours && BattleRules.BuffId(cd) == 5 });   // 火矢生效时箭带火
         if (q.Arm == Arm.None)
         {
+            // 原版 c(boolean) 5238：砍在武将身上的是体力，扣的是「伤害 ⁄ 4 + 1」；
+            // 体力归零 → cb 置 false，**武将的棋子离盘**，这一场就由 Z() 定收场。
             if (ours) foe.Hp = Mathf.Max(0, foe.Hp - BattleRules.HpHit(dmg));
             else      me.Hp  = Mathf.Max(0, me.Hp  - BattleRules.HpHit(dmg));
-            q.HitAt = Time.time; q.HitArm = (int)p.Arm; other[t] = q;
+            q.HitAt = Time.time; q.HitArm = (int)p.Arm;
+            if ((ours ? foe.Hp : me.Hp) <= 0) q.Alive = false;
+            other[t] = q;
         }
         else
         {
@@ -801,9 +870,108 @@ public class ClashView
             return n > 300 && n2 < 100;
         }
         if (U() && roundNo >= 4) { for (int i = 0; i < 4; i++) enemyOrders[i] = 2; return; }
+        EnemyAbility();                                   // 原版 z(n)/A(n) 第一件事就是 bZ()
         if (weAttack) for (int i = 0; i < 4; i++) enemyOrders[i] = 1;
         else { enemyOrders[0] = 1; for (int i = 1; i < 4; i++) enemyOrders[i] = 0; }
     }
+    /// b.Z() 5409：武将的棋子离盘之后，定这一场怎么收。
+    ///   体力 ≤ 0（被打光的）→ 阵亡；体力还在（下了撤退令走出边界的）→ 溃走，
+    ///   不过 80% 还要在退路上挨一记 2~13，扣死了照样算阵亡。
+    void RoutCheck()
+    {
+        if (Cc != 0 || mine == null || theirs == null) return;
+        var g = mine[0];
+        if (!g.Alive || g.Off)
+        {
+            if (me.Hp <= 0) { Cc = 2; return; }
+            Cc = 6;
+            if (rng.Next(10) > 1)
+            {
+                int cf = rng.Next(12) + 2;
+                if (cf >= me.Hp) { me.Hp = 0; Cc = 2; } else me.Hp -= cf;
+            }
+            return;
+        }
+        var f = theirs[0];
+        if (!f.Alive || f.Off)
+        {
+            if (foe.Hp <= 0) { Cc = 1; return; }
+            Cc = 5;
+            if (rng.Next(10) > 1)
+            {
+                int cf = rng.Next(12) + 2;
+                if (cf >= foe.Hp) { foe.Hp = 0; Cc = 1; } else foe.Hp -= cf;
+            }
+        }
+    }
+    string CcText()
+    {
+        switch (Cc)
+        {
+            case 1: return foe.Name + " 战死";
+            case 2: return me.Name  + " 战死";
+            case 3: return foe.Name + " 被擒";
+            case 4: return me.Name  + " 被擒";
+            case 5: return foe.Name + " 溃走";
+            default: return me.Name + " 溃走";
+        }
+    }
+
+    /// b.Y() 5363：我方轮完一圈查一次围捕。敌将体力 ≤ 40 且忠诚 ≤ 99 才够条件，
+    /// 四邻被我方兵棋堵住几面就是几成把握——四面 100 / 三面 90 / 两面 70 / 一面 50，
+    /// 再按他的武力和忠诚加减：硬骨头难擒，本来就三心二意的反倒好擒。
+    bool CaptureCheck()
+    {
+        var g = theirs[0];
+        if (!g.Alive || g.Off) return false;
+        if (foe.Hp > 40 || foe.Loyal > 99) return false;
+        int n = 0;
+        for (int d = 0; d < 4; d++)
+            if ((Cell(g.Col + DX[d], g.Row + DY[d]) & 0x40) != 0) n++;
+        int p = n == 4 ? 100 : n == 3 ? 90 : n == 2 ? 70 : n == 1 ? 50 : 0;
+        if (p == 0) return false;
+        if (foe.Might > 95 || foe.Loyal > 95) p -= 30;
+        else if (foe.Might >= 90 || foe.Loyal >= 90) p -= 20;
+        else if (foe.Might >= 80 || foe.Loyal >= 80) p -= 10;
+        else if (foe.Loyal < 15) p += 40;
+        else if (foe.Loyal < 35) p += 20;
+        else if (foe.Loyal < 50) p += 10;
+        return rng.Next(100) < p;
+    }
+
+    /// b.bZ() 11353：敌方也会拿点数上能力（bO = 敌将智力 × 13 / 100）。
+    ///   有 7 点：某个弓兵正好在我方某枚棋子右边 5~6 格 → 连弩（射程 6，三回合）
+    ///   有 8 点：同样的站位但对面也得是弓兵才上连弩；否则只要有谁贴上了我方 → 呐喊（四回合）
+    void EnemyAbility()
+    {
+        if (enemyPts < 7) return;
+        bool Look(bool needGong)
+        {
+            for (int i = 1; i < theirs.Count; i++)
+            {
+                var p = theirs[i];
+                if (!p.Alive || p.Off || p.Arm != Arm.Gong) continue;
+                for (int k = 5; k < 7; k++)
+                {
+                    int x = p.Col - k, y = p.Row;
+                    if (x < 0) break;
+                    foreach (var q in mine)
+                        if (q.Alive && !q.Off && q.Col == x && q.Row == y && (!needGong || q.Arm == Arm.Gong))
+                            return true;
+                }
+            }
+            return false;
+        }
+        if (enemyPts < 8) { if (Look(false)) { enemyPts -= 7; ce = 0x33; } return; }
+        if (Look(true)) { enemyPts -= 7; ce = 0x33; return; }
+        foreach (var p in theirs)
+        {
+            if (!p.Alive || p.Off) continue;
+            for (int d = 0; d < 4; d++)
+                if ((Cell(p.Col + DX[d], p.Row + DY[d]) & 0x40) != 0) { enemyPts -= 8; ce = 0x44; return; }
+        }
+    }
+
     /// 一边的兵棋全都出了场（撤退走光）→ 这场也就散了
     static bool AllOff(List<Piece> ps)
     {
@@ -870,6 +1038,8 @@ public class ClashView
     {
         me.Troops  = Formation.TotalTroops(mine   ?? new List<Piece>());
         foe.Troops = Formation.TotalTroops(theirs ?? new List<Piece>());
+        Killed = Mathf.Max(0, troops0Foe - foe.Troops);        // b.aa() 5463：歼敌数进计策点
+        Lost   = Mathf.Max(0, troops0Me  - me.Troops);
         OnDone?.Invoke(me.Troops, foe.Troops);
     }
 
