@@ -98,7 +98,11 @@ print('界面  %d 张（新）' % n)
 
 # 62 套单挑立绘，一套一个目录
 n = 0
-for d in sorted(glob.glob(os.path.join(ROOT, 'assets/duelskin/px/*'))):
+# 立绘用归一化过的那一份（normalize_duelskin.py 把各帧的人物大小对齐了，
+# 不然站立帧比动作帧大一倍，打一下就"缩水"）。没跑过归一化就退回原始的 px。
+_DSK = os.path.join(ROOT, 'assets/duelskin/norm')
+if not os.path.isdir(_DSK): _DSK = os.path.join(ROOT, 'assets/duelskin/px')
+for d in sorted(glob.glob(os.path.join(_DSK, '*'))):
     if not os.path.isdir(d): continue
     dst = os.path.join(DST, 'duelskin', os.path.basename(d))
     os.makedirs(dst, exist_ok=True)
