@@ -28,6 +28,8 @@ public class BattleField
     public System.Action OnQuit;
 
     const int CELL = 44;                            // 一格在屏上多大
+    const int NP_H = 15;                            // 名牌高度：上面 11 排字、下面 4 留给兵力条
+    const int FIG  = CELL - NP_H + 3;               // 人物：名牌以上的那块地方，脚搭在名牌上沿
     readonly int W, H;
     readonly int[,] grid;
     readonly string theme;
@@ -915,11 +917,21 @@ public class BattleField
         over = true; enemyTurn = false; sel = null; mode = ""; reach.Clear();
         CloseAsk(); CloseInfo(); CloseRetreatMenu(); ClosePlotMenu();
         hintText.text = msg;
-        float w = 320, h = 70;
+        // 「敌方全军逃窜! 我军攻占了 洛阳!  入库 金 1650 粮 1640」这种一行摆不下，
+        // 得让它自己折行、框再跟着内容长高，不能写死 320×70。
+        float w = Mathf.Min(refW - 48, 340), pad = 14;
         overPop = Node("over", Root);
+        var bg = Panel(overPop, "bg", BattleUi.PlateSp()); bg.raycastTarget = true;
+        var t = Label(overPop, msg, 17, new Color32(0xF0,0xC8,0x70,255), TextAnchor.MiddleCenter);
+        t.horizontalOverflow = HorizontalWrapMode.Wrap;
+        t.verticalOverflow = VerticalWrapMode.Truncate;
+        t.lineSpacing = 1.15f;
+        Place(t.rectTransform, pad, pad, w - pad * 2, 1000);
+        float th = Mathf.Ceil(t.preferredHeight);
+        float h = Mathf.Max(64, th + pad * 2);
         Place(overPop, (refW - w) / 2, (refH - h) / 2 - 40, w, h);
-        var bg = Panel(overPop, "bg", BattleUi.PlateSp()); Fill((RectTransform)bg.transform); bg.raycastTarget = true;
-        var t = Label(overPop, msg, 18, new Color32(0xF0,0xC8,0x70,255), TextAnchor.MiddleCenter); Fill(t.rectTransform);
+        Fill((RectTransform)bg.transform);
+        Place(t.rectTransform, pad, pad, w - pad * 2, h - pad * 2);
         Refresh();
     }
     /// 敌军踩上城池格：城易主，我方余将一个一个选退路
@@ -1091,9 +1103,10 @@ public class BattleField
             cityCount[cityId] = Mathf.Max(1, AliveCount(false));
         }
         RefreshTop();
-        ShowOver(msg + (kept ? "  (守军带走了库中金粮)"
-                             : "  入库 金 " + (oursTakes ? supply[0] : supply[2])
-                               + " 粮 " + (oursTakes ? supply[1] : supply[3])));
+        // 善后那一句另起一行：前一句是战果，后一句是账，挤在一行又长又难读
+        ShowOver(msg + "\n" + (kept ? "(守军带走了库中金粮)"
+                                     : "入库 金 " + (oursTakes ? supply[0] : supply[2])
+                                       + "  粮 " + (oursTakes ? supply[1] : supply[3])));
     }
     int governorId;                                      // j[城]：这座城的太守
     void TakeCity() => SettleCity(true, "敌方全军逃窜! 我军攻占了 " + CityNameNow() + "!");
@@ -1647,12 +1660,13 @@ public class BattleField
 
             // 脚下垫一圈阵营色的椭圆。阵型战和单挑早就这么干了（「两边长得一样时最难分敌我」），
             // 战棋层一直没接——地块又花又暗，光靠描边还是认不出来。
+            float footY = uy + FIG;                                           // 脚线
             var sh = Node("sh", board).gameObject.AddComponent<Image>();      // 深色投影：把人从花地块上垫起来
-            Place((RectTransform)sh.transform, ux + 1, uy + CELL - 16, CELL - 2, 15);
+            Place((RectTransform)sh.transform, ux + 3, footY - 10, CELL - 6, 11);
             sh.sprite = Disc(); sh.color = new Color(0, 0, 0, .5f);
             sh.raycastTarget = false; marks.Add(sh.gameObject);
             var ring = Node("ring", board).gameObject.AddComponent<Image>();   // 亮色阵营环：认敌我
-            Place((RectTransform)ring.transform, ux - 3, uy + CELL - 18, CELL + 6, 18);
+            Place((RectTransform)ring.transform, ux + 1, footY - 12, CELL - 2, 13);
             ring.sprite = Ring(192, 72, .22f);
             // 白描边已经把人勾出来了，这圈只管认敌我，别跟描边抢
             ring.color = u.Ours ? new Color(.45f, .85f, 1f, .55f) : new Color(1f, .52f, .34f, .55f);
@@ -1660,9 +1674,10 @@ public class BattleField
 
             // 小人画得比格子大一圈：源图就是 64，缩到 44 等于白丢分辨率，
             // 放到 60 差不多一比一，脚仍落在格底、横向居中（阵型战的 FIG = C + 14 也是这个路子）
+            // 人物、名牌、兵力条**全部收在自己这一格里**，谁也不越界，于是谁也盖不住谁。
+            // 名牌占格底 14 像素（压住自己的小腿，不碰别人），人物按整格画、脚落在格底。
             var im = Node("u", board).gameObject.AddComponent<Image>();
-            const int FIG = CELL + 16;
-            Place((RectTransform)im.transform, ux - (FIG - CELL) / 2f, uy + CELL - FIG, FIG, FIG);   // 脚正好落在格底
+            Place((RectTransform)im.transform, ux + (CELL - FIG) / 2f, uy, FIG, FIG);
             im.sprite = UnitSprite(u); im.raycastTarget = false;
             im.color = Color.white;                    // 原版没有"已行动"变灰：一个武将只要机动力够可以一直用
             if (u.Flip)
@@ -1675,17 +1690,7 @@ public class BattleField
             }
             marks.Add(im.gameObject);
 
-            // 兵力条收窄到格子中段，两头留出来给脚下那圈阵营色的弧
-            const float BW = CELL - 18;
-            var back = Node("bk", board).gameObject.AddComponent<Image>();
-            Place((RectTransform)back.transform, ux + 9, uy + CELL - 9, BW, 7);
-            back.color = new Color(0, 0, 0, .55f); back.raycastTarget = false;
-            marks.Add(back.gameObject);
-            var bar = Node("bar", board).gameObject.AddComponent<Image>();
-            float f = Mathf.Clamp01(u.O.Troops / 1000f);
-            Place((RectTransform)bar.transform, ux + 10, uy + CELL - 8, (BW - 2) * f, 5);
-            bar.color = u.Ours ? new Color(.35f, .65f, 1f) : new Color(1f, .35f, .3f);
-            bar.raycastTarget = false; marks.Add(bar.gameObject);
+            // 兵力条不再单占一行：画成名牌底下的一道下划线（在第二遍里压在名牌上）
 
             if (u.Trapped > 0)                             // 被困：脚下压咒缚那套绳索（复用阵型战的特效）
             {
@@ -1723,22 +1728,30 @@ public class BattleField
             // 精确值看情报——只留名字，牌子正好一格宽，横着挨着站也不再互相压。
             // 素材两端各有 14 像素的铜钉（battleui.txt 的 border），ppuMultiplier 把九宫格的边缩一半。
             const float NPW = CELL, NPX = 0, NPPAD = 6;
+            // 名牌收进本格底部，不再探到下一格去
             var np = BattleUi.Get("nameplate");
             if (np != null)
             {
                 var pl = Node("np", board).gameObject.AddComponent<Image>();
-                Place((RectTransform)pl.transform, ux + NPX, uy + CELL, NPW, 16);
+                Place((RectTransform)pl.transform, ux + NPX, uy + CELL - NP_H, NPW, NP_H);
                 pl.sprite = np; pl.type = Image.Type.Sliced;
                 pl.pixelsPerUnitMultiplier = 2f; pl.raycastTarget = false;
                 marks.Add(pl.gameObject);
             }
             // 三字名（诸葛亮、司马懿…）按 11 号排会顶到铜钉上，缩一号正好
             var nm = Label(board, u.O.Name, u.O.Name.Length >= 3 ? 10 : 11, Color.white, TextAnchor.MiddleCenter);
-            Place(nm.rectTransform, ux + NPX + NPPAD, uy + CELL, NPW - NPPAD * 2, 16);
+            Place(nm.rectTransform, ux + NPX + NPPAD, uy + CELL - NP_H, NPW - NPPAD * 2, NP_H - 4);
             var ol = nm.gameObject.AddComponent<Outline>();     // 压在地形上不描边看不清
             ol.effectColor = new Color(0, 0, 0, .95f);
             ol.effectDistance = new Vector2(1.2f, 1.2f);
             marks.Add(nm.gameObject);
+
+            const float BW = CELL - 14;                         // 兵力条：名牌下沿的一道细线
+            var bar = Node("bar", board).gameObject.AddComponent<Image>();
+            float f = Mathf.Clamp01(u.O.Troops / 1000f);
+            Place((RectTransform)bar.transform, ux + 7, uy + CELL - 4, BW * f, 3);   // 名牌下沿那一条，不压字
+            bar.color = u.Ours ? new Color(.35f, .75f, 1f) : new Color(1f, .40f, .34f);
+            bar.raycastTarget = false; marks.Add(bar.gameObject);
         }
 
         Place((RectTransform)cursorImg.transform, curX * CELL - 3, curY * CELL - 3, CELL + 6, CELL + 6);
