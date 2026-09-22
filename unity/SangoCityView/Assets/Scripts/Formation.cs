@@ -101,16 +101,20 @@ public static class Formation
         return o;
     }
 
-    /// b.c(boolean,n) → a()/b()：攻城时守方不按阵型，贴着墙线站。
-    /// 先沿行 0 与行 6 排，站满 6 个之后余部退到内侧纵列。
-    public static List<Vector2Int> HugWall(int nb, bool ours)
+    /// b.c(boolean, cn) → a()/b()：攻城时守方不按阵型站。
+    /// cn 是弓兵数——守城前 b(boolean) 已经把**骑兵全转成弓兵**了，所以 cn = 原骑兵 + 原弓兵。
+    /// 前 min(cn,6) 个弓兵贴上下两条城墙（行 0 / 行 6，列从武将那侧往外数三列、每列两个）；
+    /// 其余的（多出来的弓兵 + 全部步兵）退到紧挨武将的那一纵列，**从队尾往回排**，
+    /// 所以行 1 站的是最后一枚步兵，越往下越靠前。
+    public static Vector2Int[] HugWall(int nb, bool ours, int cn)
     {
-        var o = new List<Vector2Int>();
-        int onWall = Mathf.Min(6, nb - 1);
-        for (int i = 1; i <= onWall; i++)
-            o.Add(new Vector2Int(ours ? 8 - (i - 1) / 2 : 7 + (i - 1) / 2, (i - 1) % 2 * 6));
-        for (int j = 1; j <= nb - 1 - onWall; j++)
-            o.Add(new Vector2Int(ours ? 2 : 13, j));
+        var o = new Vector2Int[nb];
+        int onWall = cn > 6 ? 6 : cn;
+        int inner  = cn > 6 ? nb - 7 : nb - cn - 1;
+        for (int i = 1; i <= onWall && i < nb; i++)
+            o[i] = new Vector2Int(ours ? 8 - (i - 1) / 2 : 7 + (i - 1) / 2, (i - 1) % 2 * 6);
+        for (int i = 1; i <= inner && nb - i > 0; i++)
+            o[nb - i] = new Vector2Int(ours ? 2 : 13, i);
         return o;
     }
 
@@ -136,10 +140,11 @@ public static class Formation
     {
         int nb = BattleRules.PieceCount(o.Troops);
         bool hug = siege && (ours ? !weAttack : weAttack);       // 守城那一方贴墙
-        var pos = hug ? HugWall(nb, ours)
-                      : (ours ? Ours(nb, formation) : Theirs(nb, formation));
-
         BattleRules.ArmSplit(o.Lv, out int x, out int y);
+        // b.b(boolean)：守城的一方**骑兵全部转成弓兵**——所以武将等级越高（骑兵占比越大），
+        // 守城时城墙上的弓箭手就越多。转完之后弓兵数 cn = y - 1。
+        var hugPos = hug ? HugWall(nb, ours, y - 1) : null;
+        var pos = hug ? null : (ours ? Ours(nb, formation) : Theirs(nb, formation));
         var list = new List<Piece> {
             // 0 号是武将本人，固定在最左/最右的中间一行
             // bX[0][0]=3 朝右、bX[1][0]=2 朝左 —— 开局双方就是面对面的
@@ -149,10 +154,11 @@ public static class Formation
         int left = o.Troops;
         for (int i = 1; i < nb; i++)
         {
-            var arm = i < x ? Arm.Qi : (i < y ? Arm.Gong : Arm.Bu);
+            var arm = hug ? (i < y ? Arm.Gong : Arm.Bu)          // 守城没有骑兵，全是弓和步
+                          : (i < x ? Arm.Qi : (i < y ? Arm.Gong : Arm.Bu));
             int t = left / (nb - i);
             left -= t;
-            var p = pos[i - 1];
+            var p = hug ? hugPos[i] : pos[i - 1];
             list.Add(new Piece {
                 Col = Mathf.Clamp(p.x, 0, BattleRules.GridW - 1),
                 Row = Mathf.Clamp(p.y, 0, BattleRules.GridH - 1),

@@ -241,7 +241,7 @@ public static class BattleRules
     /// b.a(boolean) 里按 H[]（等级）查出的两个分界：
     /// 兵棋 [1,x) 是骑兵、[x,y) 是弓兵、[y,兵棋数) 是步兵。等级越高骑兵占比越大。
     static readonly int[,] Split = {
-        {3,6},{3,6},{3,7},{4,7},{5,8},{6,9},{6,10},{7,10},{7,10}
+        {3,6},{3,6},{3,7},{4,7},{5,8},{6,9},{6,10},{7,10},{7,12}   // Lv8 原版是 7,12，之前抄成了 7,10
     };
     public static void ArmSplit(int lv, out int x, out int y)
     {

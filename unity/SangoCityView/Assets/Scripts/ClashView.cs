@@ -1239,6 +1239,20 @@ public class ClashView
         Place(n.rectTransform, x - 10, y0 + h + 4, W + 20, 22);
     }
 
+    /// 小地图上那个「大图正看着哪一块」的框。
+    /// 缩小到整场能看全时，战场比视窗小，ScrollTo 会把它居中摆——偏移是**负的**；
+    /// 直接拿这个负偏移算框的位置，框就顶到小地图外面去了。先算框多大，再夹回小地图里。
+    void PlaceMapView()
+    {
+        if (mapView == null || gridRoot == null) return;
+        var clip = (RectTransform)gridRoot.parent;
+        float mw = BattleRules.GridW * MM, mh = BattleRules.GridH * MM;
+        float w = Mathf.Min(mw, clip.rect.width  / (C * zoom) * MM);
+        float h = Mathf.Min(mh, clip.rect.height / (C * zoom) * MM);
+        Place(mapView, Mathf.Clamp(-gridRoot.anchoredPosition.x / (C * zoom) * MM, 0, mw - w),
+                       Mathf.Clamp( gridRoot.anchoredPosition.y / (C * zoom) * MM, 0, mh - h), w, h);
+    }
+
     void BuildMinimap()
     {
         var panel = Panel(field, "mm", UiPlate());
@@ -1342,10 +1356,7 @@ public class ClashView
         mapView.SetAsLastSibling();
 
         var clip = (RectTransform)gridRoot.parent;
-        Place(mapView, -gridRoot.anchoredPosition.x / (C * zoom) * MM,
-                        gridRoot.anchoredPosition.y / (C * zoom) * MM,
-                        Mathf.Min(BattleRules.GridW * MM, clip.rect.width / (C * zoom) * MM),
-                        Mathf.Min(BattleRules.GridH * MM, clip.rect.height / (C * zoom) * MM));
+        PlaceMapView();
     }
 
     void MapSide(List<Piece> ps, Color32 c)
@@ -1563,10 +1574,7 @@ public class ClashView
         gridRoot.anchoredPosition = Vector2.Lerp(now, camTarget, Time.deltaTime * 6f);
         if (mapView == null) return;                    // 镜头在滑，小地图那个框要跟着走
         var clip = (RectTransform)gridRoot.parent;
-        Place(mapView, -gridRoot.anchoredPosition.x / (C * zoom) * MM,
-                        gridRoot.anchoredPosition.y / (C * zoom) * MM,
-                        Mathf.Min(BattleRules.GridW * MM, clip.rect.width / (C * zoom) * MM),
-                        Mathf.Min(BattleRules.GridH * MM, clip.rect.height / (C * zoom) * MM));
+        PlaceMapView();
     }
 
     void DrawSide(List<Piece> ps, bool ours)
