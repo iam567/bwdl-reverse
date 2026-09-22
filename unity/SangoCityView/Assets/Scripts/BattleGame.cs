@@ -78,6 +78,9 @@ public class BattleGame : MonoBehaviour
         yield return Shot(dir, "2h_敌军回合");
         field.CaptureForTest();                    // 硬当守方：敌军踩上城池格 → 「敌军占领我方城池!」→ 逐将选退路
         yield return Shot(dir, "2i_失城逐将撤退");
+        field.CaptureResetForTest();
+        field.SupplyForTest(10, 900);              // 我方粮只剩 10，不够一回合的消耗 → 「我军粮草耗竭,全军撤退!」
+        yield return Shot(dir, "2j_粮草耗竭");
         field.CaptureResetForTest();               // 演示完复位，后面的截图还当攻方
         field.LandForTest(me, foe.X - 1, foe.Y);
         field.LandForTest(me, 5, 5);               // 站到粮仓(码3)上：看压不压住、弹「是否进入村庄?」

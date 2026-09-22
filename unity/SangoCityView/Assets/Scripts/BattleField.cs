@@ -60,6 +60,7 @@ public class BattleField
                        List<Unit> roster, float refW, float refH, int[] supply = null, int rulerId = -1)
     {
         this.refW = refW; this.refH = refH; this.supply = supply ?? new int[4]; this.cityId = cityId; this.rulerId = rulerId;
+        supply0 = (int[])this.supply.Clone();                      // 自检复位用
         theme = themeKey;
         grid = BattleRules.LoadMap(Path.Combine(BattleGame.BattleDir, "maps", cityId + ".map"));
         H = grid.GetLength(0); W = grid.GetLength(1);
@@ -189,7 +190,7 @@ public class BattleField
         Col(14, 40, "我方", 13, new Color32(0x9C,0xC8,0xFF,255), TextAnchor.MiddleLeft);
         goldMe = Col(54, 110, "金 " + supply[0] + "  粮 " + supply[1], 13, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleLeft);
         Col(refW - 16 - 14 - 40, 40, "敌方", 13, new Color32(0xFF,0x98,0x90,255), TextAnchor.MiddleRight);
-        Col(refW - 16 - 14 - 40 - 110, 110, "金 " + supply[2] + "  粮 " + supply[3], 13, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleRight);
+        goldFoe = Col(refW - 16 - 14 - 40 - 110, 110, "金 " + supply[2] + "  粮 " + supply[3], 13, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleRight);
         dayText = Col(0, refW - 16, "", 15, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleCenter);
         mpText  = Label(top.transform, "", 13, new Color32(0xF0,0xD0,0x88,255), TextAnchor.MiddleCenter);
         Place(mpText.rectTransform, 0, 30, refW - 16, 18);
@@ -444,8 +445,12 @@ public class BattleField
         Btn("是", 22, yes); Btn("否", w - 22 - 110, null);
         hintText.text = q;
     }
-    Text goldMe;
-    void RefreshTop() { if (goldMe != null) goldMe.text = "金 " + supply[0] + "  粮 " + supply[1]; }
+    Text goldMe, goldFoe;
+    void RefreshTop()
+    {
+        if (goldMe  != null) goldMe.text  = "金 " + supply[0] + "  粮 " + supply[1];
+        if (goldFoe != null) goldFoe.text = "金 " + supply[2] + "  粮 " + supply[3];
+    }
 
 
     // ── 计策 ───────────────────────────────────────────────────────────
@@ -821,13 +826,15 @@ public class BattleField
     //            我方余将逐一「撤退武将 X」选相邻城 / 下野（A()），主公无城可退 →「君主所在城市被攻占,无可退城市!」。
     bool WeAttack { get { LoadCityData(); cityRuler.TryGetValue(cityId, out int o); return forceDefend ? false : o != OurRuler(); } }
     bool forceDefend;                      // 自检用：演示局里我们是攻方，硬当守方试失城那条路
-    bool over, captured;
+    readonly int[] supply0;
+    bool over, captured, retreating;
+    string endMsg;                         // 逐将撤完之后报哪一句
     readonly Queue<Unit> retreatQ = new Queue<Unit>();
     RectTransform overPop;
     int AliveCount(bool ours) { int n = 0; foreach (var u in units) if (u.Ours == ours && u.Alive) n++; return n; }
     void CheckOver()
     {
-        if (over || captured) return;
+        if (over || retreating) return;
         string cn = BattleRules.CityName(Path.Combine(BattleGame.BattleDir, "city-adjacency.json"), cityId);
         if (AliveCount(false) == 0) ShowOver(WeAttack ? "我军攻占了 " + cn + "!" : "敌军攻打 " + cn + " 失败了!");
         else if (AliveCount(true) == 0) ShowOver(WeAttack ? "我军攻打 " + cn + " 失败了!" : "敌军占领了 " + cn + "!");
@@ -851,7 +858,16 @@ public class BattleField
         cityRuler.TryGetValue(cityId, out int old);
         int foeRuler = 0; foreach (var u in units) if (!u.Ours && u.Alive && rulerIds.Contains(u.O.Id)) foeRuler = u.O.Id;
         cityRuler[cityId] = foeRuler != 0 ? foeRuler : old;                           // 谁来占的就归谁；演示里认不出主公就不改
-        hintText.text = "敌军占领我方城池!";
+        ForceRetreatAll("敌军占领我方城池!", "敌军占领了 " + CityNameNow() + "!");      // W == 21
+    }
+    string CityNameNow() => BattleRules.CityName(Path.Combine(BattleGame.BattleDir, "city-adjacency.json"), cityId);
+    /// 原版 c.java 4476（W = 7 / 9 / 20 / 21 共用）：A() 起头，我方余将一个一个「撤退武将 X」选退路
+    void ForceRetreatAll(string reason, string end)
+    {
+        retreating = true; enemyTurn = false; plans = null; endMsg = end;
+        sel = null; mode = ""; reach.Clear();
+        CloseAsk(); CloseInfo(); ClosePlotMenu();
+        hintText.text = reason;
         retreatQ.Clear();
         foreach (var u in units) if (u.Ours && u.Alive) retreatQ.Enqueue(u);
         NextRetreat();
@@ -866,12 +882,12 @@ public class BattleField
             OpenRetreatMenu(); Refresh();
             return;
         }
-        string cn = BattleRules.CityName(Path.Combine(BattleGame.BattleDir, "city-adjacency.json"), cityId);
-        ShowOver("敌军占领了 " + cn + "!");
+        retreating = false;
+        ShowOver(endMsg ?? "敌军占领了 " + CityNameNow() + "!");
     }
-    void AfterRetreat() { if (captured) NextRetreat(); }
+    void AfterRetreat() { if (retreating) NextRetreat(); }
     public void CaptureForTest() { CloseAsk(); CloseInfo(); ClosePlotPop(); forceDefend = true; Captured(); }
-    public void CaptureResetForTest() { captured = false; forceDefend = false; retreatQ.Clear(); CloseRetreatMenu(); sel = null; Refresh(); }
+    public void CaptureResetForTest() { captured = retreating = over = false; forceDefend = false; retreatQ.Clear(); System.Array.Copy(supply0, supply, 4); RefreshTop(); CloseRetreatMenu(); if (overPop != null) Object.Destroy(overPop.gameObject); overPop = null; sel = null; Refresh(); }
 
     void EndDay()
     {
@@ -884,10 +900,43 @@ public class BattleField
         Refresh();
     }
 
+    // ── 粮草与回合上限：原版 b.R() 3951 ────────────────────────────────
+    //   每回合末双方各扣「存活总兵力 − 1 ⁄ 250 + 1」；先查我方、再查敌方。
+    //   我方粮尽 → W=7「我军粮草耗竭,全军撤退!」→ 余将逐一选退路（这场就输了）
+    //   敌方粮尽 → W=6「敌方粮草耗竭,已全军逃窜!」→ L() + aq=4（这场赢了）
+    //   打满 30 回合（bA == 30）→ W=20「战争回合结束！」→ 同样余将逐一撤退
+    const int MAX_DAY = 30;
+    static int Upkeep(int troops) => troops <= 0 ? 1 : (troops - 1) / 250 + 1;
+    bool EndRoundSupply()
+    {
+        supply[1] = Mathf.Max(0, supply[1] - Upkeep(TotalTroops(true)));
+        RefreshTop();
+        if (supply[1] <= 0)
+        {
+            ForceRetreatAll("我军粮草耗竭,全军撤退!", "我军粮草耗竭,全军撤退!");
+            return true;
+        }
+        supply[3] = Mathf.Max(0, supply[3] - Upkeep(TotalTroops(false)));
+        RefreshTop();
+        if (supply[3] <= 0)
+        {
+            ShowOver("敌方粮草耗竭,已全军逃窜!");
+            return true;
+        }
+        return false;
+    }
+    public void SupplyForTest(int ourFood, int foeFood) { supply[1] = ourFood; supply[3] = foeFood; RefreshTop(); StartOurDay(); }
+
     void StartOurDay()
     {
         enemyTurn = false;
+        if (EndRoundSupply()) return;                  // 粮尽：这场到此为止，不再开新的一日
         day++;
+        if (day > MAX_DAY)                             // 原版 while (bA != 30)
+        {
+            ForceRetreatAll("战争回合结束！", "战争回合结束！");
+            return;
+        }
         foreach (var u in units)
         {
             u.Acted = false;
