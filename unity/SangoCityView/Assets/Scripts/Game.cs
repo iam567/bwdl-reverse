@@ -8,16 +8,21 @@ using static UIKit;
 public class Game : MonoBehaviour
 {
     public Font font;
-    const int REF_W = 375, REF_H = 812;
+    // 排版一律按 ScreenFit 算出来的逻辑尺寸，不写死 375×812。
+    static float RefW => ScreenFit.RefW;
+    static float RefH => ScreenFit.RefH;
 
+    RectTransform root;
     MapView mapView; CityView cityView; MapData data;
     MapData.City curCity;
     Text toast; float toastUntil;
 
     PoliticsView politics;
     Dictionary<int, Officer> officers;
-    Text orderText;
     int orders;                       // 本回合还剩几道令（原版 aG）
+    int pendingCmd = -1;              // 重建时开着的内政指令，重建完接着开
+    System.Action afterBuild;         // 自检钩子：每次重建完重放一遍
+    float resizeAt = -1f;             // 窗口尺寸变动的时刻，用来防抖
 
     void Start()
     {
@@ -26,15 +31,49 @@ public class Game : MonoBehaviour
 
         var go = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
         var canvas = go.GetComponent<Canvas>(); canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        var sc = go.GetComponent<CanvasScaler>();
-        sc.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        sc.referenceResolution = new Vector2(REF_W, REF_H); sc.matchWidthOrHeight = 0;
-        var root = (RectTransform)go.transform;
+        ScreenFit.Attach(go.GetComponent<CanvasScaler>());
+        root = (RectTransform)go.transform;
 
         officers = BattleRules.LoadOfficers(Path.Combine(ArtDir, "battle", "officers.csv"));
+        Build();
 
-        mapView  = new MapView(root, data, REF_W, REF_H);
-        cityView = new CityView(root, REF_W, REF_H);
+        Debug.Log("就绪：地图上点城池选中，再点一次进城；城内点建筑出指令，右上角「地图」返回");
+        foreach (var a in System.Environment.GetCommandLineArgs())
+            if (a == "-politics") { PoliticsSelfCheck(); break; }
+            else if (a == "-city")                        // 只进城，不开浮层
+            {
+                afterBuild = () => {
+                    if (curCity == null) mapView.OnEnter(data.cities.Find(x => x.name == "洛阳"));
+                };
+                afterBuild();
+                break;
+            }
+            else if (a == "-polui" || a == "-polui2" || a == "-polui3")
+            {
+                // 截图用：直接开到某一屏。窗口尺寸一变整棵树就重建，所以挂成
+                // afterBuild，每次重建完重放一遍，不然刚开窗那阵抖动就把它冲没了。
+                int step = a == "-polui" ? 0 : a == "-polui2" ? 1 : 2;
+                afterBuild = () => {
+                    var c0 = data.cities.Find(x => x.name == "洛阳");
+                    if (curCity == null) mapView.OnEnter(c0);
+                    var st0 = data.stats.Find(x => x.id == c0.id);
+                    if (step == 0) politics.Begin(Politics.Cmd.Reclaim, st0, officers);
+                    else politics.ConfirmForTest(Politics.Cmd.Reclaim, st0, officers, 0, step == 2);
+                };
+                afterBuild();
+                break;
+            }
+    }
+
+    /// 两屏都是在构造里按尺寸摆好的，所以窗口一变就整个重建。
+    /// 重建很便宜（贴图都有缓存），而且这样不用在每个界面里各写一份 Relayout。
+    void Build()
+    {
+        foreach (Transform t in root) Destroy(t.gameObject);
+
+        mapView  = new MapView(root, data, RefW, RefH);
+        cityView = new CityView(root, RefW, RefH);
+        cityView.Orders = orders;
         cityView.Root.gameObject.SetActive(false);
 
         mapView.OnEnter = c => {
@@ -43,29 +82,24 @@ public class Game : MonoBehaviour
             mapView.Root.gameObject.SetActive(false);
             cityView.Show(data.stats.Find(s => s.id == c.id), c.key);
         };
-        politics = new PoliticsView(root, REF_W, REF_H, cityView.PanelSprite, cityView.BtnSprite);
+        politics = new PoliticsView(root, RefW, RefH, cityView.PanelSprite, cityView.BtnSprite);
         politics.OnDone = _ => {                     // 原版 aL()：一道令走完，aG 减一
-            orders--; RefreshOrders();
+            orders--; pendingCmd = -1;
+            // 原版 aG 归零就直接翻篇（aq=3 → 下一回合）。月末结算和战略层 AI 还没接，
+            // 这里先照着翻，只是中间那一段什么都不算。
+            if (orders <= 0) { NewTurn(playerFaction); Toast("本月指令已尽，进入下月"); }
+            cityView.Orders = orders;
             cityView.Refresh();
-            if (orders <= 0) Toast("本回合指令已用尽");
         };
-        politics.OnCancel = () => { };
+        politics.OnCancel = () => { pendingCmd = -1; };
 
-        orderText = Label(root, "", 13, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleRight);
-        Place(orderText.rectTransform, 0, 6, REF_W - 92, 22);
-        var nt = Node("newturn", root).gameObject.AddComponent<Image>();
-        Place((RectTransform)nt.transform, REF_W - 84, 4, 72, 24);
-        nt.sprite = cityView.BtnSprite; nt.type = Image.Type.Sliced;
-        var ntl = Label(root, "新回合", 12, new Color32(0xF8,0xEC,0xD4,255), TextAnchor.MiddleCenter);
-        Place(ntl.rectTransform, REF_W - 84, 4, 72, 24);
-        var ntb = nt.gameObject.AddComponent<Button>(); ntb.transition = Selectable.Transition.None;
-        ntb.onClick.AddListener(() => { if (playerFaction != null) NewTurn(playerFaction); });
 
         cityView.OnCommand = cmd => {
             int k = System.Array.IndexOf(Politics.CmdName, cmd);
             if (k >= 0)
             {
                 if (orders <= 0) { Toast("本回合指令已用尽"); return; }
+                pendingCmd = k;
                 politics.Begin((Politics.Cmd)k, data.stats.Find(x => x.id == curCity.id), officers);
                 return;
             }
@@ -80,36 +114,30 @@ public class Game : MonoBehaviour
         };
 
         toast = Label(root, "", 13, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleCenter);
-        Place(toast.rectTransform, 0, REF_H - 150, REF_W, 30);
+        Place(toast.rectTransform, 0, RefH - 150, RefW, 30);
         toast.gameObject.SetActive(false);
 
-        Debug.Log("就绪：地图上点城池选中，再点一次进城；城内点建筑出指令，右上角「地图」返回");
-        foreach (var a in System.Environment.GetCommandLineArgs())
-            if (a == "-politics") { PoliticsSelfCheck(); break; }
-            else if (a == "-polui")                       // 直接开到内政浮层，好截图看排版
-            {
-                var c0 = data.cities.Find(x => x.name == "洛阳");
-                mapView.OnEnter(c0);
-                politics.Begin(Politics.Cmd.Reclaim, data.stats.Find(x => x.id == c0.id), officers);
-                break;
-            }
+        if (curCity != null)                      // 重建前在城里，那就还回城里
+        {
+            mapView.Root.gameObject.SetActive(false);
+            cityView.Show(data.stats.Find(x => x.id == curCity.id), curCity.key);
+            if (pendingCmd >= 0)                  // 浮层也接着开，别让拖一下窗口就白点一次
+                politics.Begin((Politics.Cmd)pendingCmd, data.stats.Find(x => x.id == curCity.id), officers);
+        }
+        afterBuild?.Invoke();
     }
 
     /// 一回合能下几道令 = 本势力城数，夹在 3..8（原版 b.e(byte) 1726、ao() 6156）。
-    /// 回合循环、月末结算（粮饷、民心、灾荒）和战略层 AI 都还没接，
-    /// 所以令用尽之后只能点「新回合」手动续，好把这四条指令走通。
+    /// 这个数就是城内顶栏那个「令牌」——原版数据里每座城的令牌值正好等于它，
+    /// 所以剩余指令直接显示在那一格，不另开一处。
+    /// 月末结算（粮饷、民心、灾荒）和战略层 AI 还没接，翻篇时中间那一段是空的。
     string playerFaction;
 
     void NewTurn(string faction)
     {
         playerFaction = faction;
         orders = Politics.OrdersPerTurn(data.cities.FindAll(c => c.owner == faction).Count);
-        RefreshOrders();
-    }
-
-    void RefreshOrders()
-    {
-        orderText.text = "剩余指令 " + Mathf.Max(0, orders);
+        cityView.Orders = orders;
     }
 
     /// 自检：把四条内政各跑一遍，打出前后值，好对着原版公式核。
@@ -148,9 +176,15 @@ public class Game : MonoBehaviour
 
     void Update()
     {
-        mapView.Update(REF_W, REF_H);
+        // 桌面拖窗口、手机转屏：重新算一遍逻辑尺寸再把两屏搭回去。
+        // 拖动过程中尺寸每帧都在变（开窗那一下系统自己就要改十几次），
+        // 所以等它停稳 0.25 秒再重建，不然一路重建到底，浮层也会被冲掉。
+        if (ScreenFit.Changed()) resizeAt = Time.unscaledTime;
+        if (resizeAt > 0 && Time.unscaledTime - resizeAt > 0.25f) { resizeAt = -1f; Build(); return; }
+        mapView.Update(RefW, RefH);
         // 内政浮层开着的时候别让点击透到城内视图去，不然选建筑会跟着变
         if (!politics.Root.gameObject.activeSelf) cityView.Update();
+        politics.Tick();                          // 结果屏那段八帧动画
         if (toast.gameObject.activeSelf && Time.time > toastUntil) toast.gameObject.SetActive(false);
     }
 }

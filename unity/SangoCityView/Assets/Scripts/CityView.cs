@@ -26,6 +26,9 @@ public class CityView
     Image popBg; Transform popCmds;
     Text hName, hTier, hOwner, hTok;
     RectTransform statGrid; Sprite panelSprite, plaqueSprite, btnSprite;
+    /// 本回合还剩几道令。原版那个「令牌」数就是每回合的指令数
+    /// （= 势力城数夹在 3..8，b.java 1726），所以直接拿这一格显示剩余，不另开一处。
+    public int Orders = -1;
     public Sprite PanelSprite => panelSprite;
     public Sprite BtnSprite => btnSprite;
     readonly Dictionary<string,Texture2D> hlCache = new();
@@ -66,8 +69,21 @@ public class CityView
         statGrid = dp.rectTransform;
         y += 153;
 
+        // 城图是一张固定比例的整图，按屏宽铺开之后往往比剩下的高度还高
+        // （横屏尤其明显，下半截整个看不见）。所以套一个视口，图在里面上下拖。
         picW = W; picY = y;
-        picRT = Node("City", Root); Place(picRT, PAD, y, W, W*1.5f);
+        float availH = Mathf.Max(120f, sh - y - 8f);
+        picView = Node("CityView", Root);
+        Place(picView, PAD, y, W, availH);
+        picView.gameObject.AddComponent<RectMask2D>();
+        picScroll = picView.gameObject.AddComponent<ScrollRect>();
+        picScroll.horizontal = false; picScroll.vertical = true;
+        picScroll.movementType = ScrollRect.MovementType.Clamped;
+        picScroll.scrollSensitivity = 30;
+        picScroll.viewport = picView;
+
+        picRT = Node("City", picView); Place(picRT, 0, 0, W, W*1.5f);
+        picScroll.content = picRT;
         cityImg = picRT.gameObject.AddComponent<RawImage>();
         cityImg.raycastTarget = true;
 
@@ -86,7 +102,8 @@ public class CityView
         btnSprite = Slice(Load("btn.png"), 30, 90, 6, 9);
         popBg.gameObject.SetActive(false);
     }
-    RectTransform backRT, plaqueRoot;
+    RectTransform backRT, plaqueRoot, picView;
+    ScrollRect picScroll;
     float picW, picY;
     string curKey;
 
@@ -108,7 +125,9 @@ public class CityView
         cityImg.texture = city;
 
         float imgH = picW * city.height / (float)city.width;
-        Place(picRT, 12f, picY, picW, imgH);
+        Place(picRT, 0, 0, picW, imgH);
+        picScroll.vertical = imgH > picView.sizeDelta.y;      // 装得下就别让它能拖
+        picScroll.verticalNormalizedPosition = 1f;            // 每次进城从图的顶上看起
         f = picW / meta.size[0];
 
         foreach (Transform t in plaqueRoot) Object.Destroy(t.gameObject);
@@ -132,7 +151,7 @@ public class CityView
         LoadCity(key);
         st = s;
         hName.text = s.name; hTier.text = s.tierName;
-        hOwner.text = "◼ " + Ruler(s.owner); hTok.text = s.令牌.ToString();
+        hOwner.text = "◼ " + Ruler(s.owner);
         Refresh();
         Select(null);
         Root.gameObject.SetActive(true);
@@ -144,6 +163,7 @@ public class CityView
     {
         var s = st;
         if (s == null) return;
+        hTok.text = (Orders >= 0 ? Orders : s.令牌).ToString();
         foreach (Transform t in statGrid) Object.Destroy(t.gameObject);
         string[,] rows = {{"君主",s.ruler},{"太守",s.governor},{"武将",s.武将.ToString()},
             {"人口",Wan(s.人口)},{"兵力",Wan(s.兵力)},{"统治",s.治安.ToString()},
@@ -159,9 +179,16 @@ public class CityView
         }
     }
 
+    Vector2 downAt; bool dragged;
+
     public void Update()
     {
-        if (!Root.gameObject.activeInHierarchy || !Input.GetMouseButtonDown(0)) return;
+        if (!Root.gameObject.activeInHierarchy) return;
+        // 城图能上下拖了，所以选建筑改判在松手那一下：按下到松手之间挪了几像素就算拖，不算点。
+        if (Input.GetMouseButtonDown(0)) { downAt = Input.mousePosition; dragged = false; return; }
+        if (Input.GetMouseButton(0))
+        { if (((Vector2)Input.mousePosition - downAt).sqrMagnitude > 64f) dragged = true; return; }
+        if (!Input.GetMouseButtonUp(0) || dragged) return;
         if (RectTransformUtility.RectangleContainsScreenPoint(backRT, Input.mousePosition, null))
         { OnBack?.Invoke(); return; }
         if (popBg.gameObject.activeSelf &&

@@ -44,25 +44,16 @@ public class BattleGame : MonoBehaviour
     //     屏幕比基准更瘦长 → 按宽度对齐，宽恒为 375，多出来的高度全给地图；
     //     屏幕比基准矮胖   → 改按高度对齐，高恒为 812，画面横向变宽（整体等比缩小一点）。
     //   这样 refW ≥ 375、refH ≥ 812 两条同时成立，排版里不会再有东西被挤出屏幕。
+    // 这套算法搬进 ScreenFit 了，城池层和以后的界面共用同一份。
     CanvasScaler scaler;
-    static float refW = REF_W, refH = REF_H;
-    int lastW, lastH;
-    void ApplyScale()
-    {
-        lastW = Screen.width; lastH = Screen.height;
-        float aspect = Screen.height / (float)Screen.width;      // 屏幕有多瘦长
-        if (aspect >= REF_H / (float)REF_W)
-        { scaler.matchWidthOrHeight = 0; refW = REF_W; refH = REF_W * aspect; }
-        else
-        { scaler.matchWidthOrHeight = 1; refH = REF_H; refW = REF_H / aspect; }
-    }
+    static float refW => ScreenFit.RefW;
+    static float refH => ScreenFit.RefH;
 
     void Update()
     {
         // 桌面窗口被拖动改大小时重排一次。手机上只有转屏会走到这儿。
-        if (Screen.width != lastW || Screen.height != lastH)
+        if (ScreenFit.Changed())
         {
-            ApplyScale();
             if (duel == null)                        // 单挑是一段短动画，演完回阵型战自然就是新尺寸
             {
                 if (clash != null) clash.Relayout(refW, refH);
@@ -78,10 +69,8 @@ public class BattleGame : MonoBehaviour
         var go = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
         var canvas = go.GetComponent<Canvas>(); canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         scaler = go.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(REF_W, REF_H);
+        ScreenFit.Attach(scaler);
         root = (RectTransform)go.transform;
-        ApplyScale();
 
         book = BattleRules.LoadOfficers(Path.Combine(BattleDir, "officers.csv"));
         OpenField();
