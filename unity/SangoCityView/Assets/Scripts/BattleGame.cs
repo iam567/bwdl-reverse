@@ -90,8 +90,15 @@ public class BattleGame : MonoBehaviour
         Directory.CreateDirectory(dir);
         yield return Shot(dir, "1_战棋层");
 
-        field.MoveForTest(FindUnit(true));        // 按「移动」：亮出按原版消耗算出来的可达范围
+        var mv = FindUnit(true);
+        field.MoveForTest(mv);                    // 按「移动」：亮出按原版消耗算出来的可达范围
         yield return Shot(dir, "1b_移动范围");
+        int mp0 = field.MpForTest; var p0 = field.PosForTest(mv);
+        field.MoveCancelForTest(mv, mv.X + 2, mv.Y + 1);   // 走两格：指令条换成「确定 / 取消」
+        yield return Shot(dir, "1c_走了两格");
+        field.DoCancelForTest();                  // 取消：位置和机动力都该还原
+        Debug.Log(string.Format("[cancel] mp {0}->{1} pos {2}->{3}", mp0, field.MpForTest, p0, field.PosForTest(mv)));
+        yield return Shot(dir, "1d_取消还原");
 
         // 把我方一支挪到敌方旁边，直接触发攻击，省得模拟点击
         var me = FindUnit(true); var foe = FindUnit(false);

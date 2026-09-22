@@ -327,7 +327,17 @@ public class BattleField
     public void RetreatMenuForTest(Unit u) { CloseInfo(); sel = u; mode = ""; OpenRetreatMenu(); Refresh(); }
     public void InfoForTest(Unit u, Unit tgt) { ClosePlotPop(); sel = u; mode = "info"; ShowInfo(tgt); Refresh(); }   // 先收上一步的计策弹框
     /// 自检：按「移动」，亮出可达范围
-    public void MoveForTest(Unit u) { CloseAsk(); sel = u; mode = "move"; ComputeReach(); curX = u.X; curY = u.Y; Refresh(); }
+    public void MoveForTest(Unit u) { CloseAsk(); sel = u; BeginMove(); curX = u.X; curY = u.Y; Refresh(); }
+    /// 自检：走一格再按取消，看位置和机动力是不是都还原了
+    public void MoveCancelForTest(Unit u, int x, int y)
+    {
+        CloseAsk(); sel = u; BeginMove();
+        if (reach.Contains(y * W + x)) DoMove(x, y);
+        Refresh();
+    }
+    public void DoCancelForTest() { CancelMove(); }
+    public int MpForTest => mp;
+    public Vector2Int PosForTest(Unit u) => new Vector2Int(u.X, u.Y);
     public void CommandForTest(Unit u, int k) { sel = u; mode = ""; Command(k); CenterOn(u.X, u.Y); curX = u.X; curY = u.Y; Refresh(); }
 
     // ── 素材 ───────────────────────────────────────────────────────────
@@ -394,7 +404,11 @@ public class BattleField
         else if (mode == "attack" && sel != null && here != null && !here.Ours && Adjacent(sel, x, y)) { DoAttack(here); }
         else if (mode == "info" && here != null) { ShowInfo(here); }
         else if (here != null && here.Ours && here.Trapped > 0) hintText.text = "武将中计,无法动弹!";   // W == 19
-        else if (here != null && here.Ours) { sel = here; mode = ""; }   // 原版 4631：只过滤 bu 状态，没有"已行动"锁
+        else if (here != null && here.Ours)
+        {
+            if (mode == "move" && here != sel) EndMove();                // 移动到一半改点别人：先照原版 E() 落定
+            sel = here; mode = ""; reach.Clear();                        // 原版 4631：只过滤 bu 状态，没有"已行动"锁
+        }
         Refresh();
     }
 
@@ -403,11 +417,16 @@ public class BattleField
         if (over) return;
         if (enemyTurn) { hintText.text = "敌军行动中..."; return; }
         if (sel == null) { hintText.text = "先点一支我方部队"; return; }
-        if (mode == "move") EndMove();               // 走到一半按别的令：先按原版 E() 确定
+        if (mode == "move")                          // 移动态下六个键只剩「确定」「取消」两个意思
+        {
+            if (i == 0) { EndMove(); Refresh(); }
+            else if (i == 1) CancelMove();
+            return;
+        }
         switch (i)
         {
             case 0:                                  // 移动
-                mode = "move"; ComputeReach(); break;
+                BeginMove(); break;
             case 1:                                  // 计策：原版 b.d(X) 算出可用几种，弹单选
                 mode = ""; OpenPlotMenu(); break;
             case 2:                                  // 攻击
@@ -1343,6 +1362,25 @@ public class BattleField
     //   规则还是原版的（每格 b.h 消耗、有人的格过不去、总消耗 ≤ 机动力），点哪格就按最省的路走过去扣机动力。
     static readonly int[] DX = { 0, 0, -1, 1 }, DY = { -1, 1, 0, 0 };   // 0 上 1 下 2 左 3 右
     readonly Dictionary<int, int> costTo = new Dictionary<int, int>();
+    // 原版 c.java 4556：按「移动」那一刻把位置和机动力记下来（x/y 和 R），
+    // 中途按取消键就整个还原 —— 走错了不用赔上一回合的机动力。
+    int fromX, fromY, fromMp;
+    void BeginMove()
+    {
+        fromX = sel.X; fromY = sel.Y; fromMp = mp; moved = false;
+        mode = "move"; ComputeReach();
+    }
+    void CancelMove()
+    {
+        if (sel != null && moved)
+        {
+            sel.X = fromX; sel.Y = fromY; sel.Draw = new Vector2(fromX, fromY);
+            mp = fromMp; CenterOn(fromX, fromY); curX = fromX; curY = fromY;
+        }
+        moved = false; mode = ""; reach.Clear();
+        hintText.text = "选择武将下命令";
+        RefreshTop(); Refresh();
+    }
     void ComputeReach()
     {
         reach.Clear(); costTo.Clear();
@@ -1364,7 +1402,7 @@ public class BattleField
             }
         }
         reach.Remove(s);
-        hintText.text = "武将移动 · 亮格可达 · 机动力 " + mp;
+        hintText.text = "武将移动 · 点亮格走 · 确定落定 / 取消还原";
     }
     /// b.h(格,兵种)：有人站着算 100（走不了）
     int StepCost(Unit u, int nx, int ny) => At(nx, ny) != null ? 100 : BattleRules.MoveCost(grid[ny, nx] & 0xF, u.O.Kind);
@@ -1377,8 +1415,10 @@ public class BattleField
         sel.Flip = dx < 0;
         sel.X = x; sel.Y = y;
         CenterOn(x, y);
-        moved = true; EndMove();
-        hintText.text = "移动消耗 " + cost + " 点 · 机动力 " + mp;
+        moved = true;
+        // 原版走完一格还留在移动态，能接着走、也能按取消还原；按「确定」才落定。
+        ComputeReach();
+        hintText.text = "移动消耗 " + cost + " 点 · 剩 " + mp + " · 可继续走 / 确定 / 取消";
     }
     /// 原版 E()：确定。落到建筑格问「是否进入村庄?」，回到「选择武将下命令」
     bool moved;
@@ -1629,9 +1669,20 @@ public class BattleField
 
         dayText.text = "第 " + day + " 日";
         mpText.text = "机动力 " + mp + " / " + BattleRules.MoveCapMax(TotalTroops(true));
-        int hi = mode == "move" ? 0 : mode == "attack" ? 2 : mode == "info" ? 3 : -1;
+        // 移动态把这排键换成「确定 / 取消」，其余四个压暗——原版那会儿软键也只有这两个意思
+        bool mv = mode == "move";
         for (int i = 0; i < CMD.Length; i++)
-            if (cmdImgs[i] != null)
-                cmdImgs[i].color = i == hi ? new Color(1f, .92f, .55f, 1f) : Color.white;
+        {
+            if (cmdLabels[i] != null)
+            {
+                cmdLabels[i].text = mv ? (i == 0 ? "确定" : i == 1 ? "取消" : CMD[i]) : CMD[i];
+                cmdLabels[i].color = mv && i > 1 ? new Color32(0x78,0x70,0x60,255)
+                                                 : new Color32(0xF0,0xE0,0xB8,255);
+            }
+            if (cmdImgs[i] == null) continue;
+            bool on = mv ? i <= 1 : i == (mode == "attack" ? 2 : mode == "info" ? 3 : -1);
+            cmdImgs[i].color = on ? new Color(1f, .92f, .55f, 1f)
+                                  : (mv && i > 1 ? new Color(.62f, .62f, .62f, 1f) : Color.white);
+        }
     }
 }
