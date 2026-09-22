@@ -111,8 +111,12 @@ public class BattleGame : MonoBehaviour
         yield return Shot(dir, "2a_计策菜单");
         field.PlotMenuForTest(me, true, 15);       // 16 种全开，选中奇门遁甲
         yield return Shot(dir, "2a2_计策16种");
-        field.PlotForTest(me, 4, foe);             // 敌军站在水格上，用乱水（火计不许打水，原版 2330）
-        yield return Shot(dir, "2b_乱水");
+        // 敌方太守是摆在城池格上的（地形 2），按原版 2330 那张表，
+        // 城池格只有贴身的伪击转杀(7)打得了。
+        // （原先这里写的是乱水，目标根本不在水格上，每次都弹"此地无法使用该计策"，
+        //   计策弹框那条路一直没被自检覆盖到。）
+        field.PlotForTest(me, 7, foe);
+        yield return Shot(dir, "2b_伪击转杀");
         field.InfoForTest(me, foe);                // 情报：点敌将弹武将信息
         yield return Shot(dir, "2c_情报");
         field.LandForTest(me, 4, 9);               // 关羽挪远些，再跑 14 步敌军回合看 AI 走位

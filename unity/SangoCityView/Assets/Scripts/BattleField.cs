@@ -309,6 +309,10 @@ public class BattleField
     {
         ClosePlotMenu(); sel = u; plotSel = plot; mode = "plot";
         CenterOn(tgt.X, tgt.Y); curX = tgt.X; curY = tgt.Y; Refresh();
+        if (ClashView.Trace)
+            Debug.Log(string.Format("[plot] {0}({1},{2}) 地形{3} → {4}({5},{6}) 地形{7} 第{8}种",
+                u.O.Name, u.X, u.Y, TerrainAt(u.X, u.Y),
+                tgt.O.Name, tgt.X, tgt.Y, TerrainAt(tgt.X, tgt.Y), plot));
         DoPlot(tgt.X, tgt.Y); Refresh();
     }
     public Unit UnitOf(int officerId) => units.Find(x => x.O.Id == officerId);
@@ -593,13 +597,21 @@ public class BattleField
         var t = new Texture2D(2, 2); t.LoadImage(File.ReadAllBytes(p)); t.Apply(); t.filterMode = FilterMode.Point;
         return plotCache[k] = Whole(t);
     }
-    void ShowPlotPop(int plot, string result)
+    /// caster / target 是我们加的：原版弹框只写「使用计策: ○○」，
+    /// 看不出是谁对谁放的——一屏十几支部队时根本认不出来。
+    /// 目标为空（十面埋伏埋在自己脚下）就只写施计者。
+    void ShowPlotPop(int plot, string result, Unit caster = null, Unit target = null)
     {
         ClosePlotPop();
         plotFrames = new Sprite[8]; int have = 0;
         for (int f = 0; f < 8; f++) { plotFrames[f] = PlotFrame(plot, f); if (plotFrames[f] != null) have++; }
         if (have == 0) plotFrames = null;
-        float w = refW - 28, ph = (w - 16) * 384f / 512f, h = 34 + ph + 40;
+        string who = null;
+        if (caster != null)
+            who = target != null ? caster.O.Name + "  ▶  " + target.O.Name
+                                 : caster.O.Name;
+        float top = who != null ? 52 : 34;
+        float w = refW - 28, ph = (w - 16) * 384f / 512f, h = top + ph + 40;
         plotPop = Node("ppop", Root);
         Place(plotPop, 14, (refH - h) / 2 - 30, w, h);
         var bg = Panel(plotPop, "bg", BattleUi.PlateSp()); Fill((RectTransform)bg.transform);
@@ -608,12 +620,19 @@ public class BattleField
         bt.onClick.AddListener(() => { ClosePlotPop(); Refresh(); });
         var t = Label(plotPop, "使用计策: " + BattleRules.PlotName[plot], 15, new Color32(0xF0,0xC8,0x70,255), TextAnchor.MiddleCenter);
         Place(t.rectTransform, 0, 8, w, 22);
+        if (who != null)
+        {
+            // 施计者一律我方色、目标一律敌方色说不通（笼络能反向），所以这行统一用浅色，
+            // 只靠箭头表达方向。
+            var wl = Label(plotPop, who, 13, new Color32(0xD8,0xD0,0xC0,255), TextAnchor.MiddleCenter);
+            Place(wl.rectTransform, 0, 30, w, 18);
+        }
         plotPic = Node("pic", plotPop).gameObject.AddComponent<Image>();
-        Place((RectTransform)plotPic.transform, 8, 34, w - 16, ph);
+        Place((RectTransform)plotPic.transform, 8, top, w - 16, ph);
         plotPic.raycastTarget = false;
         if (plotFrames != null) plotPic.sprite = plotFrames[0]; else plotPic.color = new Color(.1f, .08f, .06f, 1);
         var r = Label(plotPop, result, 15, Color.white, TextAnchor.MiddleCenter);
-        Place(r.rectTransform, 0, 34 + ph + 8, w, 24);
+        Place(r.rectTransform, 0, top + ph + 8, w, 24);
         plotT0 = Time.time;
     }
     void ClosePlotPop() { if (plotPop != null) Object.Destroy(plotPop.gameObject); plotPop = null; plotFrames = null; }
@@ -649,7 +668,7 @@ public class BattleField
             if (TerrainAt(sel.X, sel.Y) == 5 && sel.O.Troops >= 100)
             {
                 ambush.Add(sel.Y * W + sel.X); sel.O.Troops -= 100; mp -= cost;
-                hintText.text = "使用计策: 十面埋伏"; ShowPlotPop(11, "埋伏完毕");
+                hintText.text = sel.O.Name + " 使用计策: 十面埋伏"; ShowPlotPop(11, "埋伏完毕", sel);
                 sel.Acted = true; sel = null;
             }
             else hintText.text = "此地无法使用该计策";
@@ -663,8 +682,8 @@ public class BattleField
         mp -= cost;                                                            // 成不成都扣（原版 4939）
         string msg = r.Ok ? BattleRules.PlotMessage(plot, r) : "计策实施失败!";
         if (r.Ok) ApplyPlot(plot, r, tgt);
-        hintText.text = "使用计策: " + BattleRules.PlotName[plot];
-        ShowPlotPop(plot, msg);                                                // 原版 P 在 roll 之前就置 true：失败也弹图
+        hintText.text = sel.O.Name + " 对 " + tgt.O.Name + " 使用计策: " + BattleRules.PlotName[plot];
+        ShowPlotPop(plot, msg, sel, tgt);                                      // 原版 P 在 roll 之前就置 true：失败也弹图
         sel.Acted = true; sel = null;
     }
 
@@ -1423,8 +1442,8 @@ public class BattleField
                 var r = BattleRules.PlotRoll(plot, e.O, t.O, supply[1], rng);
                 string msg = r.Ok ? BattleRules.PlotMessage(plot, r) : "计策失败！";
                 if (r.Ok) ApplyPlot(plot, r, t, false);
-                hintText.text = e.O.Name + " 使用计策: " + BattleRules.PlotName[plot];
-                ShowPlotPop(plot, msg);
+                hintText.text = e.O.Name + " 对 " + t.O.Name + " 使用计策: " + BattleRules.PlotName[plot];
+                ShowPlotPop(plot, msg, e, t);
                 acting = e; CenterOn(t.X, t.Y);
                 return true;
             }
