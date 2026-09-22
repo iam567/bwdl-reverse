@@ -256,6 +256,8 @@ public class ClashView
     }
     public void AdvanceForTest(int n = 120) { CloseCmd(); for (int i = 0; i < n; i++) { tickAt = 0; Tick(); } }
     public void FinishForTest() { Finish(); }
+    /// 单挑里投降：原版 b.b(s,true) 置 aq=2，整场阵型战到此为止
+    public void Surrender() { over = "我方投降"; Finish(); }
     public void FireForTest() { UseSkill(4); }        // 自检：点火矢，看箭带不带火
     /// 自检：直接挂上咒缚/呐喊。咒缚的绳子在敌将脚下，镜头得滚过去才截得到。
     public void BuffForTest(int skill)
@@ -474,6 +476,7 @@ public class ClashView
     public void Tick()
     {
         Glide();                                  // 镜头每帧都动，别卡在下面的节拍判断后面
+        ZoomTick();
         GroundTick();
         ShotTick();
         FxTick();
@@ -947,8 +950,8 @@ public class ClashView
             if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
                     mapRoot, pd.position, null, out var lp)) return;
             var clip = (RectTransform)gridRoot.parent;
-            ScrollTo(new Vector2(-(lp.x / MM * C - clip.rect.width / 2f),
-                                  -lp.y / MM * C - clip.rect.height / 2f));
+            ScrollTo(new Vector2(-(lp.x / MM * C * zoom - clip.rect.width / 2f),
+                                  -lp.y / MM * C * zoom - clip.rect.height / 2f));
         });
         trig.triggers.Add(e);
     }
@@ -987,12 +990,12 @@ public class ClashView
         // 放在 OpenCmd 里的话，绕开它直接开菜单就会把 cmdPop 覆盖掉，
         // 旧的那个成了没人管的孤儿，永远赖在画面上。
         CloseCmd();
-        float cx = gridRoot.anchoredPosition.x + col * C;
-        float cy = VIEW_Y + row * C - gridRoot.anchoredPosition.y;
-        float x = cx + C + 6;
+        float cx = gridRoot.anchoredPosition.x + col * C * zoom;
+        float cy = VIEW_Y + row * C * zoom - gridRoot.anchoredPosition.y;
+        float x = cx + C * zoom + 6;
         if (x + w > refW - 6) x = cx - 6 - w;
         x = Mathf.Clamp(x, 6, refW - 6 - w);
-        float y = Mathf.Clamp(cy + C / 2f - h / 2f, VIEW_Y + 4, VIEW_Y + VIEW_H - 4 - h);
+        float y = Mathf.Clamp(cy + C * zoom / 2f - h / 2f, VIEW_Y + 4, VIEW_Y + VIEW_H - 4 - h);
         cmdPop = Node("cmd", field);
         Place(cmdPop, x, y, w, h);
         var bg = Panel(cmdPop, "bg", UiPlate()); Fill((RectTransform)bg.transform);
@@ -1024,9 +1027,10 @@ public class ClashView
         mapView.SetAsLastSibling();
 
         var clip = (RectTransform)gridRoot.parent;
-        Place(mapView, -gridRoot.anchoredPosition.x / C * MM,
-                        gridRoot.anchoredPosition.y / C * MM,
-                        clip.rect.width / C * MM, clip.rect.height / C * MM);
+        Place(mapView, -gridRoot.anchoredPosition.x / (C * zoom) * MM,
+                        gridRoot.anchoredPosition.y / (C * zoom) * MM,
+                        Mathf.Min(BattleRules.GridW * MM, clip.rect.width / (C * zoom) * MM),
+                        Mathf.Min(BattleRules.GridH * MM, clip.rect.height / (C * zoom) * MM));
     }
 
     void MapSide(List<Piece> ps, Color32 c)
@@ -1169,12 +1173,53 @@ public class ClashView
         }
     }
 
+    // ── 缩放：双指捏合（手机）/ 滚轮（桌面），最小缩到整场 16 列都在视窗里 ──
+    float zoom = 1f; float pinchD0 = -1f, zoom0 = 1f;
+    float MinZoom() { var clip = (RectTransform)gridRoot.parent; return Mathf.Min(1f, clip.rect.width / (BattleRules.GridW * C)); }
+    void SetZoom(float z, Vector2 pivotLocal)
+    {
+        z = Mathf.Clamp(z, MinZoom(), 1f);
+        if (Mathf.Approximately(z, zoom)) return;
+        // 以手指中点为轴：轴那一点在场地里的坐标缩放前后不变
+        var before = gridRoot.anchoredPosition;
+        float k = z / zoom;
+        var np = new Vector2(pivotLocal.x - (pivotLocal.x - before.x) * k, pivotLocal.y - (pivotLocal.y - before.y) * k);
+        zoom = z; gridRoot.localScale = new Vector3(zoom, zoom, 1);
+        ScrollTo(np);
+    }
+    void ZoomTick()
+    {
+        if (gridRoot == null) return;
+        var clip = (RectTransform)gridRoot.parent;
+        if (Input.touchCount == 2)
+        {
+            var a = Input.GetTouch(0); var b = Input.GetTouch(1);
+            float d = (a.position - b.position).magnitude;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(clip, (a.position + b.position) / 2f, null, out var mid);
+            var pv = new Vector2(mid.x + clip.rect.width / 2f, mid.y - clip.rect.height / 2f);   // 转成 clip 左上原点
+            if (pinchD0 < 0) { pinchD0 = d; zoom0 = zoom; }
+            else SetZoom(zoom0 * d / pinchD0, pv);
+            dragged = true;                                    // 捏合期间不要当成点格子
+            return;
+        }
+        pinchD0 = -1f;
+        float wheel = Input.mouseScrollDelta.y;
+        if (Mathf.Abs(wheel) > .01f && RectTransformUtility.RectangleContainsScreenPoint(clip, Input.mousePosition))
+        {
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(clip, Input.mousePosition, null, out var m);
+            SetZoom(zoom * (1f + wheel * .08f), new Vector2(m.x + clip.rect.width / 2f, m.y - clip.rect.height / 2f));
+        }
+    }
+    public void ZoomForTest(float z) { SetZoom(z, Vector2.zero); ScrollTo(Vector2.zero); camTarget = gridRoot.anchoredPosition; }
+
     void ScrollTo(Vector2 p)
     {
         var clip = (RectTransform)gridRoot.parent;
-        gridRoot.anchoredPosition = new Vector2(
-            Mathf.Clamp(p.x, Mathf.Min(0, clip.rect.width  - BattleRules.GridW * C), 0),
-            Mathf.Clamp(p.y, 0, Mathf.Max(0, BattleRules.GridH * C - clip.rect.height)));
+        float cw = BattleRules.GridW * C * zoom, ch = BattleRules.GridH * C * zoom;
+        // 缩到比视窗小时居中，别贴左上角留一大块黑
+        float x = cw < clip.rect.width  ? (clip.rect.width - cw) / 2f  : Mathf.Clamp(p.x, clip.rect.width - cw, 0);
+        float y = ch < clip.rect.height ? -(clip.rect.height - ch) / 2f : Mathf.Clamp(p.y, 0, ch - clip.rect.height);
+        gridRoot.anchoredPosition = new Vector2(x, y);
         camTarget = gridRoot.anchoredPosition;
     }
 
@@ -1186,12 +1231,12 @@ public class ClashView
     {
         if (gridRoot == null) return;
         var clip = (RectTransform)gridRoot.parent;
-        float vw = clip.rect.width, total = BattleRules.GridW * C;
-        float x = col * C + C / 2f;              // 这枚棋在整场里的横坐标
-        float lo = -camTarget.x + C, hi = -camTarget.x + vw - C;
+        float vw = clip.rect.width, total = BattleRules.GridW * C * zoom, cz = C * zoom;
+        float x = (col * C + C / 2f) * zoom;     // 这枚棋在整场里的横坐标（已缩放）
+        float lo = -camTarget.x + cz, hi = -camTarget.x + vw - cz;
         float want = camTarget.x;
-        if (x < lo) want = -(x - C);
-        else if (x > hi) want = -(x - vw + C);
+        if (x < lo) want = -(x - cz);
+        else if (x > hi) want = -(x - vw + cz);
         camTarget = new Vector2(Mathf.Clamp(want, Mathf.Min(0, vw - total), 0), camTarget.y);
     }
 
@@ -1203,9 +1248,10 @@ public class ClashView
         gridRoot.anchoredPosition = Vector2.Lerp(now, camTarget, Time.deltaTime * 6f);
         if (mapView == null) return;                    // 镜头在滑，小地图那个框要跟着走
         var clip = (RectTransform)gridRoot.parent;
-        Place(mapView, -gridRoot.anchoredPosition.x / C * MM,
-                        gridRoot.anchoredPosition.y / C * MM,
-                        clip.rect.width / C * MM, clip.rect.height / C * MM);
+        Place(mapView, -gridRoot.anchoredPosition.x / (C * zoom) * MM,
+                        gridRoot.anchoredPosition.y / (C * zoom) * MM,
+                        Mathf.Min(BattleRules.GridW * MM, clip.rect.width / (C * zoom) * MM),
+                        Mathf.Min(BattleRules.GridH * MM, clip.rect.height / (C * zoom) * MM));
     }
 
     void DrawSide(List<Piece> ps, bool ours)

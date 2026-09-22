@@ -11,6 +11,8 @@ public class DuelView
 {
     public RectTransform Root;
     public System.Action OnDone;
+    public System.Action OnSurrender;             // 投降：不回阵型战，整场结束、回战棋层选退路
+    bool surrendered;
     /// 劝降成功要把人收过来，交给外面处理
     public System.Action<Officer> OnRecruit;
 
@@ -325,7 +327,7 @@ public class DuelView
 
     void Pick(int move)
     {
-        if (over != null) { OnDone?.Invoke(); return; }
+        if (over != null) { if (surrendered && OnSurrender != null) OnSurrender(); else OnDone?.Invoke(); return; }
         if (step >= 0) return;                     // 正在演，别插队
         report = "";
 
@@ -344,7 +346,7 @@ public class DuelView
                 if (BattleRules.Flee(me, foe, rng))
                 { over = "自军成功撤离!"; StartExit(true); Refresh(); return; }
                 report += "撤退失败...\n"; break;
-            case 5: over = "我方投降!"; StartExit(true); Refresh(); return;
+            case 5: over = "我方投降!"; surrendered = true; StartExit(true); Refresh(); return;
             default: queue.Add(Plan(true, move)); break;
         }
 
@@ -406,7 +408,7 @@ public class DuelView
         if (over != null && !exiting && !joining && overAt > -1e8f)
         {
             if (overAt == 0f) overAt = Time.time;
-            else if (Time.time - overAt > 1.8f) { overAt = -1e9f; OnDone?.Invoke(); return; }
+            else if (Time.time - overAt > 1.8f) { overAt = -1e9f; if (surrendered && OnSurrender != null) OnSurrender(); else OnDone?.Invoke(); return; }
         }
         float t = Time.time;
         if (joining)                               // 归顺：骑过来，停在我方身侧

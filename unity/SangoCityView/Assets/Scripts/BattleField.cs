@@ -148,7 +148,7 @@ public class BattleField
             var l = Label(top.transform, t, size, c, a); Place(l.rectTransform, x, 8, w, 22); return l;
         }
         Col(14, 40, "我方", 13, new Color32(0x9C,0xC8,0xFF,255), TextAnchor.MiddleLeft);
-        Col(54, 110, "金 " + supply[0] + "  粮 " + supply[1], 13, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleLeft);
+        goldMe = Col(54, 110, "金 " + supply[0] + "  粮 " + supply[1], 13, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleLeft);
         Col(refW - 16 - 14 - 40, 40, "敌方", 13, new Color32(0xFF,0x98,0x90,255), TextAnchor.MiddleRight);
         Col(refW - 16 - 14 - 40 - 110, 110, "金 " + supply[2] + "  粮 " + supply[3], 13, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleRight);
         dayText = Col(0, refW - 16, "", 15, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleCenter);
@@ -229,6 +229,11 @@ public class BattleField
         DoPlot(tgt.X, tgt.Y); Refresh();
     }
     public Unit UnitOf(int officerId) => units.Find(x => x.O.Id == officerId);
+    /// 单挑投降回来：这支部队退出战场，选附近的城或下野
+    public void OpenRetreatFor(Unit u) { sel = u; mode = ""; hintText.text = u.O.Name + " 投降，退出战场"; OpenRetreatMenu(); Refresh(); }
+    public void LandForTest(Unit u, int x, int y) { CloseAsk(); CloseInfo(); CloseRetreatMenu(); sel = u; u.X = x; u.Y = y; u.Draw = new Vector2(x, y); CenterOn(x, y); curX = x; curY = y; Refresh(); OnLanded(u); }
+    public void HealForTest(Unit u) { CloseAsk(); u.O.Hp = Mathf.Max(1, u.O.HpMax - 40); HealPrompt(u); }
+    public void AskYesForTest() { var b = askPop != null ? askPop.Find("b是") : null; b?.GetComponent<Button>().onClick.Invoke(); }
     public void RetreatMenuForTest(Unit u) { CloseInfo(); sel = u; mode = ""; OpenRetreatMenu(); Refresh(); }
     public void InfoForTest(Unit u, Unit tgt) { ClosePlotPop(); sel = u; mode = "info"; ShowInfo(tgt); Refresh(); }   // 先收上一步的计策弹框
     public void CommandForTest(Unit u, int k) { sel = u; mode = ""; Command(k); CenterOn(u.X, u.Y); curX = u.X; curY = u.Y; Refresh(); }
@@ -296,7 +301,7 @@ public class BattleField
         else if (mode == "move" && sel != null && reach.Contains(y * W + x)) { DoMove(x, y); }
         else if (mode == "attack" && sel != null && here != null && !here.Ours && Adjacent(sel, x, y)) { DoAttack(here); }
         else if (mode == "info" && here != null) { ShowInfo(here); }
-        else if (here != null && here.Ours && !here.Acted) { sel = here; mode = ""; }
+        else if (here != null && here.Ours && here.Trapped == 0) { sel = here; mode = ""; }   // 原版 4631：只过滤 bu 状态，没有"已行动"锁
         Refresh();
     }
 
@@ -318,7 +323,7 @@ public class BattleField
             case 3: mode = "info"; hintText.text = "请选择要侦察的武将"; break;   // 原版原话
             case 4:                                  // 撤退：原版 b.g() → 弹相邻己方城/空城，非主公多一项下野
                 mode = ""; OpenRetreatMenu(); break;
-            case 5: sel.Acted = true; hintText.text = "我军待机中..."; sel = null; mode = ""; break;
+            case 5: hintText.text = "我军待机中..."; sel = null; mode = ""; EndDay(); break;   // 原版 4713：aq=1，整军交回合
         }
         Refresh();
     }
@@ -334,7 +339,59 @@ public class BattleField
         mode = ""; reach.Clear();
         hintText.text = "移动消耗 " + cost + " 点";
         CenterOn(x, y);
+        OnLanded(sel);
     }
+
+    // ── 落到建筑格：原版 c.java 4766 j(格) → 「是否进入村庄?」→ G() 按格分派 ──
+    //   4 疗伤点：C() 体力满→「当前武将毋需治疗!」，金 <50→「金子不够,无法进行治疗!」，
+    //             否则「是否对武将进行治疗?」→ 金 −50、体力 += bI() = 35 + rnd(17)，钳到上限，「武将体力恢复了」
+    //   1 / 3：原版只置 aq=5/6 进一个空等待循环，没有任何效果（GAME_LOGIC §8.2）；其他版本是武器店/金粮店，待定
+    void OnLanded(Unit u)
+    {
+        int code = TerrainAt(u.X, u.Y) & 0xF;
+        if (code != 1 && code != 3 && code != 4) return;
+        Ask("是否进入村庄?", () => {
+            if (code == 4) HealPrompt(u);
+            // 1 / 3：原版无事发生
+        });
+    }
+    void HealPrompt(Unit u)
+    {
+        if (u.O.Hp >= u.O.HpMax) { hintText.text = "当前武将毋需治疗!"; return; }
+        if (supply[0] < 50) { hintText.text = "金子不够,无法进行治疗!"; return; }
+        Ask("是否对武将进行治疗?", () => {
+            supply[0] -= 50;
+            u.O.Hp = Mathf.Clamp(u.O.Hp + 35 + rng.Next(17), 0, u.O.HpMax);
+            hintText.text = "武将体力恢复了";
+            RefreshTop(); Refresh();
+        });
+    }
+    // 是 / 否 小弹框（原版底栏 V 那一行 + 左右软键）
+    RectTransform askPop;
+    void CloseAsk() { if (askPop != null) Object.Destroy(askPop.gameObject); askPop = null; }
+    void Ask(string q, System.Action yes)
+    {
+        CloseAsk();
+        float w = 280, h = 96;
+        askPop = Node("ask", Root);
+        Place(askPop, (refW - w) / 2, refH - 100 - h - 10, w, h);
+        var bg = Panel(askPop, "bg", BattleUi.PlateSp()); Fill((RectTransform)bg.transform);
+        var t = Label(askPop, q, 15, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleCenter);
+        Place(t.rectTransform, 0, 10, w, 26);
+        void Btn(string txt, float x, System.Action act)
+        {
+            var b = Node("b" + txt, askPop); Place(b, x, 50, 110, 34);
+            var bi = b.gameObject.AddComponent<Image>(); bi.sprite = BattleUi.BtnSp(); bi.type = Image.Type.Sliced;
+            var bt = b.gameObject.AddComponent<Button>(); bt.transition = Selectable.Transition.None;
+            bt.onClick.AddListener(() => { CloseAsk(); act?.Invoke(); });
+            var l = Label(b, txt, 15, new Color32(0xF0,0xE0,0xB8,255), TextAnchor.MiddleCenter); Fill(l.rectTransform);
+        }
+        Btn("是", 22, yes); Btn("否", w - 22 - 110, null);
+        hintText.text = q;
+    }
+    Text goldMe;
+    void RefreshTop() { if (goldMe != null) goldMe.text = "金 " + supply[0] + "  粮 " + supply[1]; }
+
 
     // ── 计策 ───────────────────────────────────────────────────────────
     RectTransform plotMenu; int plotSel = -1, plotHover = -1;
@@ -939,7 +996,7 @@ public class BattleField
             var im = Node("u", board).gameObject.AddComponent<Image>();
             Place((RectTransform)im.transform, ux, uy, CELL, CELL);
             im.sprite = UnitSprite(u); im.raycastTarget = false;
-            im.color = u.Acted ? new Color(.62f, .62f, .62f, 1f) : Color.white;
+            im.color = Color.white;                    // 原版没有"已行动"变灰：一个武将只要机动力够可以一直用
             if (u.Flip)
             {
                 // Place() 的轴心在左上角，localScale=-1 是绕左边缘翻的，

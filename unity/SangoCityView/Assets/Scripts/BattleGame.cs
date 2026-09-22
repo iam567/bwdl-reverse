@@ -69,6 +69,15 @@ public class BattleGame : MonoBehaviour
         yield return Shot(dir, "2b_乱水");
         field.InfoForTest(me, foe);                // 情报：点敌将弹武将信息
         yield return Shot(dir, "2c_情报");
+        field.LandForTest(me, 5, 5);               // 站到粮仓(码3)上：看压不压住、弹「是否进入村庄?」
+        yield return Shot(dir, "2e_村庄");
+        field.LandForTest(me, 19, 17);             // 药庐(码4)：进村 → 治疗提示
+        field.AskYesForTest();
+        field.HealForTest(me);
+        yield return Shot(dir, "2f_治疗问");
+        field.AskYesForTest();
+        yield return Shot(dir, "2g_治疗后");
+        field.LandForTest(me, foe.X - 1, foe.Y);   // 放回原位
         field.RetreatMenuForTest(me);              // 撤退：弹相邻城 + 下野（洛阳四邻都不是刘备的 → 只剩下野）
         yield return Shot(dir, "2d_撤退");
         var lord = field.UnitOf(3);                // 刘备是主公：不能下野、无城可退 → 背水一战
@@ -90,6 +99,9 @@ public class BattleGame : MonoBehaviour
 
         clash.AdvanceForTest(45);                  // 120 拍会一路打到武将碰面进单挑，看不到阵型战
         yield return Shot(dir, "5_打了一阵");
+        clash.ZoomForTest(0.2f);                   // 捏到最小：整场 16 列都在视窗里
+        yield return Shot(dir, "5h_缩到整场");
+        clash.ZoomForTest(1f);
         // 火矢：点了之后再推几拍，趁箭还在飞连抓几帧——Shot() 要等 0.35 秒，箭早到了
         // 特效四组：呐喊圈 / 咒缚绳 / 爆炎 / 命中（推一拍后连抓，命中特效只活 0.46 秒）
         clash.BuffForTest(3);
@@ -237,6 +249,15 @@ public class BattleGame : MonoBehaviour
                 {
                     Object.Destroy(duel.Root.gameObject); duel = null;
                     clash.Root.gameObject.SetActive(true);   // 单挑打完回阵型战接着打
+                };
+                // 投降：原版 b.b(s,true) 置 aq=2 整场结束、主将 bu=2 退出，其余部队逐一选城撤退。
+                // 我们改成：整场结束，回战棋层，给投降的这支部队弹「退往何处」（城 / 下野），记 HOUSE_RULES。
+                duel.OnSurrender = () =>
+                {
+                    Object.Destroy(duel.Root.gameObject); duel = null;
+                    clash.Root.gameObject.SetActive(true);
+                    clash.Surrender();                       // → clash.OnDone → 回战棋层
+                    field.OpenRetreatFor(me);
                 };
             };
             clash.OnDone = (mine, theirs) =>
