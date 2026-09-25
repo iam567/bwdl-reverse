@@ -336,7 +336,8 @@ public class ClashView
         var p = mine[0]; p.Off = true; p.Col = -1; p.Row = -1; mine[0] = p;
         RoutCheck(); over = CcText(); Redraw();
     }
-    public void FireForTest() { UseSkill(4); }        // 自检：点火矢，看箭带不带火
+    public void FireForTest() { UseSkill(4); }
+    public void SkillForTest(int i) { plotPts = 99; UseSkill(i); }                   // 自检：放一次技能看提示        // 自检：点火矢，看箭带不带火
     /// 自检：直接挂上咒缚/呐喊。咒缚的绳子在敌将脚下，镜头得滚过去才截得到。
     public void BuffForTest(int skill)
     {
@@ -581,6 +582,7 @@ public class ClashView
 
     public void Tick()
     {
+        if (flash != null && Time.time > flashUntil) { Object.Destroy(flash.gameObject); flash = null; }
         Glide();                                  // 镜头每帧都动，别卡在下面的节拍判断后面
         ZoomTick();
         GroundTick();
@@ -1094,27 +1096,49 @@ public class ClashView
         return false;
     }
 
+    /// 原版 c.java B() 4295：点数不够「战术能力不够」；我方增益还没完（cd≠0）「计策使用中!」；
+    /// 放了就「计策[XX] 施用成功！」/「计策[XX] 施用失败！」（咒缚、挑战可能失败，其余必成）
     void UseSkill(int i)
     {
-        if (BattleRules.SkillCost[i] > plotPts) return;
+        string nm = BattleRules.SkillName[i];
+        if (cd != 0) { Flash("计策使用中!"); Sfx.Play("ui_back"); return; }
+        if (BattleRules.SkillCost[i] > plotPts) { Flash("战术能力不够"); Sfx.Play("ui_back"); return; }
         plotPts -= BattleRules.SkillCost[i];              // b.a(byte)：先扣点，再看成不成
         orders[0] = 0;                                    // 下完计策，武将回到前进
+        bool ok = true;
         switch (i)
         {
             case 0:                                       // 咒缚：定住敌将四回合
-                if (BattleRules.Bind(me, foe, rng)) { cd = BattleRules.CdOf(0); Sfx.Play("plot_magic"); }
-                else Sfx.Play("plot_fail");
+                ok = BattleRules.Bind(me, foe, rng);
+                if (ok) { cd = BattleRules.CdOf(0); Sfx.Play("plot_magic"); } else Sfx.Play("plot_fail");
                 break;
             case 1:                                       // 挑战：请对方单挑
                 Sfx.Play("gong_small");
-                if (BattleRules.Challenge(me, foe, rng)) { Redraw(); OnDuel?.Invoke(); return; }
+                ok = BattleRules.Challenge(me, foe, rng);
+                if (ok) { Flash("计策[" + nm + "] 施用成功！"); Redraw(); OnDuel?.Invoke(); return; }
                 break;
             case 5: Sfx.Play("boom"); Blaze(); break;     // 爆炎：一次性范围伤害
             default:                                      // 连弩/呐喊/火矢：设增益
                 Sfx.Play(i == 2 ? "crossbow" : i == 3 ? "war_drum" : "fire_arrow");
                 cd = BattleRules.CdOf(i); break;
         }
+        Flash("计策[" + nm + "] 施用" + (ok ? "成功！" : "失败！"));
         Redraw();
+    }
+
+    // ── 屏幕中间的提示横幅（计策成败等），停 1.8 秒 ──
+    RectTransform flash; float flashUntil;
+    void Flash(string msg)
+    {
+        if (flash != null) Object.Destroy(flash.gameObject);
+        float w = Mathf.Min(refW - 60, 300), h = 52;
+        flash = Node("flash", Root);
+        Place(flash, (refW - w) / 2, refH * .38f, w, h);
+        var bg = flash.gameObject.AddComponent<Image>(); bg.color = new Color(.085f, .06f, .035f, .9f); bg.raycastTarget = false;
+        Hud.CgFrame(flash);
+        var t = Label(flash, msg, 18, new Color32(0xF4, 0xD4, 0x8A, 255), TextAnchor.MiddleCenter, FontStyle.Bold);
+        Place(t.rectTransform, 0, 0, w, h);
+        flashUntil = Time.time + 1.8f;
     }
 
     /// b.W()：以我方武将为中心，向前 3 列 × 上下各 1 行

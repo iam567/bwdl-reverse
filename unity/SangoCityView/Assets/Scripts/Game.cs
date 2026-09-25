@@ -115,6 +115,7 @@ public partial class Game : MonoBehaviour
                 int sc = System.Array.IndexOf(av, "-scene");                                                        // 0 野战 / 3 攻城
                 var cv = new ClashView(root, l[0], l[1], sc >= 0 ? int.Parse(av[sc + 1]) : 0, true, RefW, RefH, BattleGame.ThemeOf(c0.id), c0.id);
                 cv.PickForTest(0);
+                int sk = System.Array.IndexOf(av, "-skill"); if (sk >= 0) { cv.SkillForTest(int.Parse(av[sk + 1])); if (System.Array.IndexOf(av, "-shot") >= 0) break; }
                 int adv = System.Array.IndexOf(av, "-ticks");
                 cv.AdvanceForTest(adv >= 0 ? int.Parse(av[adv + 1]) : 40);
                 Debug.Log("[阵型自检] 结果：" + cv.OverForTest);
