@@ -66,7 +66,8 @@ public partial class Game
         var lord = Realm.Ruler(Realm.Player);
         var mine = Realm.Cities(data, Realm.Player);
         if (mine.Count == 0) return null;
-        foreach (var c in mine) if (lord != null && data.stats.Find(x => x.id == c.id).governor == lord.Name) return c;
+        foreach (var c in mine) if (lord != null && data.stats.Find(x => x.id == c.id).governor == lord.Name) return c;   // 原版 u()：君主亲领的城
+        foreach (var c in mine) if (lord != null && Personnel.Of(c.id).A.Contains(lord)) return c;              // 君主移驻到别城、不当太守：进他人在的那城
         return mine[0];
     }
 
