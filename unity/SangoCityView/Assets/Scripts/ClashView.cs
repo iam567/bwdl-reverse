@@ -493,14 +493,26 @@ public class ClashView
             var g98 = Tex("orig/lib98.png");
             gsp = Sprite.Create(g98, new Rect(scene * 64 + .5f, .5f, 63f, 63f), new Vector2(.5f, .5f), 100);
         }
-        for (int y = 0; y * tile < BattleRules.GridH * C; y++)
+        // 地面上下各多铺半格当场边（压暗、不能站人）：棋子的图比格子高出一截，
+        // 不留边的话第 0 行的人头就顶在黑边上，看着像少了一行
+        const int EDGE = C / 2;
+        var gbox = Node("ground", gridRoot);
+        Place(gbox, 0, -EDGE, BattleRules.GridW * C, BattleRules.GridH * C + EDGE * 2);
+        gbox.gameObject.AddComponent<RectMask2D>();
+        for (int y = 0; y * tile < BattleRules.GridH * C + EDGE * 2; y++)
             for (int x = 0; x * tile < BattleRules.GridW * C; x++)
             {
-                var t = Node("gt", gridRoot).gameObject.AddComponent<Image>();
+                var t = Node("gt", gbox).gameObject.AddComponent<Image>();
                 Place((RectTransform)t.transform, x * tile, y * tile, tile, tile);
                 t.sprite = gsp; t.raycastTarget = false;
                 if (groundFrames != null) groundTiles.Add(t);
             }
+        foreach (float ey in new float[] { 0, EDGE + BattleRules.GridH * C })
+        {
+            var sh = Node("edge", gbox).gameObject.AddComponent<Image>();
+            Place((RectTransform)sh.transform, 0, ey, BattleRules.GridW * C, EDGE);
+            sh.color = new Color(0, 0, 0, .45f); sh.raycastTarget = false;
+        }
 
         // 按下拖动 = 滚场地。遮罩那张 Image 就当接触区，别再叠一个。
         msk.raycastTarget = true;
