@@ -19,7 +19,8 @@ public static class ScreenFit
     public static float RefH { get; private set; } = BaseH;
 
     static CanvasScaler scaler;
-    static int lastW, lastH;
+    static RectTransform safeRT;                 // 刘海 / 灵动岛 / 底部横条以内的那块，所有界面都放在它里面
+    static int lastW, lastH; static Rect lastSafe;
 
     /// 建完画布调一次。之后每帧调 Changed() 看要不要重排。
     public static void Attach(CanvasScaler cs)
@@ -30,20 +31,31 @@ public static class ScreenFit
         Apply();
     }
 
+    /// 手机上要避开刘海 / 灵动岛 / 底部横条：按安全区算缩放——安全区宽高都不小于 375×812 个逻辑单位，
+    /// 多出来的那一边照旧算进 RefW / RefH（桌面上安全区就是整个窗口，跟以前一样）。
     static void Apply()
     {
-        lastW = Screen.width; lastH = Screen.height;
-        float aspect = Screen.height / (float)Screen.width;          // 屏幕有多瘦长
-        if (aspect >= BaseH / BaseW)
-        { scaler.matchWidthOrHeight = 0; RefW = BaseW; RefH = BaseW * aspect; }
-        else
-        { scaler.matchWidthOrHeight = 1; RefH = BaseH; RefW = BaseH / aspect; }
+        lastW = Screen.width; lastH = Screen.height; lastSafe = Screen.safeArea;
+        var sa = Screen.safeArea;
+        if (sa.width < 1 || sa.height < 1) sa = new Rect(0, 0, Screen.width, Screen.height);
+        float s = Mathf.Min(sa.width / BaseW, sa.height / BaseH);
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
+        scaler.scaleFactor = s;
+        RefW = sa.width / s; RefH = sa.height / s;
+        if (safeRT != null)
+        {
+            safeRT.anchorMin = new Vector2(sa.x / Screen.width, sa.y / Screen.height);
+            safeRT.anchorMax = new Vector2((sa.x + sa.width) / Screen.width, (sa.y + sa.height) / Screen.height);
+            safeRT.offsetMin = safeRT.offsetMax = Vector2.zero; safeRT.pivot = new Vector2(.5f, .5f);
+        }
     }
+    /// Game 建完画布后挂上安全区容器
+    public static void AttachSafe(RectTransform safe) { safeRT = safe; Apply(); }
 
     /// 屏幕尺寸变了吗（桌面拖窗口、手机转屏）。变了就顺手把 RefW/RefH 更新掉。
     public static bool Changed()
     {
-        if (scaler == null || (Screen.width == lastW && Screen.height == lastH)) return false;
+        if (scaler == null || (Screen.width == lastW && Screen.height == lastH && Screen.safeArea == lastSafe)) return false;
         Apply();
         return true;
     }

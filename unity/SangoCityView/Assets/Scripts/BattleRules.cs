@@ -32,6 +32,10 @@ public class Officer
 
 public static class BattleRules
 {
+    /// 头像号：普通武将就是武将号；自建武将（229~231）挑的是 229~238 那十张里的一张（原版 cY[]）
+    public static readonly Dictionary<int, int> Faces = new();
+    public static int Face(int id) => Faces.TryGetValue(id, out int f) ? f : id;
+
     /// 原版 b.ad[]：R[] 是武器（0–23）、S[] 是防具（24–31）的下标。
     /// 单挑和列表画面都用 ad[R[x]] / ad[S[x]] 直接取名。
     public static readonly string[] EquipName = {

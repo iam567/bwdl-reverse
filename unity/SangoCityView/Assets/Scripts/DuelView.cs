@@ -395,6 +395,10 @@ public class DuelView
     void Land(Blow b)
     {
         var o = b.Mine ? me : foe;
+        // 普攻挥刀；强攻重击；必杀重击再叠一声兵刃相交；落空（强攻没中 / 全力自伤）是空挥
+        if (b.SelfHurt || b.Dmg == 0) Sfx.Play("swing");
+        else if (b.Move == 0) Sfx.Play("slash");
+        else { Sfx.Play("hit"); if (b.Move >= 2) Sfx.Play("clash", .8f); }
         if (b.SelfHurt)                            // 「全力」落空：自伤
         {
             o.Hp = Mathf.Max(0, o.Hp + b.Dmg);

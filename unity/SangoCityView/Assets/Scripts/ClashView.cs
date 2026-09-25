@@ -85,7 +85,7 @@ public class ClashView
     }
     static Sprite Avatar(int id)
     {
-        var p = Path.Combine(ArtDir, "battle", "avatar", id + ".jpg");
+        var p = Path.Combine(ArtDir, "battle", "avatar", BattleRules.Face(id) + ".jpg");
         if (!File.Exists(p)) return null;
         var t = new Texture2D(2, 2);
         t.LoadImage(File.ReadAllBytes(p)); t.Apply();
@@ -278,6 +278,7 @@ public class ClashView
         for (int i = 0; i < n; i++) { tickAt = 0; Tick(); }
     }
     public void FinishForTest() { Finish(); }
+    public string OverForTest => over ?? ("未分胜负 r" + roundNo + " 敌令 " + string.Join(",", enemyOrders));
     /// 单挑里投降：原版 b.b(s,true) 置 aq=2，整场阵型战到此为止
     public void Surrender() { Cc = 4; over = me.Name + " 投降"; Finish(); }
     /// 单挑回来：原版 c.z() 把结局折成 b.cc（1 敌将亡 / 2 我将亡 / 3 敌将被擒 / 4 我方被擒），
@@ -887,6 +888,9 @@ public class ClashView
         }
         if (t < 0) return false;
         var q = other[t];
+        // 兵种各有各的声：弓兵放箭（火矢生效时带火）、骑兵劈砍、步兵刺击、武将本人兵刃相交
+        Sfx.Play(p.Arm == Arm.Gong ? (ours && BattleRules.BuffId(cd) == 5 ? "fire_arrow" : "arrow")
+               : p.Arm == Arm.Qi ? "cav_slash" : p.Arm == Arm.Bu ? "stab" : "clash", .6f);
         int dmg = BattleRules.Damage(BattleRules.Atk(self, p.Arm),
                                      BattleRules.Def(enemy), p.Troops, rng,
                                      ours ? cd : ce, p.Arm);
@@ -929,12 +933,49 @@ public class ClashView
             int n = 0, n2 = 0;
             foreach (var p in mine)   if (p.Alive && p.Arm != Arm.None) n  += p.Troops;
             foreach (var p in theirs) if (p.Alive && p.Arm != Arm.None) n2 += p.Troops;
-            return n > 300 && n2 < 100;
+            // 原版 U() 4077 是 n > 300 && n2 < 100（我方兵还得多于 300 敌方才撤）；
+            // 家规：去掉我方兵力的限制——敌方兵（武将本人不算）不足 100、打满 4 回合就撤，免得光杆武将杵着不走（见 HOUSE_RULES）
+            return n2 < 100;
         }
         if (U() && roundNo >= 4) { for (int i = 0; i < 4; i++) enemyOrders[i] = 2; return; }
-        EnemyAbility();                                   // 原版 z(n)/A(n) 第一件事就是 bZ()
-        if (weAttack) for (int i = 0; i < 4; i++) enemyOrders[i] = 1;
-        else { enemyOrders[0] = 1; for (int i = 1; i < 4; i++) enemyOrders[i] = 0; }
+        EnemyAbility();                                   // 原版 z(n)/A(n)/B(n) 第一件事就是 bZ()
+        // 原版 h(cG) 4163：cm（攻城战，城墙那张图）才分 z()/A()；野战走 g() → B()。
+        // 以前这里只照了攻城那两条，野战里我方先动手时敌军就一直待机、一步不挪——补上 B()。
+        if (siege)
+        {
+            if (weAttack) for (int i = 0; i < 4; i++) enemyOrders[i] = 1;                       // z()：守城的全体待机
+            else { enemyOrders[0] = 1; for (int i = 1; i < 4; i++) enemyOrders[i] = 0; }      // A()：攻城的兵前进
+            return;
+        }
+        // B() 11520：先全体待机；敌兵多过我兵（e(false) > e(true)），或者我方有兵在四格直线内碰上它的非弓兵（ca()），
+        // 就「开打」（cw）——从此武将待机、兵全体前进，这一场不再回头
+        if (!engaged)
+        {
+            for (int i = 0; i < 4; i++) enemyOrders[i] = 1;
+            int s = 0, s2 = 0;
+            foreach (var p in mine)   if (p.Alive && !p.Off && p.Arm != Arm.None) s  += p.Troops;
+            foreach (var p in theirs) if (p.Alive && !p.Off && p.Arm != Arm.None) s2 += p.Troops;
+            engaged = s2 > s || Contact();
+            if (engaged) for (int i = 1; i < 4; i++) enemyOrders[i] = 0;
+        }
+    }
+    bool engaged;                                          // 原版 cw，每场阵型战开头清零（ah() 5764）
+    /// 原版 ca()：我方每个兵往上下左右看 1~4 格，碰到敌方的兵（不算武将；是弓兵就不算）→ 开打
+    bool Contact()
+    {
+        for (int i = 1; i < mine.Count; i++)
+        {
+            var a = mine[i];
+            if (!a.Alive || a.Off) continue;
+            for (int j = 1; j < theirs.Count; j++)
+            {
+                var b = theirs[j];
+                if (!b.Alive || b.Off || b.Arm == Arm.Gong) continue;
+                int d = Mathf.Abs(a.Col - b.Col) + Mathf.Abs(a.Row - b.Row);
+                if ((a.Col == b.Col || a.Row == b.Row) && d >= 1 && d <= 4) return true;
+            }
+        }
+        return false;
     }
     /// b.Z() 5409：武将的棋子离盘之后，定这一场怎么收。
     ///   体力 ≤ 0（被打光的）→ 阵亡；体力还在（下了撤退令走出边界的）→ 溃走，
@@ -1056,13 +1097,17 @@ public class ClashView
         switch (i)
         {
             case 0:                                       // 咒缚：定住敌将四回合
-                if (BattleRules.Bind(me, foe, rng)) cd = BattleRules.CdOf(0);
+                if (BattleRules.Bind(me, foe, rng)) { cd = BattleRules.CdOf(0); Sfx.Play("plot_magic"); }
+                else Sfx.Play("plot_fail");
                 break;
             case 1:                                       // 挑战：请对方单挑
+                Sfx.Play("gong_small");
                 if (BattleRules.Challenge(me, foe, rng)) { Redraw(); OnDuel?.Invoke(); return; }
                 break;
-            case 5: Blaze(); break;                       // 爆炎：一次性范围伤害
-            default: cd = BattleRules.CdOf(i); break;     // 连弩/呐喊/火矢：设增益
+            case 5: Sfx.Play("boom"); Blaze(); break;     // 爆炎：一次性范围伤害
+            default:                                      // 连弩/呐喊/火矢：设增益
+                Sfx.Play(i == 2 ? "crossbow" : i == 3 ? "war_drum" : "fire_arrow");
+                cd = BattleRules.CdOf(i); break;
         }
         Redraw();
     }

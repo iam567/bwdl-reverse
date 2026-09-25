@@ -6,7 +6,12 @@ using UnityEngine.UI;
 public static class UIKit
 {
     public static Font UIFont;
+    public static Font UIFontBold;                      // 当前字体的粗字重；没有（站酷小薇）就用常规，不假加粗
     public static string ArtDir => Path.Combine(Application.streamingAssetsPath, "Art");
+
+    /// 素材可能还没生成的地方用这个：文件不在就回 null，调用方退回代码画的样式
+    public static Texture2D TryLoad(string rel)
+        => File.Exists(Path.Combine(ArtDir, rel)) ? Load(rel) : null;
 
     public static Texture2D Load(string rel)
     {
@@ -49,12 +54,48 @@ public static class UIKit
     {
         var rt = Node("t", p);
         var t = rt.gameObject.AddComponent<Text>();
-        t.font = UIFont; t.fontSize = size; t.color = c; t.alignment = a; t.text = s;
-        t.fontStyle = st; t.raycastTarget = false;
+        bool bold = st == FontStyle.Bold || st == FontStyle.BoldAndItalic;
+        t.font = bold && UIFontBold != null ? UIFontBold : UIFont;
+        t.fontSize = size; t.color = c; t.alignment = a; t.text = s;
+        t.fontStyle = bold ? FontStyle.Normal : st; t.raycastTarget = false;           // 粗靠字重，不让 Unity 把中文描糊
         t.horizontalOverflow = HorizontalWrapMode.Overflow;
         t.verticalOverflow = VerticalWrapMode.Overflow;
         return t;
     }
+    // ── 中文断行（Unity 自带的 Wrap 不懂标点规则，会把「。」「，」甩到行首）──
+    // 按字体实际字宽算每行放几个字；句读、右括号引号不上行首（挂到上一行尾），左括号引号不留行尾（挪到下一行）。
+    const string NoStart = "，。、；：？！…—）》」』】〉”’%％·,.;:?!)]}";
+    const string NoEnd = "（《「『【〈“‘([{";
+    /// 摆好位置（Place）之后调：按这个框的宽度把 t.text 重新断好行，关掉 Unity 自己的换行
+    public static void Cjk(Text t)
+    {
+        if (t == null || string.IsNullOrEmpty(t.text) || t.font == null) return;
+        float width = t.rectTransform.rect.width; if (width <= 1) width = t.rectTransform.sizeDelta.x;
+        if (width <= 1) return;
+        var f = t.font; int size = t.fontSize; var st = t.fontStyle;
+        f.RequestCharactersInTexture(t.text, size, st);
+        float Adv(char c) => f.GetCharacterInfo(c, out var ci, size, st) ? ci.advance : size;
+        var sb = new System.Text.StringBuilder(); var line = new System.Text.StringBuilder(); float lw = 0;
+        void Flush() { sb.Append(line).Append('\n'); line.Clear(); lw = 0; }
+        foreach (char c in t.text)
+        {
+            if (c == '\n') { Flush(); continue; }
+            float a = Adv(c);
+            if (lw + a > width && line.Length > 0)
+            {
+                if (NoStart.IndexOf(c) >= 0) { line.Append(c); lw += a; Flush(); continue; }   // 标点挂在行尾
+                string carry = "";
+                if (NoEnd.IndexOf(line[line.Length - 1]) >= 0) { carry = line[line.Length - 1].ToString(); line.Length--; }   // 左括号挪下去
+                Flush();
+                foreach (char k in carry) { line.Append(k); lw += Adv(k); }
+            }
+            line.Append(c); lw += a;
+        }
+        sb.Append(line);
+        t.horizontalOverflow = HorizontalWrapMode.Overflow;
+        t.text = sb.ToString();
+    }
+
     public static Image Panel(Transform p, string n, Sprite s, bool sliced = true)
     {
         var im = Node(n, p).gameObject.AddComponent<Image>();

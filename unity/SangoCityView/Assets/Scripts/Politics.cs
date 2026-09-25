@@ -136,22 +136,10 @@ public static class Politics
     /// b.e(byte) 1726 / ao() 6156：一回合能下几道令 = 本势力城数，夹在 3..8
     public static int OrdersPerTurn(int cityCount) => Mathf.Clamp(cityCount, 3, 8);
 
-    /// 城里能派出去办事的武将。原版 b.java:7227 读武将表时两道门：
-    ///   第 13 列（登场年份 T[]）必须是 189，190~193 的这个剧本还没出场；
-    ///   第 15 列 1 才进城池的 A[]（仕官），0 进 B[]（在野，得靠搜索才挖得到）。
-    /// 164 人过第一道门，其中 162 人仕官；每城最多 10 人，正好顶着原版 A[城] 的数组长度。
+    /// 城里能派出去办事的武将 = 功曹府名册里的仕官 A[]。
+    /// 开局怎么进名册、每城 10 人上限，都在 Personnel.Init 里；登用进来的人也在这里面。
     public const int MaxInCity = 10;          // b.java:7057 A[s] = new short[10]
     public const int ScenarioYear = 189;      // 中平六年
     public static List<Officer> Roster(Dictionary<int, Officer> all, int cityId)
-    {
-        var list = new List<Officer>();
-        foreach (var kv in all)
-        {
-            var o = kv.Value;
-            if (o.Year == ScenarioYear && o.Serving && o.City == cityId) list.Add(o);
-        }
-        list.Sort((a, b) => a.Id.CompareTo(b.Id));
-        if (list.Count > MaxInCity) list.RemoveRange(MaxInCity, list.Count - MaxInCity);
-        return list;
-    }
+        => new List<Officer>(Personnel.Of(cityId).A);
 }

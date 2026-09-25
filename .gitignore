@@ -10,3 +10,8 @@ unity/*/Build/
 unity/*/Library/
 unity/*/Temp/
 unity/*/Logs/
+
+# 不能随 App 分发的商用字体（Arial Unicode MS），只留在本机
+unity/*/FontsRetired/
+# Unity 批处理日志
+unity/*/*.log

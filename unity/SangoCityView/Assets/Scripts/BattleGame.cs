@@ -277,7 +277,7 @@ public class BattleGame : MonoBehaviour
         Debug.Log("截图 " + name);
     }
 
-    string ThemeOf(int city)
+    public static string ThemeOf(int city)
     {
         var j = File.ReadAllText(Path.Combine(BattleDir, "city-theme.json"));
         // 只有 36 个 "id":"主题" 的扁平表，不值得拖一个 JSON 库进来

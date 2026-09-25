@@ -96,6 +96,64 @@
 `ScreenFit.RefW / RefH` 排版，不要写死 375×812。城池层尺寸一变整棵树重建
 （`Game.Build()`），所以新界面的搭建代码要能被重复调用。
 
+### 功曹府（人事）四条已接完（2026-09-25）
+
+搜索 / 登用 / 奖赏 / 任命照原版 `bR[6..9]` 步骤表接完：规则 `Personnel.cs`，界面 `PersonnelView.cs`，
+两边的弹框零件抽到了 `SheetView.cs`（太守府 `PoliticsView` 也改成继承它）。
+每城三份名册 A 仕官 / B 未发现 / C 已发现 由 `Personnel.Init` 建，`Politics.Roster` 现在也读 A。
+新增月 / 年历：一回合一个月，过 12 月走 `Personnel.NewYear`（登场年份到了的进搜索池）。
+四段八帧动画 `Art/personnelcg/rs_<0..3>_f<0..7>.jpg`，提示词 `image-studio/personnelcg.js`（平台 id `rsa_0..3`）。
+自检：`-personnel`（批量跑公式打分布）；截图：`-rs <0..3> [-step 1|2] [-at 城名] -shot <png>`。
+和原版不同的地方见 `HOUSE_RULES.md §功曹府`。
+
+### 主界面 / 设置 / 顶栏（2026-09-25）
+
+- **主界面** `TitleView.cs`：标题主视觉 `Art/title.jpg`（平台 `cg_lib13`）+ 新游戏 / 读取进度。
+  带任何自检钩子启动都直接进游戏，`-title` 强制停在主界面。
+- **设置** `SystemView.cs`：大地图右上角罗盘钮 → 存储 / 读取 / 返回主界面 / 继续。
+  三个档位照原版（空档「尚无存档」、档名「君主 年月」），`SaveGame.cs` 存 `persistentDataPath/save_<n>.json`，
+  存的是 36 城数值与归属、武将可变属性、三份名册、年月、剩余令数、所在城。自检 `-savetest`。
+- **年份**：大地图顶部居中年份牌（原版标题栏「189年1月」，c.java:6627），城内城名旁也有一块。
+- **顶栏图标**：`Art/hud/`（平台 `hud.js`：年份牌、方形图标钮底、令牌 / 地图 / 设置），零件在 `Hud.cs`，
+  缺图时退回原来的字框。
+- **搜索五种结果各一段动画** `personnelcg/rs_s<0..4>`（无 / 粮 / 金 / 贤才 / 宝物，平台 `rss_0..4`）。
+
+### 校场（军事）四条 + 战争接入 + 集市四条（2026-09-25）
+
+- **移动 / 征兵 / 输送** `Military.cs` + `MilitaryView.cs`；**集市** `Market.cs` + `MarketView.cs`（常平仓 / 武库 / 郡学 / 药庐）。
+- **战争** `War.cs`：选城 → 勾选出征 → 带金粮（屏 14）→ 补任太守或选主将 → 誓师 → 开战 / 占空城。
+  战场直接在城池游戏里开（`Game.StartBattle`），BattleField 通过 `BattleField.World` 读活数据，
+  打完点结局框 → `War.Settle` 按原版 `L()` / `A()+D()` 善后（城易主、俘虏、撤退、金粮、君主战死选继位）→ 扣令。
+  独立的 SangoBattle 演示不塞 World，照旧读开局表。
+- 动画：`militarycg/js_<0..3>`、`marketcg/sc_<0..3>`（平台 `jsa_*` / `sca_*`）。
+- 自检：`-wartest`（同一队人马打一场胜、一场败，打出前后名册与城池）；截图：`-war` / `-js <n>` / `-sc <指令原话>`。
+
+### 完整游戏循环（2026-09-25，P0 全部 + P1 大部）
+
+从主界面一路玩到统一 / 灭亡都接上了。新文件与职责：
+
+| 文件 | 内容 | 原版 |
+|---|---|---|
+| `Realm.cs` | 势力表（owner 键 → 君主武将号、存活）、同盟表 | a[] b[] c[] d[][]，W/X/Y |
+| `GameTurns.cs` | 回合引擎：每月 8 格随机顺序，玩家发令 / AI「战略中」≥2 秒；月末、年末；守城；结局 | aF/aD/au/t/ao/aC/aE |
+| `AI.cs` | AI 一回合：战争 > 征兵 > 调将 > 医馆 > 奖赏 > 输送 > 杂项 | bw() 与其下全部 |
+| `WarAI.cs` | AI 打空城 / AI 打 AI 算式结算 / 撤退被擒 / 玩家守城善后 | t(int) d() 9420 C()/D()/K()/L() |
+| `MonthEnd.cs` | 月末：胜负、三灾、瘟疫、民变、AI 自然增长、收金收粮、回血、同盟倒计时、彩蛋；结局评分 | aC() k() |
+| `Diplomacy.cs` + `DiplomacyView.cs` | 同盟 / 离间 / 招揽 / 情报 | Z/P(20)/aa/P(4) |
+| `EventView.cs` | 事件弹窗（屏 19）排队 + 八帧动画；「XX 战略中」遮罩 | c.R()/e() |
+| `RulerPickView.cs` | 君主选择（7 家 + 自建） | c.S() |
+| `CustomOfficers.cs` + `CustomView.cs` | 自建武将：3 名、文 / 武 / 随机、加点、4 字名，跨局保存；自建势力在空城建都 | 屏 27，bR()/ap() |
+| `VillageView.cs` | 战场村庄：武器村 / 金粮村（原版，替换掉旧家规） | aj()/ak() |
+
+规格文档（从反编译逐行抄的）：`docs/AI_SPEC.md`、`MONTHEND_SPEC.md`、`TURNS_SPEC.md`、`DIPLOMACY_SPEC.md`。
+改动与修掉的原版 bug 全在 `HOUSE_RULES.md`。
+
+动画：`Art/eventcg/ev_<key>`（24 段：攻城 / 占空城 / 易主 / 败退 / 旱水蝗 / 瘟疫 / 收金 / 收粮 / 跟随 / 骚乱 /
+同盟解除 / 密会 / 投奔 / 灭亡 / 继位 / 战略中 / 同盟 / 离间 / 招揽 / 情报 / 统一 / 覆灭，平台 `eventcg.js`）；
+自建武将头像 `battle/avatar/229~238.jpg`（平台 `customcg.js`）。
+
+自检钩子：`-sim <月> [-as 势力]`（无人值守跑月报）、`-customtest`、`-wintest`、`-newgame`、`-play <势力> [-ai]`、`-custom`。
+
 ### 主城界面还欠的
 
 `unity/SangoCityView`（`Builder.BuildMac` → `Build/SangoCityView.app`，`City.unity` 场景）

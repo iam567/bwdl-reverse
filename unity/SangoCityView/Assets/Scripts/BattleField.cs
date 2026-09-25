@@ -25,7 +25,27 @@ public class BattleField
 {
     public RectTransform Root;
     public System.Action<Unit, Unit, bool> OnClash;   // 我方, 敌方, 我方是不是攻方
-    public System.Action OnQuit;
+    public System.Action OnQuit;                    // 结局框上点「返回」
+
+    /// 接进正式游戏时由 Game 塞进来：城主 / 城里人数 / 邻城 / 城名都读活的数据。
+    /// 不塞（独立的 SangoBattle 演示）就照旧读 cities.csv 那份开局表。
+    public interface IWorld
+    {
+        Dictionary<int, int> Rulers();          // 城 → 城主武将号（0 = 空城），原版 i[]
+        Dictionary<int, int> Counts();          // 城 → 仕官人数，原版 r[]
+        int[] Adjacent(int city);
+        string Name(int city);
+    }
+    public static IWorld World;
+
+    // ── 结局记录：打完之后战略层照这个善后 ────────────────────────────
+    public readonly Dictionary<Officer, int> RetreatTo = new();   // 撤到哪座城（0 = 下野）
+    public readonly HashSet<Officer> Dead = new();                 // 战死
+    public int CityFell;                                            // 1 我方攻占 / -1 敌方攻占 / 0 城没易主
+    public int[] Supply => supply;                                  // 我金 我粮 敌金 敌粮（打完的余数）
+    public bool IsOver => over;
+    public int KeptGold, KeptFood;
+    public int OurKeptGold, OurKeptFood;                            // 我方守城失守时，撤走的人带走的城库                                  // 城破时守军带走的金粮（K() 3322）
 
     const int CELL = 44;                            // 一格在屏上多大
     const int NP_H = 15;                            // 名牌高度：上面 11 排字、下面 4 留给兵力条
@@ -331,6 +351,23 @@ public class BattleField
         foreach (var u in units) u.Draw = new Vector2(u.X, u.Y);
         Refresh();
     }
+    /// 自检：守城时连跑 n 个敌军日，每日记下敌军站位（贴上就打的不开阵型战，只记一笔）
+    public void DefenseDaysForTest(int n)
+    {
+        var keep = OnClash; OnClash = (m, e, _) => Debug.Log("[守城自检] " + e.O.Name + " 攻打 " + m.O.Name);
+        for (int d = 0; d < n && !over; d++)
+        {
+            EndDay();
+            for (int g = 0; g < 400 && enemyTurn; g++) { ClosePlotPop(); if (!EnemyStep()) break; }
+            var sb = new System.Text.StringBuilder("[守城自检] 第 " + day + " 日 cN=" + foeCalls + "：");
+            foreach (var u in units) if (!u.Ours && u.Alive) sb.Append(u.O.Name + "(" + u.X + "," + u.Y + ") ");
+            var head = units.Find(u => u.Ours && u.Alive);
+            if (head != null) sb.Append("｜我方头将 " + head.O.Name + "(" + head.X + "," + head.Y + ")");
+            Debug.Log(sb.ToString());
+            StartOurDay();
+        }
+        OnClash = keep;
+    }
     /// 单挑投降回来：这支部队退出战场，选附近的城或下野
     public void OpenRetreatFor(Unit u) { sel = u; mode = ""; hintText.text = u.O.Name + " 投降，退出战场"; OpenRetreatMenu(); Refresh(); }
     public void LandForTest(Unit u, int x, int y) { CloseAsk(); CloseInfo(); CloseRetreatMenu(); sel = u; u.X = x; u.Y = y; u.Draw = new Vector2(x, y); CenterOn(x, y); curX = x; curY = y; Refresh(); OnLanded(u); }
@@ -436,7 +473,7 @@ public class BattleField
         if (sel == null) { hintText.text = "先点一支我方部队"; return; }
         if (mode == "move")                          // 移动态下六个键只剩「确定」「取消」两个意思
         {
-            if (i == 0) { EndMove(); Refresh(); }
+            if (i == 0) { EndMove(true); Refresh(); }
             else if (i == 1) CancelMove();
             return;
         }
@@ -462,33 +499,23 @@ public class BattleField
     // ── 落到建筑格：原版 c.java 4766 j(格) → 「是否进入村庄?」→ G() 按格分派 ──
     //   4 疗伤点：C() 体力满→「当前武将毋需治疗!」，金 <50→「金子不够,无法进行治疗!」，
     //             否则「是否对武将进行治疗?」→ 金 −50、体力 += bI() = 35 + rnd(17)，钳到上限，「武将体力恢复了」
-    //   1 / 3：原版只置 aq=5/6 进一个空等待循环，没有任何效果（GAME_LOGIC §8.2）；其他版本是武器店/金粮店，待定
+    //   1 武器村：aq=5 → al()/an() 外层 aj() → 屏 17 战斗版武器店（货架档 z[战场城]，从战场金 bc 付，装给进村那员）
+    //   3 金粮村：aq=6 → ak() → 屏 16 战斗版金粮兑换（战场金 bc / 粮 bd，每进一次成交一笔）
+    //   没有次数限制、不耗机动力、不结束这一日（关掉结果回「选择武将下命令」）。界面由 OnVillage 交给外面开。
+    public System.Action<Unit, int> OnVillage;          // (进村那员, 地形码 1 / 3)
+    public int VillageTier = -1;                        // 原版 z[战场城]，cities.csv 第 22 列；<0 = 这张图没有武器村
     void OnLanded(Unit u)
     {
         int code = TerrainAt(u.X, u.Y) & 0xF;
         if (code != 1 && code != 3 && code != 4) return;
         Ask("是否进入村庄?", () => {
             if (code == 4) { HealPrompt(u); return; }
-            // 1 / 3：原版无事发生。这里按「其他版本是武器店 / 金粮店」补一版战场里说得通的（HOUSE_RULES）：
-            // 一座建筑一场仗只能用一次。
-            int key = u.Y * W + u.X;
-            if (usedBuildings.Contains(key)) { hintText.text = "村中已空"; return; }
-            usedBuildings.Add(key);
-            if (code == 3)
-            {
-                int n = 100 + rng.Next(201);                        // 征得粮草：100~300
-                supply[1] += n; hintText.text = "征得粮草: " + n; RefreshTop();
-            }
-            else
-            {
-                // 武库：兵器升一档（原版 R[] 0–23 是兵器表下标）
-                if (u.O.ArmLv < 23) { u.O.ArmLv++; hintText.text = "获得兵器 " + BattleRules.WeaponOf(u.O); }
-                else hintText.text = "库中兵器不及手中之物";
-            }
-            Refresh();
+            if (OnVillage != null) OnVillage(u, code);
+            else hintText.text = "退出村庄!";
         });
     }
-    readonly HashSet<int> usedBuildings = new HashSet<int>();
+    /// 村里买完 / 换完：顶栏金粮刷新，底栏提示原版那句话（W 10~14）
+    public void VillageDone(string msg) { hintText.text = msg; RefreshTop(); Refresh(); }
     void HealPrompt(Unit u)
     {
         if (u.O.Hp >= u.O.HpMax) { hintText.text = "当前武将毋需治疗!"; return; }
@@ -502,11 +529,22 @@ public class BattleField
     }
     // 是 / 否 小弹框（原版底栏 V 那一行 + 左右软键）
     RectTransform askPop;
-    void CloseAsk() { if (askPop != null) Object.Destroy(askPop.gameObject); askPop = null; }
+    /// 弹窗背后的透明全屏垫子：点到弹窗外面 = 关掉（等于按「否」/ 不施展）
+    RectTransform Shade(string n, System.Action onTap)
+    {
+        var sh = Node(n, Root); Fill(sh);
+        var im = sh.gameObject.AddComponent<Image>(); im.color = new Color(0, 0, 0, 0); im.raycastTarget = true;
+        var b = sh.gameObject.AddComponent<Button>(); b.transition = Selectable.Transition.None;
+        b.onClick.AddListener(() => onTap());
+        return sh;
+    }
+    RectTransform askShade, plotShade, infoShade;
+    void CloseAsk() { if (askPop != null) Object.Destroy(askPop.gameObject); askPop = null; if (askShade != null) Object.Destroy(askShade.gameObject); askShade = null; }
     void Ask(string q, System.Action yes)
     {
         CloseAsk();
         float w = 280, h = 96;
+        askShade = Shade("askShade", () => { CloseAsk(); hintText.text = "选择武将下命令"; });
         askPop = Node("ask", Root);
         Place(askPop, (refW - w) / 2, refH - 100 - h - 10, w, h);
         var bg = Panel(askPop, "bg", BattleUi.PlateSp()); Fill((RectTransform)bg.transform);
@@ -535,7 +573,8 @@ public class BattleField
     RectTransform plotMenu; int plotSel = -1, plotHover = -1;
     readonly HashSet<int> ambush = new HashSet<int>();          // 十面埋伏埋下的格（y*W+x）
     Text plotDescT, plotDescTitle; readonly List<Image> plotBtnImgs = new List<Image>();
-    void ClosePlotMenu() { if (plotMenu != null) Object.Destroy(plotMenu.gameObject); plotMenu = null; plotHover = -1; plotBtnImgs.Clear(); }
+    void ClosePlotMenu() { if (plotMenu != null) Object.Destroy(plotMenu.gameObject); plotMenu = null; plotHover = -1; plotBtnImgs.Clear();
+                           if (plotShade != null) Object.Destroy(plotShade.gameObject); plotShade = null; }
 
     /// 原版 c.P()：一次一条的走马灯——上半是说明 d.q、下面黄字是当前计策名、确认才施。
     /// 触屏改成 4×4 全列出来，但两段式保留：第一下选中并显示说明，再点同一条才进选落点。
@@ -545,6 +584,7 @@ public class BattleField
         int n = BattleRules.PlotCount(sel.O);
         const int COLS = 4, ROW = 34, DESC = 74; int rows = (n + COLS - 1) / COLS;
         float w = refW - 20, h = 34 + rows * ROW + 6 + DESC + 8;
+        plotShade = Shade("plotShade", () => { ClosePlotMenu(); hintText.text = "选择武将下命令"; });   // 点菜单外面 = 不施展
         plotMenu = Node("plot", Root);
         Place(plotMenu, 10, refH - 100 - h - 8, w, h);
         var bg = Panel(plotMenu, "bg", BattleUi.PlateSp()); Fill((RectTransform)bg.transform);
@@ -564,6 +604,9 @@ public class BattleField
             bt.onClick.AddListener(() => {
                 if (plotHover != k) { PlotHover(k); return; }                 // 第一下：看说明
                 plotSel = k; ClosePlotMenu();                                  // 第二下：施
+                // 射程 / 地形内一个能施的敌将都没有：直接说，不进选落点（十面埋伏是埋自己脚下，另算）
+                if (k != 11 && !HasPlotTarget(k))
+                { plotSel = -1; mode = ""; hintText.text = BattleRules.PlotName[k] + "：施展范围内没有敌军!"; Refresh(); return; }
                 mode = "plot"; hintText.text = "选择计策实施地点 · " + BattleRules.PlotName[k]; Refresh();
             });
             var l = Label(b, BattleRules.PlotName[i] + " " + cost, 13,
@@ -587,7 +630,7 @@ public class BattleField
             if (plotBtnImgs[i] != null && plotBtnImgs[i].color != new Color(.55f, .52f, .48f, 1f))
                 plotBtnImgs[i].color = i == k ? new Color(1f, .92f, .55f, 1f) : Color.white;
         plotDescTitle.text = BattleRules.PlotName[k] + " · 需机动力 " + BattleRules.CostOfPlot(k) + " · 再点一次施展";
-        plotDescT.text = BattleRules.PlotDesc[k];
+        plotDescT.text = BattleRules.PlotDesc[k]; Cjk(plotDescT);
     }
 
     // ── 计策效果弹框（原版 c.java 3194：图在上、结果句在下、按键才收）──
@@ -609,6 +652,7 @@ public class BattleField
     void ShowPlotPop(int plot, string result, Unit caster = null, Unit target = null)
     {
         ClosePlotPop();
+        Sfx.Plot(plot, result == null || !result.Contains("失败"));             // 火 / 水 / 落石 / 箭 / 通用，失败是一声闷响
         plotFrames = new Sprite[8]; int have = 0;
         for (int f = 0; f < 8; f++) { plotFrames[f] = PlotFrame(plot, f); if (plotFrames[f] != null) have++; }
         if (have == 0) plotFrames = null;
@@ -637,6 +681,7 @@ public class BattleField
         Place((RectTransform)plotPic.transform, 8, top, w - 16, ph);
         plotPic.raycastTarget = false;
         if (plotFrames != null) plotPic.sprite = plotFrames[0]; else plotPic.color = new Color(.1f, .08f, .06f, 1);
+        Hud.CgFrame((RectTransform)plotPic.transform);                          // 动画外沿的细画框
         var r = Label(plotPop, result, 15, Color.white, TextAnchor.MiddleCenter);
         Place(r.rectTransform, 0, top + ph + 8, w, 24);
         plotT0 = Time.time;
@@ -665,6 +710,16 @@ public class BattleField
     }
 
     /// c.H() 的后半段：落点 → 合法 → roll → 结算 → 扣机动力
+    /// 这条计策现在能不能落到任何一个敌将头上（和落点态亮红框用同一套判定）
+    bool HasPlotTarget(int plot)
+    {
+        foreach (var o in units)
+            if (!o.Ours && o.Alive && o.Trapped == 0 &&
+                BattleRules.PlotLegal(plot, sel.X, sel.Y, o.X, o.Y, TerrainAt(sel.X, sel.Y), TerrainAt(o.X, o.Y), HasAllyAdjacent(o)))
+                return true;
+        return false;
+    }
+
     void DoPlot(int x, int y)
     {
         int plot = plotSel; mode = ""; plotSel = -1;
@@ -675,7 +730,7 @@ public class BattleField
             {
                 ambush.Add(sel.Y * W + sel.X); sel.O.Troops -= 100; mp -= cost;
                 hintText.text = sel.O.Name + " 使用计策: 十面埋伏"; ShowPlotPop(11, "埋伏完毕", sel);
-                sel.Acted = true; sel = null;
+                sel.Acted = true; curX = sel.X; curY = sel.Y;                  // 施计的人留着选中，好接着连施
             }
             else hintText.text = "此地无法使用该计策";
             return;
@@ -692,7 +747,8 @@ public class BattleField
         BattleRules.GainExp(sel.O, before - tgt.O.Troops);                     // 4934：差额进施计者的经验，再 f() 升级
         hintText.text = sel.O.Name + " 对 " + tgt.O.Name + " 使用计策: " + BattleRules.PlotName[plot];
         ShowPlotPop(plot, msg, sel, tgt);                                      // 原版 P 在 roll 之前就置 true：失败也弹图
-        sel.Acted = true; sel = null;
+        // 施计的人留着选中、光标回到他身上：原版没有「一日一动」的锁，机动力够就能直接再按「计策」连施
+        sel.Acted = true; curX = sel.X; curY = sel.Y;
     }
 
     /// b.a(short,byte[],byte,byte,int,boolean)
@@ -744,12 +800,28 @@ public class BattleField
     void LoadCityData()
     {
         if (cityRuler != null) return;
+        if (World != null)
+        {
+            cityRuler = World.Rulers(); cityCount = World.Counts(); adjCities = World.Adjacent(cityId);
+            rulerIds = new HashSet<int>(cityRuler.Values); rulerIds.Remove(0);
+            cityRuler.TryGetValue(cityId, out origOwner);
+            return;
+        }
         cityRuler = BattleRules.LoadCityRulers(Path.Combine(BattleGame.BattleDir, "cities.csv"));
         adjCities = BattleRules.AdjacentCities(Path.Combine(BattleGame.BattleDir, "city-adjacency.json"), cityId);
         rulerIds = new HashSet<int>(cityRuler.Values);
         cityCount = new Dictionary<int, int>();
         foreach (var o in BattleRules.LoadOfficers(Path.Combine(BattleGame.BattleDir, "officers.csv")).Values)
             if (o.City > 0) cityCount[o.City] = cityCount.TryGetValue(o.City, out int n) ? n + 1 : 1;
+        cityRuler.TryGetValue(cityId, out origOwner);                 // 开战时的城主：城易主之后撤退判断还按它
+    }
+    /// 敌方主公：我方攻城时 = 这座城开战时的城主；守城时 = 来犯那家（Game 开战时塞进 FoeRulerId）
+    public int FoeRulerId;
+    int origOwner = -1;
+    int FoeRuler()
+    {
+        LoadCityData();
+        return FoeRulerId > 0 ? FoeRulerId : origOwner;
     }
     int OurRuler()
     {
@@ -778,7 +850,7 @@ public class BattleField
         if (cs.Count == 0 && isRuler)
         {
             if (captured)                                                       // W == 9：城没了、主公也无处可去 → 这支就没了
-            { hintText.text = "君主所在城市被攻占,无可退城市!"; sel.Alive = false; sel = null; Refresh(); AfterRetreat(); }
+            { hintText.text = "君主所在城市被攻占,无可退城市!"; Dead.Add(sel.O); sel.Alive = false; sel = null; Refresh(); AfterRetreat(); }
             else hintText.text = "无城可退，背水一战吧";                        // W == 18
             return;
         }
@@ -801,7 +873,7 @@ public class BattleField
             var bt = b.gameObject.AddComponent<Button>(); bt.transition = Selectable.Transition.None;
             bt.onClick.AddListener(() => DoRetreat(city));
             cityRuler.TryGetValue(city, out int owner);
-            string nm = xy ? "下野" : BattleRules.CityName(Path.Combine(BattleGame.BattleDir, "city-adjacency.json"), city) + (owner == 0 ? "(空)" : "");
+            string nm = xy ? "下野" : NameOf(city) + (owner == 0 ? "(空)" : "");
             var l = Label(b, nm, 14, xy ? new Color32(0xF8,0x5A,0x52,255) : new Color32(0xF0,0xE0,0xB8,255), TextAnchor.MiddleCenter);   // 下野原版画红
             Fill(l.rectTransform);
         }
@@ -812,12 +884,13 @@ public class BattleField
         if (city > 0)
         {
             cityRuler.TryGetValue(city, out int owner);
-            string nm = BattleRules.CityName(Path.Combine(BattleGame.BattleDir, "city-adjacency.json"), city);
+            string nm = NameOf(city);
             hintText.text = sel.O.Name + (owner == 0 ? " 退入空城 " + nm + "，就势占了" : " 退往 " + nm);
             cityCount[city] = cityCount.TryGetValue(city, out int c) ? c + 1 : 1;             // b.a(short,byte,short)：r[城]++
             if (owner == 0) cityRuler[city] = OurRuler();                                       // 空城 → i[城] = 我方主公
         }
         else hintText.text = sel.O.Name + " 下野";
+        RetreatTo[sel.O] = city > 0 ? city : 0;
         sel.Alive = false; sel.Acted = true;                                                  // 兵跟着人走，没有损失
         sel = null; Refresh();
         AfterRetreat();
@@ -827,17 +900,17 @@ public class BattleField
     // 光标点到哪一支（敌我都行）就弹「武将信息」：头像、名、LV、武/智、体/德、兵/忠、武器/防具。
     // 不扣机动力、不算行动——原版 F() 里没有 bk 减法，也不置 Acted。
     RectTransform infoPop;
-    void CloseInfo() { if (infoPop != null) Object.Destroy(infoPop.gameObject); infoPop = null; }
+    void CloseInfo() { if (infoPop != null) Object.Destroy(infoPop.gameObject); infoPop = null; if (infoShade != null) Object.Destroy(infoShade.gameObject); infoShade = null; }
     static Sprite AvatarOf(int id)
     {
-        var p = Path.Combine(ArtDir, "battle", "avatar", id + ".jpg");
+        var p = Path.Combine(ArtDir, "battle", "avatar", BattleRules.Face(id) + ".jpg");
         if (!File.Exists(p)) return null;
         var t = new Texture2D(2, 2); t.LoadImage(File.ReadAllBytes(p)); t.Apply();
         return Whole(t);
     }
     static Sprite CardOf(int id)
     {
-        var p = Path.Combine(ArtDir, "battle", "card", id + ".jpg");
+        var p = Path.Combine(ArtDir, "battle", "card", BattleRules.Face(id) + ".jpg");   // 自建武将按他挑的那张脸找卡面
         if (!File.Exists(p)) return null;
         var t = new Texture2D(2, 2); t.LoadImage(File.ReadAllBytes(p)); t.Apply();
         return Whole(t);
@@ -848,6 +921,7 @@ public class BattleField
         hintText.text = "武将信息";
         var o = u.O;
         float w = 340, h = 514;                       // 卡牌整张立在左上，属性条在下（经验多占一行）
+        infoShade = Shade("infoShade", () => { CloseInfo(); Refresh(); });
         infoPop = Node("info", Root);
         Place(infoPop, (refW - w) / 2, (refH - h) / 2 - 36, w, h);
         var bg = Panel(infoPop, "bg", BattleUi.PlateSp()); Fill((RectTransform)bg.transform);
@@ -871,6 +945,7 @@ public class BattleField
         {
             var ci = Node("card", infoPop).gameObject.AddComponent<Image>();
             Place((RectTransform)ci.transform, ax, ay, cwid, chei); ci.sprite = card; ci.raycastTarget = false;
+            AlbumView.BadgeOn((RectTransform)ci.transform, o, cwid);                  // 天下霸图的评级角标
         }
         // 卡外一圈细金边：头像框那张没有九宫格 border（量的是洞不是边），拉伸会拼成十字纹；
         // 用木牌底图（border 3，四边是金线脚）垫在卡下面、比卡大一圈，露出的就是那圈金线。
@@ -981,7 +1056,7 @@ public class BattleField
     {
         UpdateLoneRuler();
         if (over || retreating) return;
-        string cn = BattleRules.CityName(Path.Combine(BattleGame.BattleDir, "city-adjacency.json"), cityId);
+        string cn = NameOf(cityId);
         if (AliveCount(false) == 0)
         {
             if (WeAttack) SettleCity(true, "我军攻占了 " + cn + "!");     // 攻方全歼守军 → L()
@@ -995,6 +1070,9 @@ public class BattleField
     }
     void ShowOver(string msg)
     {
+        // 胜负：我方丢城 / 粮尽 / 全军撤退是败，其余（攻下、守住、敌军逃窜）是胜
+        bool lost = CityFell == -1 || msg.Contains("我军粮草") || msg.Contains("敌军占领") || msg.Contains("我军攻打") || msg.Contains("全军撤退");
+        Sfx.Play(lost ? "gong_lose" : "gong_win");
         over = true; enemyTurn = false; sel = null; mode = ""; reach.Clear();
         CloseAsk(); CloseInfo(); CloseRetreatMenu(); ClosePlotMenu();
         hintText.text = msg;
@@ -1007,12 +1085,19 @@ public class BattleField
         t.horizontalOverflow = HorizontalWrapMode.Wrap;
         t.verticalOverflow = VerticalWrapMode.Truncate;
         t.lineSpacing = 1.15f;
-        Place(t.rectTransform, pad, pad, w - pad * 2, 1000);
+        Place(t.rectTransform, pad, pad, w - pad * 2, 1000); Cjk(t);
         float th = Mathf.Ceil(t.preferredHeight);
         float h = Mathf.Max(64, th + pad * 2);
         Place(overPop, (refW - w) / 2, (refH - h) / 2 - 40, w, h);
         Fill((RectTransform)bg.transform);
         Place(t.rectTransform, pad, pad, w - pad * 2, h - pad * 2);
+        if (OnQuit != null)                              // 接在正式游戏里：点结局框回城
+        {
+            var bt = bg.gameObject.AddComponent<Button>(); bt.transition = Selectable.Transition.None;
+            bt.onClick.AddListener(() => OnQuit());
+            var hint = Label(overPop, "点此返回", 12, new Color32(0xC8,0xB0,0x80,255), TextAnchor.MiddleCenter);
+            Place(hint.rectTransform, 0, h - 18, w, 16);
+        }
         Refresh();
     }
     /// 敌军踩上城池格：城易主，我方余将一个一个选退路
@@ -1021,7 +1106,8 @@ public class BattleField
         captured = true; enemyTurn = false; plans = null;   // 城的归属等余将撤完了由 SettleCity 一并办
         ForceRetreatAll("敌军占领我方城池!", "敌军占领了 " + CityNameNow() + "!");      // W == 21
     }
-    string CityNameNow() => BattleRules.CityName(Path.Combine(BattleGame.BattleDir, "city-adjacency.json"), cityId);
+    string CityNameNow() => NameOf(cityId);
+    string NameOf(int c) => World != null ? World.Name(c) : BattleRules.CityName(Path.Combine(BattleGame.BattleDir, "city-adjacency.json"), c);
     /// 原版 c.java 4476（W = 7 / 9 / 20 / 21 共用）：A() 起头，我方余将一个一个「撤退武将 X」选退路
     void ForceRetreatAll(string reason, string end)
     {
@@ -1090,6 +1176,30 @@ public class BattleField
         foreach (var u in loneSaved) u.Alive = true;
         loneSaved.Clear(); Refresh();
     }
+    /// 自检：直接判胜负，看战略层善后对不对。胜 = 守军全灭；败 = 我方全员撤往第一座能退的城（没有就下野）
+    public void ForceOutcomeForTest(bool weWin)
+    {
+        LoadCityData(); CloseAsk(); CloseInfo(); ClosePlotPop();
+        if (weWin)
+        {
+            bool first = true;
+            foreach (var u in units) if (!u.Ours && u.Alive) { u.Alive = false; if (first) { Dead.Add(u.O); first = false; } }
+            SettleCity(true, "我军攻占了 " + CityNameNow() + "!");
+            return;
+        }
+        var cs = RetreatCities();
+        foreach (var u in units) if (u.Ours && u.Alive) { RetreatTo[u.O] = cs.Count > 0 ? cs[0] : 0; u.Alive = false; }
+        ShowOver("我军攻打 " + CityNameNow() + " 失败了!");
+    }
+    /// 自检：守城直接判——守住（攻方全灭）或失守（我方全员撤往第一座能退的城）
+    public void ForceDefenseForTest(bool hold)
+    {
+        LoadCityData(); CloseAsk(); CloseInfo(); ClosePlotPop();
+        if (hold) { foreach (var u in units) if (!u.Ours) u.Alive = false; ShowOver("敌军攻打 " + CityNameNow() + " 失败了!"); return; }
+        var cs = RetreatCities();
+        foreach (var u in units) if (u.Ours && u.Alive) { RetreatTo[u.O] = cs.Count > 0 ? cs[0] : 0; u.Alive = false; }
+        SettleCity(false, "敌军占领了 " + CityNameNow() + "!");
+    }
     public void CaptureForTest() { CloseAsk(); CloseInfo(); ClosePlotPop(); forceDefend = true; Captured(); }
     public void CaptureResetForTest() { captured = retreating = over = false; forceDefend = false; retreatQ.Clear(); System.Array.Copy(supply0, supply, 4); RefreshTop(); CloseRetreatMenu(); if (overPop != null) Object.Destroy(overPop.gameObject); overPop = null; sel = null; Refresh(); }
 
@@ -1111,8 +1221,8 @@ public class BattleField
         string msg = null;
         switch (cc)
         {
-            case 1: foe.Alive = false;  msg = foe.O.Name + " 战死"; break;
-            case 2: ours.Alive = false; msg = ours.O.Name + " 战死"; break;
+            case 1: foe.Alive = false;  Dead.Add(foe.O);  msg = foe.O.Name + " 战死"; break;
+            case 2: ours.Alive = false; Dead.Add(ours.O); msg = ours.O.Name + " 战死"; break;
             case 3: foe.Alive = false;  msg = Capture(foe, ours, true);  break;
             case 4: ours.Alive = false; msg = Capture(ours, foe, false); break;
             case 5: msg = foe.O.Name + " 溃走"; break;                // 人还在战棋层，只是这一仗打不下去了
@@ -1183,12 +1293,14 @@ public class BattleField
     {
         LoadCityData();
         bool kept;                                       // 守方把库里的金粮带走了没有
+        CityFell = oursTakes ? 1 : -1;
         if (oursTakes)
         {
             int r = OurRuler(); if (r > 0) cityRuler[cityId] = r;
             var c0 = OurCommander0(); governorId = c0 != null ? c0.O.Id : 0;
             kept = AliveCount(false) > 0 && EnemyCanRetreat();
             if (!kept) { supply[0] += supply[2]; supply[1] += supply[3]; }
+            else { KeptGold = supply[2]; KeptFood = supply[3]; }        // 守将带着撤走，战略层把它加进他退去的城
             supply[2] = supply[3] = 0;
             cityCount[cityId] = Mathf.Max(1, AliveCount(true));
         }
@@ -1200,6 +1312,7 @@ public class BattleField
             var f0 = FoeCommander0(); governorId = f0 != null ? f0.O.Id : 0;
             kept = AliveCount(true) > 0 && RetreatCities().Count > 0;
             if (!kept) { supply[2] += supply[0]; supply[3] += supply[1]; }
+            else { OurKeptGold = supply[0]; OurKeptFood = supply[1]; }    // 第一个撤走的带着城库（i() 2947）
             supply[0] = supply[1] = 0;
             cityCount[cityId] = Mathf.Max(1, AliveCount(false));
         }
@@ -1217,7 +1330,7 @@ public class BattleField
         if (enemyTurn) return;
         enemyTurn = true;
         enemyMp = BattleRules.MoveCap(TotalTroops(false), enemyMp);   // 上回合没用完的接着攒
-        enemyIdx = 0; plans = null; roundStartMp = -1;
+        enemyIdx = 0; plans = null; roundStartMp = -1; foeCalls++;
         sel = null; mode = ""; reach.Clear();
         hintText.text = "敌军行动中...";
         Refresh();
@@ -1243,7 +1356,9 @@ public class BattleField
         RefreshTop();
         if (supply[3] <= 0)
         {
-            ShowOver("敌方粮草耗竭,已全军逃窜!");
+            // 原版 W=6 → L()：我方攻城就拿下这座城；我方守城就是守住了
+            if (WeAttack) SettleCity(true, "敌方粮草耗竭,已全军逃窜! 我军攻占了 " + CityNameNow() + "!");
+            else ShowOver("敌方粮草耗竭,已全军逃窜!");
             return true;
         }
         return false;
@@ -1256,6 +1371,11 @@ public class BattleField
         ClosePlotPop();                                // 兜底：别把敌军回合的弹框留到我方回合
         if (EndRoundSupply()) return;                  // 粮尽：这场到此为止，不再开新的一日
         day++;
+        if (day > MAX_DAY && !WeAttack)                // 守城撑满 30 日：原版 B10 也判守方撤退丢城，这里算守住，敌军撤退
+        {
+            ShowOver("战争回合结束！敌军撤退了");
+            return;
+        }
         if (day > MAX_DAY)                             // 原版 while (bA != 30)
         {
             ForceRetreatAll("战争回合结束！", "战争回合结束！");
@@ -1348,7 +1468,7 @@ public class BattleField
     bool EnemyCanRetreat()
     {
         LoadCityData();
-        cityRuler.TryGetValue(cityId, out int er);                 // 守方主公 = 这座城的城主
+        int er = FoeRuler();                                       // 原版 a(bb, ba)：ba = 敌方主公（守城时是来犯那家）
         foreach (int c in adjCities)
         {
             cityRuler.TryGetValue(c, out int owner); cityCount.TryGetValue(c, out int cnt);
@@ -1367,6 +1487,7 @@ public class BattleField
         if (cmd == null || ours == null) return;
         bool canRetreat = EnemyCanRetreat();
         int total = EnemyArmyTotal();
+        if (!WeAttack) { BuildAttackerPlans(cmd, canRetreat, total); return; }
         foreach (var e in enemyOrder)
         {
             var pl = new EnemyPlan();
@@ -1396,6 +1517,31 @@ public class BattleField
                 else if (EnemyPlotCandidates(e).Count > 0) pl.Type = 2;
                 else pl.Type = 0;
             }
+            plans[e] = pl;
+        }
+    }
+    /// 敌军来攻我城：原版 b.bY() 11287（b.java 3943 bp 为真时走这套，am() 6064 置 bp）。
+    ///   主将：F() 有退路且（敌总战力 < 我方 ⁄ 4 或 兵<100 且体力<40）→ 整军逃窜；
+    ///         5 格内有能放的计策 → 放计策；前 3 次（cN<4）原地不动，第 4 次起朝我方 [0]（太守）压过去
+    ///         （原版 c() 11278 这里把「放计策」误写成 byArray3[0]=2，主将有计策可放时反而站着不动——修掉，见 HOUSE_RULES）
+    ///   其余：y() 撤 → 放计策 → 都不是就朝我方 [0] 压过去。
+    int foeCalls;                                                  // 原版 cN：每进一次 bY() +1（开一日 / 打完一仗回来）
+    void BuildAttackerPlans(Unit cmd, bool canRetreat, int total)
+    {
+        Unit head = units.Find(u => u.Ours && u.Alive);                // 原版 bg[0]
+        foreach (var e in enemyOrder)
+        {
+            var pl = new EnemyPlan();
+            if (e == cmd)
+            {
+                if (canRetreat && (total < OurArmyTotal() / 4 || (e.O.Troops < 100 && e.O.Hp < 40))) pl.Type = 5;
+                else if (EnemyPlotCandidates(e).Count > 0) pl.Type = 2;
+                else if (foeCalls >= 4 && head != null) { pl.Type = 1; pl.Target = head; }
+                else pl.Type = 0;
+            }
+            else if (canRetreat && e.O.Troops < 400 && total * 2 / 33 > e.O.Troops) pl.Type = 3;
+            else if (EnemyPlotCandidates(e).Count > 0) pl.Type = 2;
+            else if (head != null) { pl.Type = 1; pl.Target = head; }
             plans[e] = pl;
         }
     }
@@ -1453,7 +1599,8 @@ public class BattleField
         switch (pl.Type)
         {
             case 5:                                            // 太守整军逃窜：原版 W=5 → L()，整场我方赢
-                ShowOver("敌方全军逃窜!");
+                if (WeAttack) SettleCity(true, "敌方全军逃窜! 我军攻占了 " + CityNameNow() + "!");
+                else ShowOver("敌方全军逃窜!");
                 return true;
             case 3:                                            // 这支遁逃（原版 W=3）
                 e.Alive = false; hintText.text = "敌将遁逃!"; acting = null; CenterOn(e.X, e.Y);
@@ -1483,22 +1630,23 @@ public class BattleField
                     {
                         if (enemyMp < BattleRules.AttackCost) return false;
                         enemyMp -= BattleRules.AttackCost;
+                        foeCalls++;                                // 原版 aq=3 退出 bY()，打完再进来 ++cN
                         hintText.text = "敌军攻打我军!";           // W == 2
                         acting = e; OnClash?.Invoke(m, e, false);
                         return true;
                     }
                 if (pl.Target == null || !pl.Target.Alive) return false;
-                // 原版 3652：路是 b.a() 贪心算的，每轮只走第一步，下一轮从新位置重算；
-                // 第一步撞上有人的格（h()=100）就这轮不动，不换方向
-                var path = GreedyPath(e.X, e.Y, pl.Target.X, pl.Target.Y, true);
-                if (path.Count == 0) return false;
-                var nxt = new Vector2Int(e.X + DX[path[0]], e.Y + DY[path[0]]);
+                // 原版 3652：每轮只走最短路的第一步，下一轮从新位置重算；机动力不够走那一格就这轮不动
+                int dir = WindowStep(e, pl.Target.X, pl.Target.Y);
+                if (dir < 0) return false;
+                var nxt = new Vector2Int(e.X + DX[dir], e.Y + DY[dir]);
                 int cost = StepCost(e, nxt.x, nxt.y);
                 if (cost > enemyMp) return false;
                 enemyMp -= cost;
                 e.Dir = nxt.x != e.X ? "e" : (nxt.y > e.Y ? "s" : "n");
                 e.Flip = nxt.x < e.X;
                 e.X = nxt.x; e.Y = nxt.y;
+                Sfx.Play("step", .5f);                                                // 敌军走一步，轻一点
                 acting = e; CenterOn(e.X, e.Y);
                 if (ambush.Remove(e.Y * W + e.X))              // b.java 3703：踩进埋伏格
                 {
@@ -1569,6 +1717,7 @@ public class BattleField
     {
         int cost = costTo.TryGetValue(y * W + x, out var c) ? c : 0;
         mp -= cost;
+        Sfx.Play("step");                                                            // 行军一步
         int dx = x - sel.X, dy = y - sel.Y;
         sel.Dir = Mathf.Abs(dx) > Mathf.Abs(dy) ? "e" : (dy > 0 ? "s" : "n");
         sel.Flip = dx < 0;
@@ -1581,100 +1730,67 @@ public class BattleField
     }
     /// 原版 E()：确定。落到建筑格问「是否进入村庄?」，回到「选择武将下命令」
     bool moved;
-    void EndMove()
+    void EndMove(bool confirm = false)
     {
         mode = ""; reach.Clear();
         hintText.text = "选择武将下命令";
-        if (moved) OnLanded(sel);                 // 原版不挪也问；触屏上误点了「移动」再按别的令，别弹村庄
+        if (moved || confirm) OnLanded(sel);      // 原版按「确定」不挪也问；只是改点别人（隐式落定）时不问
         moved = false;
     }
 
-    /// 原版 b.a(byte×4,…) 3436：贪心寻路。
-    /// 目标格有人（nudge）就先把目标挪到它旁边一格——按象限定四个方向的先后；
-    /// 然后逐格逼近：先走长轴，横向那格有人才改纵向（纵向不查有没有人，撞上就是走不动）；最多 16 步。
-    /// 返回一串方向。地图层敌军每轮只走它的第一步，下一轮从新位置重算。
-    List<int> GreedyPath(int x, int y, int tx, int ty, bool nudge)
+    /// 原版 Z=2 的寻路（b.c(5 参) 11214 → b.a(by,by2,…) 11195）：以自己和目标为界取一块 8×8 的窗（b() 10964），
+    /// 窗里每格的进入代价按兵种查（a(by,by2,by3,…) 11026：有人站着 100、平地 2/3、山 5/6、水 3/5/6、城 6），
+    /// 在窗里做一遍最短路（63 轮取最小，11145），目标太远就沿直线取 6 格外那点当终点（a(int,int,…) 11090）。
+    /// 返回第一步的方向（0 上 1 下 2 左 3 右），走不通返回 -1。地图层每轮只走第一步，下一轮从新位置重算。
+    /// 以前这里照的是 Z=1 的贪心寻路（b.a 3436），撞上树 / 水就原地不动——原版默认是 Z=2，改回这套。
+    int WindowStep(Unit e, int tx, int ty)
     {
-        bool F(int a, int b) => a >= 0 && b >= 0 && a < W && b < H && At(a, b) == null;   // f()==0
-        int n = tx - x, n2 = ty - y;
-        if (nudge)
+        int ww = Mathf.Min(8, W), wh = Mathf.Min(8, H);
+        int Org(int f, int t, int dim)
         {
-            if (n >= 0 && n2 >= 0)
+            int n;
+            if (t - f > 6) n = Mathf.Max(0, f - 1);
+            else if (t - f >= 0) n = (f + t + 1) / 2 - 4;
+            else if (t - f > -7) n = (f + t) / 2 - 3;
+            else n = f - 6;
+            return Mathf.Clamp(n, 0, Mathf.Max(0, dim - 8));
+        }
+        int ox = Org(e.X, tx, W), oy = Org(e.Y, ty, H);
+        int dx = tx - e.X, dy = ty - e.Y, gx = tx, gy = ty;
+        if (Mathf.Abs(dx) > 6 || Mathf.Abs(dy) > 6)
+        {
+            if (Mathf.Abs(dx) >= Mathf.Abs(dy)) { gx = e.X + (dx > 0 ? 6 : -6); gy = e.Y + (dx > 0 ? 6 * dy / dx : -6 * dy / dx); }
+            else { gy = e.Y + (dy > 0 ? 6 : -6); gx = e.X + (dy > 0 ? 6 * dx / dy : -6 * dx / dy); }
+        }
+        gx = Mathf.Clamp(gx - ox, 0, ww - 1); gy = Mathf.Clamp(gy - oy, 0, wh - 1);
+        int sx = e.X - ox, sy = e.Y - oy;
+        if (sx < 0 || sy < 0 || sx >= ww || sy >= wh) return -1;
+        int N = ww * wh, start = sy * ww + sx, goal = gy * ww + gx;
+        if (start == goal) return -1;
+        var dist = new int[N]; var prev = new int[N]; var done = new bool[N];
+        for (int i = 0; i < N; i++) { dist[i] = int.MaxValue; prev[i] = -1; }
+        dist[start] = 0;
+        int Enter(int c) { int x = ox + c % ww, y = oy + c / ww; return At(x, y) != null ? 100 : BattleRules.MoveCost(grid[y, x], e.O.Kind); }
+        for (int k = 0; k < N; k++)
+        {
+            int cur = -1;
+            for (int i = 0; i < N; i++) if (!done[i] && dist[i] != int.MaxValue && (cur < 0 || dist[i] < dist[cur])) cur = i;
+            if (cur < 0) break;
+            done[cur] = true;
+            int cx = cur % ww, cy = cur / ww;
+            int[] nb = { cx < ww - 1 ? cur + 1 : -1, cx > 0 ? cur - 1 : -1, cy < wh - 1 ? cur + ww : -1, cy > 0 ? cur - ww : -1 };   // 右 左 下 上（原版松弛次序）
+            foreach (int n in nb)
             {
-                if (n - n2 >= 0)
-                {
-                    if (tx > 0 && F(tx - 1, ty)) tx--;
-                    else if (ty > 0 && F(tx, ty - 1)) ty--;
-                    else if (ty < H - 1 && F(tx, ty + 1)) ty++;
-                    else if (tx < W - 1 && F(tx + 1, ty)) tx++;
-                }
-                else if (ty > 0 && F(tx, ty - 1)) ty--;
-                else if (tx > 0 && F(tx - 1, ty)) tx--;
-                else if (tx < W - 1 && F(tx + 1, ty)) tx++;
-                else if (ty < H - 1 && F(tx, ty + 1)) ty++;
-            }
-            else if (n < 0 && n2 >= 0)
-            {
-                if (n + n2 < 0)
-                {
-                    if (tx < W - 1 && F(tx + 1, ty)) tx++;
-                    else if (ty > 0 && F(tx, ty - 1)) ty--;
-                    else if (ty < H - 1 && F(tx, ty + 1)) ty++;
-                    else if (tx > 0 && F(tx - 1, ty)) tx--;
-                }
-                else if (ty > 0 && F(tx, ty - 1)) ty--;
-                else if (tx < W - 1 && F(tx + 1, ty)) tx++;
-                else if (tx > 0 && F(tx - 1, ty)) tx--;
-                else if (ty < H - 1 && F(tx, ty + 1)) ty++;
-            }
-            else if (n >= 0 && n2 < 0)
-            {
-                if (n + n2 >= 0)
-                {
-                    if (tx > 0 && F(tx - 1, ty)) tx--;
-                    else if (ty < H - 1 && F(tx, ty + 1)) ty++;
-                    else if (ty > 0 && F(tx, ty - 1)) ty--;
-                    else if (tx < W - 1 && F(tx + 1, ty)) tx++;
-                }
-                else if (ty < H - 1 && F(tx, ty + 1)) ty++;
-                else if (tx > 0 && F(tx - 1, ty)) tx--;
-                else if (tx < W - 1 && F(tx + 1, ty)) tx++;
-                else if (ty > 0 && F(tx, ty - 1)) ty--;
-            }
-            else
-            {
-                if (n - n2 < 0)
-                {
-                    if (tx < W - 1 && F(tx + 1, ty)) tx++;
-                    else if (ty < H - 1 && F(tx, ty + 1)) ty++;
-                    else if (ty > 0 && F(tx, ty - 1)) ty--;
-                    else if (tx > 0 && F(tx - 1, ty)) tx--;
-                }
-                else if (ty < H - 1 && F(tx, ty + 1)) ty++;
-                else if (tx < W - 1 && F(tx + 1, ty)) tx++;
-                else if (tx > 0 && F(tx - 1, ty)) tx--;
-                else if (ty > 0 && F(tx, ty - 1)) ty--;
+                if (n < 0 || done[n]) continue;
+                int nd = dist[cur] + Enter(n);
+                if (nd < dist[n]) { dist[n] = nd; prev[n] = cur; }
             }
         }
-        var path = new List<int>(16);
-        while ((x != tx || y != ty) && path.Count < 16)
-        {
-            n = tx - x; n2 = ty - y;
-            int d;
-            if (Mathf.Abs(n) - Mathf.Abs(n2) >= 0)
-            {
-                if (n >= 0 && F(x + 1, y)) d = 3;
-                else if (n < 0 && F(x - 1, y)) d = 2;
-                else d = n2 >= 0 ? 1 : 0;
-            }
-            else if (n2 >= 0 && F(x, y + 1)) d = 1;
-            else if (n2 < 0 && F(x, y - 1)) d = 0;
-            else d = n >= 0 ? 3 : 2;
-            x += DX[d]; y += DY[d];
-            if (x < 0 || y < 0 || x >= W || y >= H) break;
-            path.Add(d);
-        }
-        return path;
+        if (prev[goal] < 0) return -1;
+        int step = goal;
+        while (prev[step] != start) step = prev[step];
+        int ddx = step % ww - sx, ddy = step / ww - sy;
+        return ddy < 0 ? 0 : ddy > 0 ? 1 : ddx < 0 ? 2 : 3;
     }
 
     bool Adjacent(Unit u, int x, int y) => Mathf.Abs(u.X - x) + Mathf.Abs(u.Y - y) == 1;

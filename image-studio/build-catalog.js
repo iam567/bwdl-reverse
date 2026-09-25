@@ -169,6 +169,8 @@ const buildSimple = (list, category, size, extra) => list.map(([f,label,desc]) =
   prompt:`${CARD_ANCHOR}\n\n${extra}\n\n画面内容：${desc}。\n\n${NEGATIVE}`
 }));
 
+module.exports = { buildPortraits, SOVEREIGN };
+if (require.main === module) {
 const csv = process.argv[2] || path.join(__dirname,'officers.csv');
 const catalog = [
   ...buildPortraits(csv),
@@ -179,3 +181,4 @@ fs.writeFileSync(path.join(__dirname,'assets.json'), JSON.stringify(catalog,null
 const by={}; for(const a of catalog) by[a.category]=(by[a.category]||0)+1;
 console.log('素材条目:', catalog.length);
 for(const [k,v] of Object.entries(by)) console.log(`  ${k}: ${v}`);
+}
