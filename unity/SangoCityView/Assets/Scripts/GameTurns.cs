@@ -129,6 +129,7 @@ public partial class Game
         defense = null;
         ai.Month = month;
         ai.Turn(k);
+        CheckLords();                                                    // AI 打仗 / 招揽可能擒走别家君主
         mapView.RefreshFlags();
         while (!Sim && Time.time - t0 < 2f) yield return null;            // 原版每家至少停 2 秒
         events.Council(null); aiNow = null;
@@ -193,6 +194,7 @@ public partial class Game
     {
         string lordName = Lord;
         var r = War.SettleDefense(data, officers, defenseFaction, defensePlan, field, Realm.Player, turnRng);
+        foreach (var m in War.CheckRulers(data, officers)) r.Lines.Add(m);
         Destroy(field.Root.gameObject); field = null; inBattle = false; BattleField.World = null;
         Music.Play(bgmMap);
         if (village != null) { Destroy(village.Root.gameObject); village = null; }
@@ -233,6 +235,7 @@ public partial class Game
     {
         var evs = new List<MonthEnd.Ev>();
         int r = MonthEnd.Run(data, officers, ref month, year, turnRng, evs);
+        CheckLords();                                                    // 兜底；读旧档时已经错位的也在这里修正
         if (r != 0) { Ending(r > 0); yield break; }
         cityView.Root.gameObject.SetActive(false); mapView.Root.gameObject.SetActive(true);
         foreach (var e in evs) events.Push(e.Key, e.Title, e.Text);

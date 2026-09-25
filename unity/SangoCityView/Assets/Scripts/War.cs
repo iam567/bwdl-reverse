@@ -279,6 +279,25 @@ public static partial class War
         new[]{ 40 },
         new[]{ 140, 2, 172, 190, 160 },
     };
+    /// 君主已经不在自家任何一城效力了（被擒 / 被招降 / 无路可退归降——以前只有「战死」才继位）→ 照 Succeed 立新君。
+    /// 玩家自己的势力不管（我方君主被擒另有流程）。返回「XX 死亡,新君主 YY 继位!」那样的句子，一家一句
+    public static List<string> CheckRulers(MapData map, Dictionary<int, Officer> all)
+    {
+        var msgs = new List<string>();
+        foreach (var f in Realm.All)
+        {
+            if (!f.Alive || f.Key == Realm.Player || Realm.CityCount(map, f.Key) == 0) continue;
+            bool home = false;
+            foreach (var c in map.cities)
+                if (c.owner == f.Key && Personnel.Of(c.id).A.Exists(o => o.Id == f.RulerId)) { home = true; break; }
+            if (home) continue;
+            string old = f.Name;
+            var line = Succeed(map, all, f.Key, old);
+            if (line != null) msgs.Add(old + " 已不在本国," + line.Substring(line.IndexOf("新君主")));
+        }
+        return msgs;
+    }
+
     public static string Succeed(MapData map, Dictionary<int, Officer> all, string faction, string oldLord)
     {
         var mine = new List<Officer>();

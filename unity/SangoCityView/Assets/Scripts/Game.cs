@@ -122,6 +122,21 @@ public partial class Game : MonoBehaviour
                 Application.Quit();
                 break;
             }
+            else if (a == "-lordtest")                     // 自检：把一家君主挪进玩家城，看是否继位（-diff 2 孙策）
+            {
+                afterBuild = () => {
+                    afterBuild = null; playerFaction = Realm.Player = "caocao"; atTitle = false;
+                    var sun = Realm.All.Find(f => officers[f.RulerId].Name == "孙策");
+                    var lord = officers[sun.RulerId];
+                    foreach (var c in data.cities) Personnel.Of(c.id).A.Remove(lord);
+                    Personnel.Of(data.cities.Find(c => c.owner == "caocao").id).A.Add(lord);
+                    Debug.Log("[君主自检] 之前 " + sun.Key + " 君主 " + officers[sun.RulerId].Name);
+                    foreach (var m in War.CheckRulers(data, officers)) Debug.Log("[君主自检] " + m);
+                    Debug.Log("[君主自检] 之后 " + sun.Key + " 君主 " + officers[sun.RulerId].Name + "，孙策 RulerOf=" + (Realm.RulerOf(lord)?.Key ?? "无"));
+                    Application.Quit();
+                };
+                afterBuild(); break;
+            }
             else if (a == "-deftest")                      // 自检：AI 打上门，跑几日看敌军往前压没有（-as 势力）
             {
                 afterBuild = () => { afterBuild = null; StartCoroutine(DefenseSelfCheck()); };
@@ -351,6 +366,7 @@ public partial class Game : MonoBehaviour
         monthQueue = d.queue ?? new List<string>();
         atTitle = false; gameOver = false;
         Build();
+        CheckLords();                                    // 旧档里君主已经被擒 / 招降、却没继位的，读进来就补上
         Toast("读取完毕　" + d.label);
         StartLoop(true);                                // 存档只能在玩家那一格存：接着玩家这一格，剩下的令照旧
     }
@@ -555,8 +571,17 @@ public partial class Game : MonoBehaviour
     }
 
     /// 原版 aL()：一道令走完，aG 减一；减到 0 玩家这一格就轮完了，回合引擎接着走下一家（GameTurns.cs）
+    /// 各家君主还在不在自家效力，不在了就立新君、弹「新君继位」
+    void CheckLords()
+    {
+        if (data == null || atTitle) return;
+        foreach (var m in War.CheckRulers(data, officers)) { if (Sim) Debug.Log("[继位] " + m); else events.Push("succeed", "新君继位", m); }
+        mapView?.RefreshFlags();
+    }
+
     void OrderSpent()
     {
+        CheckLords();                                                    // 招揽 / 离间之后
         orders--;
         cityView.Orders = orders;
         cityView.Refresh();
@@ -811,6 +836,7 @@ public partial class Game : MonoBehaviour
     {
         string lord = Lord;
         var r = War.Settle(data, officers, sortieNow, field, playerFaction, lord, new System.Random());
+        foreach (var m in War.CheckRulers(data, officers)) r.Lines.Add(m);             // 敌方君主被擒 → 新君继位
         Destroy(field.Root.gameObject); field = null; inBattle = false; BattleField.World = null;
         Music.Play(bgmMap);                                                          // 打完回城池层：换回古地图卷
         if (village != null) { Destroy(village.Root.gameObject); village = null; }
