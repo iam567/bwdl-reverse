@@ -119,7 +119,7 @@ public partial class Game : MonoBehaviour
                 int adv = System.Array.IndexOf(av, "-ticks");
                 cv.AdvanceForTest(adv >= 0 ? int.Parse(av[adv + 1]) : 40);
                 Debug.Log("[阵型自检] 结果：" + cv.OverForTest);
-                Application.Quit();
+                if (System.Array.IndexOf(av, "-shot") < 0) Application.Quit();
                 break;
             }
             else if (a == "-lordtest")                     // 自检：把一家君主挪进玩家城，看是否继位（-diff 2 孙策）

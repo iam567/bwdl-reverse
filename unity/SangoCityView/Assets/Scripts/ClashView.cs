@@ -68,7 +68,7 @@ public class ClashView
         var bg2 = Node("bg", Root).gameObject.AddComponent<Image>();
         Fill((RectTransform)bg2.transform); bg2.color = new Color(.04f, .04f, .05f, 1);
         mapRoot = null; mapView = null; tmp.Clear(); mapTmp.Clear();
-        if (started) { BuildField(); Redraw(); } else BuildPick();
+        if (started) { BuildField(); FitView(); Redraw(); } else BuildPick();
     }
 
     // 底图与量出来的尺寸都在 BattleUi 里，单挑那屏也要用。
@@ -394,7 +394,22 @@ public class ClashView
         enemyPts = BattleRules.PlotPoints(foe);
         RefreshEnemyOrders();
         BuildField();
+        FitView();
         Redraw();
+    }
+
+    /// 开场视野：照原版一屏 11 列（原版屏宽 176，显示 11 列），镜头对准我方武将；双指 / 滚轮照样能放大缩小。
+    /// 以前是 1:1（手机上只看得到 6 列），跑到边上的人就只剩半截
+    const int VIEW_COLS = 11;
+    void FitView()
+    {
+        var clip = (RectTransform)gridRoot.parent;
+        float want = clip.rect.width / (VIEW_COLS * C);
+        zoom = 1f; gridRoot.localScale = Vector3.one;          // 重建过的 gridRoot 是 1:1，先对齐再缩
+        SetZoom(want, Vector2.zero);
+        ScrollTo(Vector2.zero);
+        camTarget = gridRoot.anchoredPosition;
+        if (mine != null && mine.Count > 0) { FocusOn(mine[0].Col); gridRoot.anchoredPosition = camTarget; }
     }
 
     // 场地是 16 列 × 7 行（bK = byte[7][16]）。原版屏宽 176，一次只显示 11 列，
