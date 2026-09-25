@@ -168,6 +168,7 @@ public class CityView
     {
         LoadCity(key);
         st = s;
+        Cheat = false; nameTaps = 0;                           // 进城（换城 / 新回合）作弊都要重新激活
         hName.text = s.name; hTier.text = s.tierName;
         float nw = Mathf.Min(hName.preferredWidth, 150);                       // 印章紧跟在城名后面
         Place(seal.rectTransform, 12 + 2 + nw + 8, 8 + 6, 30, 30);
@@ -192,7 +193,8 @@ public class CityView
         for (int i = 0; i < 6; i++)
         {
             bool money = i >= 4;
-            Row(leftP, 0, i * lh, lw, lh, L[i,0], L[i,1], money ? new Color32(0xF4,0xC8,0x5A,255) : new Color32(0xF4,0xE6,0xC8,255));
+            var vr = Row(leftP, 0, i * lh, lw, lh, L[i,0], L[i,1], money ? new Color32(0xF4,0xC8,0x5A,255) : new Color32(0xF4,0xE6,0xC8,255));
+            if (i == 4) goldRT = vr; else if (i == 5) foodRT = vr;
         }
         // 民生：人口一行，统治 / 农业 / 工业 / 防灾 带进度条（上限照 Politics：统治 防灾 99、农业 工业 999）
         float rw = rightP.sizeDelta.x, rh = (rightP.sizeDelta.y - 6) / 5f;
@@ -225,12 +227,49 @@ public class CityView
         return body;
     }
     /// 一行：左边浅色小字标签，右边亮色粗体数值
-    static void Row(RectTransform p, float x, float y, float w, float h, string k, string v, Color32 vc)
+    static RectTransform Row(RectTransform p, float x, float y, float w, float h, string k, string v, Color32 vc)
     {
         var kl = Label(p, k, 12, new Color32(0xB4,0x9C,0x74,255), TextAnchor.MiddleLeft);
         Place(kl.rectTransform, x + 8, y, 44, h);
         var vl = Label(p, v, 15, vc, TextAnchor.MiddleRight, FontStyle.Bold);
         Place(vl.rectTransform, x + 48, y, w - 56, h);
+        return vl.rectTransform;
+    }
+
+    // ── 作弊码（家规，彩蛋）：连点城名 20 下（两下之间不超过 1.5 秒）→ 弹「万事开头难」，点「放屁」激活。
+    //    激活后点一下「金子」+1000、点一下「粮食」+1000（封顶 9999，原版上限）；离开这座城就失效，要重新激活。
+    public System.Action OnCheatPrompt;                // Game 弹那个选择框
+    public System.Action<string> OnCheatToast;
+    public bool Cheat;
+    int nameTaps; float nameTapAt;
+    RectTransform goldRT, foodRT;
+    /// 自检：连点城名 20 下 / 点金子
+    public void CheatForTest(bool addGold)
+    {
+        var c = RectTransformUtility.WorldToScreenPoint(null, hName.rectTransform.position);
+        var g = RectTransformUtility.WorldToScreenPoint(null, goldRT.position);
+        if (addGold) { Cheat = true; CheatTap(g); return; }
+        for (int i = 0; i < 20; i++) CheatTap(c + new Vector2(10, -10));
+    }
+    bool CheatTap(Vector2 p)
+    {
+        if (RectTransformUtility.RectangleContainsScreenPoint(hName.rectTransform, p, null))
+        {
+            if (Time.unscaledTime - nameTapAt > 1.5f) nameTaps = 0;
+            nameTapAt = Time.unscaledTime;
+            if (++nameTaps >= 20) { nameTaps = 0; OnCheatPrompt?.Invoke(); }
+            return true;
+        }
+        if (!Cheat || st == null) return false;
+        bool gold = goldRT != null && RectTransformUtility.RectangleContainsScreenPoint(goldRT, p, null);
+        bool food = foodRT != null && RectTransformUtility.RectangleContainsScreenPoint(foodRT, p, null);
+        if (!gold && !food) return false;
+        if (gold) st.黄金 = Mathf.Min(st.黄金 + 1000, Military.MaxGoldFood);
+        else st.粮草 = Mathf.Min(st.粮草 + 1000, Military.MaxGoldFood);
+        Sfx.Play("coin");
+        OnCheatToast?.Invoke((gold ? "金子 " + st.黄金 : "粮食 " + st.粮草) + (((gold ? st.黄金 : st.粮草) >= Military.MaxGoldFood) ? "（已到上限 9999）" : ""));
+        Refresh();
+        return true;
     }
 
     Vector2 downAt; bool dragged;
@@ -243,8 +282,9 @@ public class CityView
         if (Input.GetMouseButton(0))
         { if (((Vector2)Input.mousePosition - downAt).sqrMagnitude > 64f) dragged = true; return; }
         if (!Input.GetMouseButtonUp(0) || dragged) return;
+        if (CheatTap(Input.mousePosition)) return;
         if (RectTransformUtility.RectangleContainsScreenPoint(backRT, Input.mousePosition, null))
-        { Sfx.Play("ui_back"); OnBack?.Invoke(); return; }
+        { Cheat = false; Sfx.Play("ui_back"); OnBack?.Invoke(); return; }
         if (popBg.gameObject.activeSelf &&
             RectTransformUtility.RectangleContainsScreenPoint(popRT, Input.mousePosition, null))
         {

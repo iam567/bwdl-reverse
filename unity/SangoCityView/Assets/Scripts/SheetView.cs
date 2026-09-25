@@ -444,6 +444,17 @@ public abstract class SheetView
         if (done) OnDone?.Invoke(msg); else OnCancel?.Invoke();
     }
 
+    /// 两个选项的小框（作弊码「万事开头难」用）：点哪个就关框、执行哪个
+    public void Choose(string title, string msg, string a, System.Action onA, string b, System.Action onB)
+    {
+        var box = Sheet(title, 118 + BTN_H + FOOT);
+        float w = box.sizeDelta.x;
+        var l = Label(box, msg, 16, Ink, TextAnchor.MiddleCenter);
+        Place(l.rectTransform, 24, 48, w - 48, 56);
+        Btn(box, a, w / 2 - 104, 118, 96, BTN_H, () => { Close(); onA?.Invoke(); });
+        Btn(box, b, w / 2 + 8, 118, 96, BTN_H, () => { Close(); onB?.Invoke(); });
+    }
+
     protected void Close() { cgImg = null; cgFrames = null; Root.gameObject.SetActive(false); Clear(); }
     protected void Cancel() { Close(); OnCancel?.Invoke(); }
 

@@ -137,6 +137,18 @@ public partial class Game : MonoBehaviour
                 };
                 afterBuild(); break;
             }
+            else if (a == "-cheat")                        // 截图 / 自检：-cheat [gold]，进洛阳后连点城名 20 下（或直接点金子）
+            {
+                afterBuild = () => {
+                    afterBuild = null;
+                    if (curCity == null) mapView.OnEnter(data.cities.Find(x => x.name == "洛阳"));
+                    bool g = System.Array.IndexOf(argv, "gold") >= 0;
+                    int before = data.stats.Find(x => x.name == "洛阳").黄金;
+                    cityView.CheatForTest(g);
+                    Debug.Log("[作弊自检] 金子 " + before + " → " + data.stats.Find(x => x.name == "洛阳").黄金);
+                };
+                afterBuild(); break;
+            }
             else if (a == "-deftest")                      // 自检：AI 打上门，跑几日看敌军往前压没有（-as 势力）
             {
                 afterBuild = () => { afterBuild = null; StartCoroutine(DefenseSelfCheck()); };
@@ -500,6 +512,12 @@ public partial class Game : MonoBehaviour
             }
             Toast(cmd + " 还没做");
         };
+        cityView.OnCheatPrompt = () => {
+            Sfx.Play("gong_small");
+            sys.Choose("", "万事开头难", "放屁", () => { cityView.Cheat = true; Sfx.Play("chime"); Toast("作弊已开启：点金子 / 粮食各 +1000，离城失效"); },
+                                              "是啊", () => { cityView.Cheat = false; });
+        };
+        cityView.OnCheatToast = Toast;
         cityView.OnBack = () => {
             cityView.Root.gameObject.SetActive(false);
             mapView.Root.gameObject.SetActive(true);
