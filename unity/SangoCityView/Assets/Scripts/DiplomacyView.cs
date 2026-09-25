@@ -48,7 +48,10 @@ public class DiplomacyView : SheetView
                 if (ok) Realm.Pacts.Add(new Realm.Pact { With = f.Key, Months = Diplomacy.PactMonths });
                 Say(Title, ok ? "成功结盟\n与 " + lord.Name + " 结为同盟，为期一年" : "同盟失败\n" + lord.Name + " 不肯结盟",
                     true, ok ? Cg : null, envoy);
-            }, () => StartAlly()), Cancel);
+            }, () => StartAlly(), rate: o => {                                     // Ally：德²/100 − 对方君主智力 > rand(100)
+                int p = o.Virtue * o.Virtue / 100 - lord.Int;
+                return p >= 60 ? 3 : p >= 30 ? 2 : p > 0 ? 1 : 0;
+            }), Cancel);
     }
 
     // ── 离间 / 招揽 ─────────────────────────────────────────────────
@@ -72,7 +75,24 @@ public class DiplomacyView : SheetView
                         Say(Title, ok ? "招揽成功\n" + tgt.Name + " 率兵 " + tgt.Troops + " 投入我军" : "招揽失败",
                             true, ok ? Cg : null, me);
                     }
-                }, () => StartIntrigue()), () => StartIntrigue()), Cancel);
+                }, () => StartIntrigue(), rate: o => IntrigueTier(o.Int, tgt)),
+                () => StartIntrigue(), rate: t => IntrigueTier(BestInt(), t)), Cancel);
+    }
+
+    int BestInt() { int b = 0; foreach (var m in Personnel.Of(city.id).A) b = Mathf.Max(b, m.Int); return b; }
+    /// 离间（SowAmount）：智力 − 对方有效智力 > rand(30) 才成，忠诚越高对方越难（>89 +20、>96 +50、100 不可能）；
+    /// 招揽（PoachOk）：对方忠诚 > 35 招不动；否则 智力差 + (35 − 忠诚) ≥ rand(20) 就成
+    int IntrigueTier(int myInt, Officer t)
+    {
+        if (cmd == 1)
+        {
+            if (t.Loyal > 99) return 0;
+            int dN = t.Int + (t.Loyal > 96 ? 50 : t.Loyal > 89 ? 20 : 0), m = myInt - dN;
+            return m >= 30 ? 3 : m > 15 ? 2 : m > 0 ? 1 : 0;
+        }
+        if (t.Loyal > 35) return 0;
+        int k = myInt - t.Int + (35 - t.Loyal);
+        return k >= 19 ? 3 : k >= 10 ? 2 : k >= 0 ? 1 : 0;
     }
 
     // ── 情报：屏 5 ───────────────────────────────────────────────────

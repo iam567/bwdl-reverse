@@ -37,7 +37,7 @@ public class MarketView : SheetView
             case Market.Cmd.Grain: buyFood = k == 0; amount = 0; DrawGrain(); break;
             case Market.Cmd.Arms:
                 PickGrid("武器　为何人购置", a, o => "武" + o.Might + " " + BattleRules.WeaponOf(o),   // 卡片窄，只写兵器；防具进店再看
-                         o => { buyer = o; shelf = 0; DrawShop(); }, Cancel);
+                         o => { buyer = o; shelf = 0; DrawShop(); }, Cancel, rate: o => Tier(o.Might, 75, 90, 50));   // 兵器按武力百分比加成
                 break;
             case Market.Cmd.Academy:
                 PickGrid("学院　遣何人修习", Market.Students(s), o => "智" + o.Int + " 费" + Market.Tuition(o),
@@ -45,7 +45,7 @@ public class MarketView : SheetView
                 break;
             case Market.Cmd.Clinic:
                 PickGrid("医馆　为何人疗伤（50 金）", Market.Patients(s), o => "体力上限 " + o.HpMax,
-                         DoHeal, Cancel);
+                         DoHeal, Cancel, rate: o => { int miss = (o.HpMax - o.Hp) * 100 / Mathf.Max(1, o.HpMax); return miss >= 50 ? 3 : miss >= 25 ? 2 : 1; });   // 缺得越多越该治
                 break;
         }
     }

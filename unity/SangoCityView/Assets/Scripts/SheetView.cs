@@ -191,7 +191,7 @@ public abstract class SheetView
     {
         float w = box.sizeDelta.x, x0 = 22, tw = w - 44;
         float colW = 34, colsX = x0 + tw - Cols.Length * colW;
-        // 表头
+        // 表头（有推荐评级时，「武将」后面跟一行颜色图例）
         var hd = Label(box, "武将", 12, Rust, TextAnchor.MiddleLeft, FontStyle.Bold);
         Place(hd.rectTransform, x0 + 46, y, 100, HEAD_H);
         for (int c = 0; c < Cols.Length; c++)
@@ -225,7 +225,13 @@ public abstract class SheetView
             }
             // 姓名 + 这条指令关心的那项
             string sub = stat != null ? Extra(stat(o)) : null;           // 跟右边五列重复的数去掉，只留额外信息（费、城数、兵器…）
-            var nm = Label(bg.transform, (on ? "✓ " : "") + o.Name, 15, Ink, TextAnchor.MiddleLeft, FontStyle.Bold);
+            int tier = curRate == null ? 1 : curRate(o);
+            var nm = Label(bg.transform, (on ? "✓ " : "") + o.Name, 15, curRate == null ? Ink : RateColor(tier), TextAnchor.MiddleLeft, FontStyle.Bold);
+            if (curRate != null && tier != 1)                                  // 名字后面挂个小字：优选 / 推荐 / 不推荐（光看颜色容易认错）
+            {
+                var tg = Label(bg.transform, tier >= 3 ? "优选" : tier == 2 ? "推荐" : "不推荐", 10, RateColor(tier), TextAnchor.MiddleLeft, FontStyle.Bold);
+                Place(tg.rectTransform, ROW_H - 2 + nm.preferredWidth + 5, 3, 44, 18);
+            }
             Place(nm.rectTransform, ROW_H - 2, string.IsNullOrEmpty(sub) ? 0 : 2, colsX - x0 - ROW_H, string.IsNullOrEmpty(sub) ? ROW_H - 4 : 20);
             if (!string.IsNullOrEmpty(sub))
             {
@@ -243,6 +249,13 @@ public abstract class SheetView
             }
         }
         float used = HEAD_H + Mathf.Min(PAGE, Mathf.Max(1, list.Count)) * ROW_H;
+        if (curRate != null)                                               // 图例：表格底下单独一行
+        {
+            var lg = Label(box, "<color=#1E7B34>■ 优选</color>　<color=#7E9A12>■ 推荐</color>　<color=#2E2110>■ 一般</color>　<color=#B22A1A>■ 不推荐</color>",
+                           11, Ink, TextAnchor.MiddleCenter);
+            Place(lg.rectTransform, 0, y + Mathf.Min(PAGE, Mathf.Max(1, list.Count)) * ROW_H + 2, w, 16);
+            used += 18; y += 18;
+        }
         if (pages > 1)                                                     // 翻页
         {
             float py = y + Mathf.Min(PAGE, list.Count) * ROW_H + 4;
@@ -263,23 +276,33 @@ public abstract class SheetView
         s = System.Text.RegularExpressions.Regex.Replace(s, @"[\s　]+", " ").Trim();
         return s.Length == 0 ? null : s;
     }
-    float TableH(int n) => HEAD_H + Mathf.Min(PAGE, Mathf.Max(1, n)) * ROW_H + (n > PAGE ? 38 : 0);
+    // ── 推荐评级（按原版公式看这条指令吃哪项数值）：3 优选 深绿 / 2 推荐 黄绿 / 1 一般 墨色 / 0 不推荐 红 ──
+    System.Func<Officer, int> curRate;
+    static Color32 RateColor(int t) => t >= 3 ? new Color32(0x1E, 0x7B, 0x34, 255) : t == 2 ? new Color32(0x7E, 0x9A, 0x12, 255)
+                                     : t <= 0 ? new Color32(0xB2, 0x2A, 0x1A, 255) : Ink;
+    /// 数值越高越好：≥ great 优选、≥ good 推荐、< bad 不推荐
+    protected static int Tier(int v, int good, int great, int bad) => v >= great ? 3 : v >= good ? 2 : v < bad ? 0 : 1;
+
+    float TableH(int n) => HEAD_H + Mathf.Min(PAGE, Mathf.Max(1, n)) * ROW_H + (n > PAGE ? 38 : 0) + (curRate != null ? 18 : 0);
 
     protected void PickGrid(string title, List<Officer> list, System.Func<Officer, string> stat,
-                            System.Action<Officer> pick, UnityEngine.Events.UnityAction cancel, int page = 0)
+                            System.Action<Officer> pick, UnityEngine.Events.UnityAction cancel, int page = 0,
+                            System.Func<Officer, int> rate = null)
     {
+        curRate = rate;
         var box = Sheet(title, 54 + TableH(list.Count) + 14 + BTN_H + FOOT);
         float w = box.sizeDelta.x;
         Divider(box, 36);
-        float used = OfficerTable(box, 54, list, stat, page, pick, null, pg => PickGrid(title, list, stat, pick, cancel, pg));
+        float used = OfficerTable(box, 54, list, stat, page, pick, null, pg => PickGrid(title, list, stat, pick, cancel, pg, rate));
         if (cancel != null) Btn(box, "放弃", (w - 136) / 2, 54 + used + 14, 136, BTN_H, cancel);   // 必选的那几屏（补任太守）不给作罢
     }
 
     /// 多选武将（原版屏 7 带勾选 V[]）：点一行打勾 / 取消，底下「确定」交出勾上的人。max 为 0 不限
     protected void PickMany(string title, List<Officer> list, System.Func<Officer, string> stat, int max,
                             System.Action<List<Officer>> done, UnityEngine.Events.UnityAction cancel,
-                            List<Officer> preset = null, int page = 0)
+                            List<Officer> preset = null, int page = 0, System.Func<Officer, int> rate = null)
     {
+        curRate = rate;
         var picked = new List<Officer>(preset ?? new List<Officer>());
         var box = Sheet(title + (picked.Count > 0 ? "　已选 " + picked.Count : ""), 54 + TableH(list.Count) + 14 + BTN_H + FOOT);
         float w = box.sizeDelta.x;
@@ -287,8 +310,8 @@ public abstract class SheetView
         float used = OfficerTable(box, 54, list, stat, page, o => {
             if (picked.Contains(o)) picked.Remove(o);
             else if (max <= 0 || picked.Count < max) picked.Add(o);
-            PickMany(title, list, stat, max, done, cancel, picked, page);          // 就地重画（勾选状态 / 已选人数）
-        }, o => picked.Contains(o), pg => PickMany(title, list, stat, max, done, cancel, picked, pg));
+            PickMany(title, list, stat, max, done, cancel, picked, page, rate);    // 就地重画（勾选状态 / 已选人数）
+        }, o => picked.Contains(o), pg => PickMany(title, list, stat, max, done, cancel, picked, pg, rate));
         float by = 54 + used + 14;
         Btn(box, "确定", w / 2 - 104, by, 96, BTN_H, () => { if (picked.Count > 0) done(new List<Officer>(picked)); });
         Btn(box, "放弃", w / 2 + 8, by, 96, BTN_H, cancel);

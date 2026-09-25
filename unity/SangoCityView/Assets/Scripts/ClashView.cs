@@ -991,7 +991,7 @@ public class ClashView
             if (rng.Next(10) > 1)
             {
                 int cf = rng.Next(12) + 2;
-                if (cf >= me.Hp) { me.Hp = 0; Cc = 2; } else me.Hp -= cf;
+                if (cf >= me.Hp) { me.Hp = 0; Cc = 2; } else { me.Hp -= cf; HpLost = cf; }
             }
             return;
         }
@@ -1003,20 +1003,25 @@ public class ClashView
             if (rng.Next(10) > 1)
             {
                 int cf = rng.Next(12) + 2;
-                if (cf >= foe.Hp) { foe.Hp = 0; Cc = 1; } else foe.Hp -= cf;
+                if (cf >= foe.Hp) { foe.Hp = 0; Cc = 1; } else { foe.Hp -= cf; HpLost = cf; }
             }
         }
     }
-    string CcText()
+    /// 溃走时在退路上挨的那一记（原版 cf），结果里要写「体力减少 N」
+    public int HpLost;
+    /// 原版 d.m[cc]（c.java 2582）：击毙敌将! / 我方武将阵亡! / 擒获敌将! / 我方武将被俘! / 敌将逃窜! / 我方武将已撤退!，
+    /// 溃走挨了打再接「体力减少 N」。原版不带名字，这里把名字补进去
+    public string CcText()
     {
+        string hurt = HpLost > 0 ? "　体力减少 " + HpLost : "";
         switch (Cc)
         {
-            case 1: return foe.Name + " 战死";
-            case 2: return me.Name  + " 战死";
-            case 3: return foe.Name + " 被擒";
-            case 4: return me.Name  + " 被擒";
-            case 5: return foe.Name + " 溃走";
-            default: return me.Name + " 溃走";
+            case 1: return "击毙敌将 " + foe.Name + "!";
+            case 2: return "我方武将 " + me.Name + " 阵亡!";
+            case 3: return "擒获敌将 " + foe.Name + "!";
+            case 4: return "我方武将 " + me.Name + " 被俘!";
+            case 5: return "敌将 " + foe.Name + " 逃窜!" + hurt;
+            default: return "我方武将 " + me.Name + " 已撤退!" + hurt;
         }
     }
 

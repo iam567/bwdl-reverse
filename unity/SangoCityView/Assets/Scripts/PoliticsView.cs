@@ -26,7 +26,8 @@ public class PoliticsView : SheetView
         roster = Politics.Roster(all, s.id);
         if (roster.Count == 0) { Say(Title, "城中无将可遣", false, null); return; }
         // 这四条指令只吃智力，所以卡片上只写智力
-        PickGrid(Title + "　遣何人前往", roster, o => "智 " + o.Int, o => { picked = o; Confirm(); }, Cancel);
+        PickGrid(Title + "　遣何人前往", roster, o => "智 " + o.Int, o => { picked = o; Confirm(); }, Cancel,
+                 rate: o => Tier(o.Int, 70, 90, 40));                           // 产出 ∝ 智力（Politics.Yield*）
     }
 
     /// 自检：直接跳到确认屏，好截图看排版

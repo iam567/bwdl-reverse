@@ -33,14 +33,19 @@ public class PersonnelView : SheetView
         {
             case Personnel.Cmd.Search:      // 搜索只吃智力（能不能有收获）和德（收获多少）
                 PickGrid("搜索　遣何人前往", court.A, o => "智 " + o.Int + "　德 " + o.Virtue,
-                         o => DoSearch(o), Cancel);
+                         o => DoSearch(o), Cancel, rate: o => Tier(o.Int, 70, 90, 40));      // 掷 120 以内 ≤ 智力才有收获
                 break;
             case Personnel.Cmd.Recruit:     // 先挑人：成不成看他三项里最高的那项
-                PickGrid("登用　招揽何人", court.C, o => Best(o), o => { target = o; PickEnvoy(); }, Cancel);
+                {
+                    int vMax = 0; foreach (var m in court.A) vMax = Mathf.Max(vMax, m.Virtue);       // 我方最会说的那位
+                    PickGrid("登用　招揽何人", court.C, o => Best(o), o => { target = o; PickEnvoy(); }, Cancel,
+                             rate: o => RecruitTier(vMax, o));
+                }
                 break;
             case Personnel.Cmd.Reward:
                 PickGrid("奖赏　赏赐何人", Personnel.RewardList(s), o => "忠 " + o.Loyal,
-                         o => { target = o; RewardAmount(); }, Cancel);
+                         o => { target = o; RewardAmount(); }, Cancel,
+                         rate: o => o.Loyal < 60 ? 3 : o.Loyal < 80 ? 2 : o.Loyal < 95 ? 1 : 0);   // 忠诚越低越该赏
                 break;
             case Personnel.Cmd.Appoint:
                 PickGrid("任命　何人任太守", court.A, o => "德 " + o.Virtue + "　忠 " + o.Loyal,
@@ -83,10 +88,16 @@ public class PersonnelView : SheetView
 
     // ── 登用 ────────────────────────────────────────────────────────
     /// 第二次选将：派谁去说。只看说客的德，德越高越容易请得动。
+    /// RecruitOk：对方三项最高 − 说客德行 < rand(40) 就成。差 ≤ 0 必成、< 20 过半、< 40 有机会、再多不可能
+    static int RecruitTier(int virtue, Officer t)
+    {
+        int d = Mathf.Max(t.Int, Mathf.Max(t.Might, t.Virtue)) - virtue;
+        return d <= 0 ? 3 : d < 20 ? 2 : d < 40 ? 1 : 0;
+    }
     void PickEnvoy()
     {
         PickGrid("登用　遣何人往说 " + target.Name, Personnel.Of(stat.id).A,
-                 o => "德 " + o.Virtue, DoRecruit, () => Begin(cmd, stat));
+                 o => "德 " + o.Virtue, DoRecruit, () => Begin(cmd, stat), rate: o => RecruitTier(o.Virtue, target));
     }
 
     void DoRecruit(Officer by)

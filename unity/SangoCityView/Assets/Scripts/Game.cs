@@ -791,10 +791,10 @@ public partial class Game : MonoBehaviour
             };
             clash.OnDone = (mine, theirs) =>
             {
-                int cc = clash.Cc, killed = clash.Killed, lost = clash.Lost;
+                int cc = clash.Cc, killed = clash.Killed, lost = clash.Lost; string ccText = cc != 0 ? clash.CcText() : null;
                 Destroy(clash.Root.gameObject); clash = null;
                 field.Root.gameObject.SetActive(true);
-                field.AfterClash(me, foe, cc, killed, lost);
+                field.AfterClash(me, foe, cc, killed, lost, ccText);
             };
         };
     }

@@ -94,6 +94,7 @@ public class BattleField
         mp = BattleRules.MoveCap(TotalTroops(true));
         CenterOn(units[0].X, units[0].Y);
         curX = units[0].X; curY = units[0].Y;
+        SelectLead();                                  // 开战第一日也直接选中主将
         Refresh();
     }
 
@@ -1213,7 +1214,7 @@ public class BattleField
     public Unit FoeCommander0()  { foreach (var u in units) if (!u.Ours) return u; return null; }
     readonly List<Unit> tookByUs = new List<Unit>(), tookByFoe = new List<Unit>();
 
-    public void AfterClash(Unit ours, Unit foe, int cc, int killed, int lost)
+    public void AfterClash(Unit ours, Unit foe, int cc, int killed, int lost, string ccText = null)
     {
         BattleRules.GainExp(ours.O, killed);                        // b.aa() 5463 → f()：对方掉的兵进 Q[]，够档位就升 Lv
         BattleRules.GainExp(foe.O, lost);
@@ -1228,7 +1229,8 @@ public class BattleField
             case 5: msg = foe.O.Name + " 溃走"; break;                // 人还在战棋层，只是这一仗打不下去了
             case 6: msg = ours.O.Name + " 溃走"; break;
         }
-        if (msg != null) hintText.text = msg;
+        if (ccText != null && (cc == 5 || cc == 6)) msg = ccText;               // 溃走带上「体力减少 N」
+        if (msg != null) { hintText.text = msg; Banner(ccText != null && cc <= 2 ? ccText : msg); }   // 屏幕中间横幅，停两秒
         Refresh();
         if (cc == 1 || cc == 3)                                     // 敌方谁倒了
         {
@@ -1247,29 +1249,50 @@ public class BattleField
         }
         CheckOver();
     }
-    /// 被擒：换边站，忠诚按 b.m() 重掷。兵跟着人走。
+    /// 被擒：原版 b.b(s, bl) 5864——状态记 2、从战棋图上拿掉（格子清空），**押在营中，不再上阵**；
+    /// 仗打完才处理（K() 3353：进我方拿下的城，满 10 人进在野，忠诚按 b.m() 重掷）。
+    /// 以前这里把俘虏换一边、立刻放回图上接着打，不对。
+    /// 做法：换到擒方一边，但 Alive=false（不上图、不行动、不算兵力），结算时 Final() 取到的就是擒方这一边。
     string Capture(Unit taken, Unit captor, bool toUs)
     {
         taken.Alive = false;
         var o = taken.O;
         o.Loyal = BattleRules.Rebind(o.Loyal, rng);
-        var join = new Unit { O = o, Ours = toUs, Alive = true, Dir = "e", Flip = !toUs, Trapped = 0 };
-        var spot = FreeNear(captor.X, captor.Y);
-        join.X = spot.x; join.Y = spot.y; join.Draw = new Vector2(spot.x, spot.y);
-        units.Add(join);
-        (toUs ? tookByUs : tookByFoe).Add(join);
-        return o.Name + " 被擒,归入" + (toUs ? "我军" : "敌军") + " (忠诚 " + o.Loyal + ")";
+        var held = new Unit { O = o, Ours = toUs, Alive = false, Dir = "e", Flip = !toUs, Trapped = 0, X = -1, Y = -1 };
+        held.Draw = new Vector2(-1, -1);
+        units.Add(held);
+        (toUs ? tookByUs : tookByFoe).Add(held);
+        return toUs ? "擒获敌将 " + o.Name + "!　押入营中" : "我方武将 " + o.Name + " 被俘!";
     }
-    /// 主将倒了，手里的俘虏放还原主（原版把对方的状态 2 抹回 0）
+    /// 主将倒了，手里的俘虏放还原主（原版把对方的状态 2 抹回 0）：回到原来那边，在原主将身边重新上阵
     void Release(List<Unit> took, bool backToUs)
     {
+        var lead = backToUs ? OurCommander() : EnemyCommander();
         foreach (var u in took)
         {
-            if (!u.Alive) continue;
-            u.Ours = backToUs; u.Flip = !backToUs;
+            u.Ours = backToUs; u.Flip = !backToUs; u.Alive = true;
             u.O.Loyal = BattleRules.Rebind(u.O.Loyal, rng);
+            var spot = lead != null ? FreeNear(lead.X, lead.Y) : new Vector2Int(0, 0);
+            u.X = spot.x; u.Y = spot.y; u.Draw = new Vector2(spot.x, spot.y);
         }
         took.Clear();
+    }
+
+    // ── 屏幕中间的横幅：阵型战结果（擒获 / 击毙 / 逃窜 · 体力减少 N）停两秒 ──
+    RectTransform banner; float bannerUntil;
+    void Banner(string msg)
+    {
+        if (banner != null) Object.Destroy(banner.gameObject);
+        float w = Mathf.Min(refW - 40, 340);
+        banner = Node("banner", Root);
+        var bg = Panel(banner, "bg", BattleUi.PlateSp()); bg.raycastTarget = false;
+        var t = Label(banner, msg, 18, new Color32(0xF4, 0xD4, 0x8A, 255), TextAnchor.MiddleCenter, FontStyle.Bold);
+        t.horizontalOverflow = HorizontalWrapMode.Wrap;
+        Place(t.rectTransform, 14, 10, w - 28, 1000); Cjk(t);
+        float h = Mathf.Max(56, Mathf.Ceil(t.preferredHeight) + 24);
+        Place(banner, (refW - w) / 2, refH * .36f, w, h); Fill((RectTransform)bg.transform);
+        Place(t.rectTransform, 14, 0, w - 28, h);
+        bannerUntil = Time.time + 2.2f;
     }
     Vector2Int FreeNear(int x, int y)
     {
@@ -1392,7 +1415,18 @@ public class BattleField
         }
         mp = BattleRules.MoveCap(TotalTroops(true), mp);              // 同上：机动力是攒的，不是每回合重置
         hintText.text = "回合结束，第 " + day + " 日";
+        SelectLead();                                  // 新的一日：光标直接落在我方主将身上，不用先点他
         Refresh();
+    }
+    /// 选中我方主将（出征队伍第一位；他不在场了就挑下一位还在场的），镜头跟过去
+    void SelectLead()
+    {
+        Unit lead = null;
+        foreach (var u in units) if (u.Ours && u.Alive) { lead = u; break; }
+        if (lead == null) return;
+        sel = lead; mode = ""; reach.Clear();
+        curX = lead.X; curY = lead.Y; CenterOn(lead.X, lead.Y);
+        hintText.text = "第 " + day + " 日　已选中 " + lead.O.Name + "，请下命令";
     }
 
     // ── 敌方回合：一枚一格地走 ──────────────────────────────────────────
@@ -1409,6 +1443,7 @@ public class BattleField
 
     public void Tick()
     {
+        if (banner != null && Time.time > bannerUntil) { Object.Destroy(banner.gameObject); banner = null; }
         CheckOver();
         bool moving = false;
         foreach (var u in units)                   // 滑向各自的格子
@@ -1455,6 +1490,7 @@ public class BattleField
     //         5 格内有智力比它低、且有合法付得起的计策的我方部队 → 放计策（随机挑）
     //         都不是 → 原地不动
     class EnemyPlan { public int Type; public Unit Target; }
+    const int GUARD = 6;                                  // 守方警戒圈（原版 3，家规放大到 6）
     Dictionary<Unit, EnemyPlan> plans; List<Unit> enemyOrder; int roundStartMp = -1;
 
     Unit EnemyCommander() { foreach (var u in units) if (!u.Ours && u.Alive) return u; return null; }
@@ -1506,9 +1542,12 @@ public class BattleField
             { pl.Type = 1; pl.Target = ours; }
             else
             {
+                // 家规（守城太被动，玩家嫌）：原版 a(int,…) 3589 的警戒圈是主将 3×3 以内，扩到 6；
+                // 另外守方总战力（500+兵，b.H）比攻方多三成以上时，不等人靠近，直接出城扑最近的那支
+                bool strong = total > OurArmyTotal() * 13 / 10;
                 Unit near = null; int bd = 100;
                 foreach (var m in units)
-                    if (m.Ours && m.Alive && Mathf.Abs(m.X - cmd.X) <= 3 && Mathf.Abs(m.Y - cmd.Y) <= 3)
+                    if (m.Ours && m.Alive && (strong || (Mathf.Abs(m.X - cmd.X) <= GUARD && Mathf.Abs(m.Y - cmd.Y) <= GUARD)))
                     {
                         int d = Mathf.Abs(m.X - e.X) + Mathf.Abs(m.Y - e.Y);
                         if (d < bd) { bd = d; near = m; }

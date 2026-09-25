@@ -212,6 +212,9 @@ public class MilitaryView : SheetView
         }, PickArmy, Cancel);
     }
 
+    /// 出征 / 主将：阵型战里攻防都是 武力 ×(1+兵器%)，武力高的最顶用；体力不到三成的上阵容易被单挑斩了
+    static int WarTier(Officer o) => o.Hp * 10 < o.HpMax * 3 ? 0 : Tier(o.Might, 75, 90, 50);
+
     void PickArmy(MapData.City target)
     {
         var a = Personnel.Of(city.id).A;
@@ -220,7 +223,7 @@ public class MilitaryView : SheetView
             sortie = new War.Sortie { From = city, To = target, Army = army };
             if (army.Count == a.Count) Ask("是否放弃此城市？", () => Carry(0, 0), Cancel);
             else Carry(0, 0);
-        }, () => StartWar());
+        }, () => StartWar(), rate: WarTier);
     }
 
     /// 屏 14：带多少金粮出征。不超过城里现有；可以带 0，但带 0 粮第一日末就得撤（原版如此）
@@ -263,7 +266,7 @@ public class MilitaryView : SheetView
             PickGrid("请任命军队主将", sortie.Army, o => "武 " + o.Might + "　兵 " + o.Troops, c => {
                 sortie.Army.Remove(c); sortie.Army.Insert(0, c);                          // aU() 7486：主将换到 az[0]
                 Oath();
-            }, null);
+            }, null, rate: WarTier);
     }
 
     void Oath()

@@ -197,6 +197,15 @@ public static partial class War
                 if (tA.Count < Politics.MaxInCity) { tA.Add(o); o.Serving = true; o.City = T.id; }
                 else { Personnel.Of(T.id).B.Add(o); o.Serving = false; }
             }
+            // 我方押在营中的俘虏（被擒的敌将，不在图上）：攻城没拿下，放还这座城（原版只在拿下城时 K() 收编俘虏）
+            foreach (var kv in fin)
+                if (kv.Value.Ours && !kv.Value.Alive && !f.Dead.Contains(kv.Key) && !f.RetreatTo.ContainsKey(kv.Key))
+                {
+                    var o = kv.Key;
+                    if (tA.Count < Politics.MaxInCity) { tA.Add(o); o.Serving = true; o.City = T.id; }
+                    else { Personnel.Of(T.id).B.Add(o); o.Serving = false; }
+                    r.Lines.Add(o.Name + " 被放还");
+                }
             ts.黄金 = Mathf.Min(f.Supply[2], MaxGoldFood); ts.粮草 = Mathf.Min(f.Supply[3], MaxGoldFood);
             // 我方带去的金粮：主将活着撤走了就跟着他走（i() 2947）；主将战死就落在敌城（bE）。
             // 原版 bE 不复位，后面每场败仗都会再加一遍——这里只算这一场。
