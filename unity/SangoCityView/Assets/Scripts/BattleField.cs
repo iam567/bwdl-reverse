@@ -906,16 +906,21 @@ public class BattleField
     // 光标点到哪一支（敌我都行）就弹「武将信息」：头像、名、LV、武/智、体/德、兵/忠、武器/防具。
     // 不扣机动力、不算行动——原版 F() 里没有 bk 减法，也不置 Acted。
     RectTransform infoPop;
-    void CloseInfo() { if (infoPop != null) Object.Destroy(infoPop.gameObject); infoPop = null; if (infoShade != null) Object.Destroy(infoShade.gameObject); infoShade = null; }
+    void CloseInfo() { if (infoPop != null) Object.Destroy(infoPop.gameObject); infoPop = null; if (infoShade != null) Object.Destroy(infoShade.gameObject); infoShade = null;
+                       if (infoCardTex != null) { Object.Destroy(infoCardTex); infoCardTex = null; } }
     static Sprite AvatarOf(int id)
     {
         var t = TryLoad(Path.Combine("battle", "avatar", BattleRules.Face(id) + ".jpg"));     // 缓存：以前每点一次「情报」新读一张
         return t != null ? Whole(t) : null;
     }
-    static Sprite CardOf(int id)
+    /// 武将信息里那张整卡：用 576×864 高清卡面（小卡只有 192×288，放到半屏发虚）；不进缓存，关框就放掉
+    Texture2D infoCardTex;
+    Sprite CardOf(int id)
     {
-        var t = TryLoad(Path.Combine("battle", "card", BattleRules.Face(id) + ".jpg"));       // 自建武将按他挑的那张脸找卡面
-        return t != null ? Whole(t) : null;
+        string f = BattleRules.Face(id) + ".jpg";                                             // 自建武将按他挑的那张脸找卡面
+        if (infoCardTex != null) { Object.Destroy(infoCardTex); infoCardTex = null; }
+        infoCardTex = TryLoadFresh(Path.Combine("battle", "card_hd", f)) ?? TryLoadFresh(Path.Combine("battle", "card", f));
+        return infoCardTex != null ? Whole(infoCardTex) : null;
     }
     void ShowInfo(Unit u)
     {

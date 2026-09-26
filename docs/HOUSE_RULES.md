@@ -426,3 +426,4 @@ lo = n2 / 2;  hi = n2 - 1
 - App Store Connect：App「霸业江山」，套装 ID com.jingtaoliang.sgwzdl（开发者网站 Identifiers 里显式注册，描述 BayeJiangshan），版本 1.0。
 - 出包：Unity BuildIOS → xcodebuild archive（generic/platform=iOS）→ xcodebuild -exportArchive，导出选项 tools/ExportOptions-testflight.plist（app-store-connect / upload / 自动签名）。
   构建号是时间戳 yyMMddHHmm，每次上传自动递增。IOSPostBuild.cs 自动写 ITSAppUsesNonExemptEncryption=false。
+- 放大看卡（天下霸图大图、战场武将信息）用 576×864 高清卡面 Art/battle/card_hd/（平台原图 1024×1536 缩出，逐张比对过跟小卡同一版本）；小卡列表仍用 192×288。战场信息框关掉就释放高清图。

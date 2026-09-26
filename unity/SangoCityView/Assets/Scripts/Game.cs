@@ -805,7 +805,8 @@ public partial class Game : MonoBehaviour
         int wi = System.Array.IndexOf(av, "-wait");
         yield return new WaitForSeconds(wi >= 0 ? float.Parse(av[wi + 1]) : 3f);
         yield return new WaitForEndOfFrame();
-        ScreenCapture.CaptureScreenshot(path);
+        int su = System.Array.IndexOf(av, "-super");                     // -super N：按窗口 N 倍分辨率截（商店截图 428×926 ×3 = 1284×2778）
+        ScreenCapture.CaptureScreenshot(path, su >= 0 ? int.Parse(av[su + 1]) : 1);
         yield return new WaitForSeconds(1f);
         Application.Quit();
     }

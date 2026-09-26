@@ -131,7 +131,7 @@ public class AlbumView : SheetView
         frame.sprite = BattleUi.PlateSp(); frame.type = Image.Type.Sliced; frame.color = new Color(1.4f, 1.25f, .9f, 1); frame.raycastTarget = false;
         var img = Node("img", frame.transform).gameObject.AddComponent<Image>();
         Place(img.rectTransform, 5, 5, w, h); img.raycastTarget = false;
-        var tex = TryLoadFresh(Path.Combine("battle", "card", c.art + ".jpg"));
+        var tex = TryLoadFresh(Path.Combine("battle", "card_hd", c.art + ".jpg")) ?? TryLoadFresh(Path.Combine("battle", "card", c.art + ".jpg"));   // 放大用 576×864 高清卡面
         if (tex != null) { loaded.Add(tex); img.sprite = Whole(tex); }
         Corner(frame.rectTransform, c.tier, w + 10, w * .36f, true);
         var nm = Label(dim.transform, c.name, 26, Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
