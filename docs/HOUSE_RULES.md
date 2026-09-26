@@ -419,3 +419,5 @@ lo = n2 / 2;  hi = n2 - 1
 ## 改名「霸业江山」（2026-09-26，为 TestFlight 分发、避开「三国志」商标）
 - 8 张封面以原图为参考（平台 title_cover2_0..7，refItem = title_cover_0..7）只换标题，画面保留；App 图标从新封面 5 重新裁。
 - iOS 桌面名 productName「霸业江山」、游戏帮助第一句同步改；Mac 版 productName 仍是 SangoCityView（存档位置靠它）。
+- 主界面最底下一行小字「Made by Liang」，点它打开「致谢」：字体（SIL OFL 1.1，许可原文随包在 Art/licenses/）、Kevin MacLeod 音乐（CC BY 4.0 署名）、Kenney 音效（CC0）、Suno、AI 美术，并注明玩法源自《三国志霸王的大陆》。
+- 霞鹜文楷的 OFL 保留字体名「霞鹜 / LXGW」：裁剪过的子集属修改版，内部字体名改为「BYJS Kai」（文件名未动），致谢里注明来源。

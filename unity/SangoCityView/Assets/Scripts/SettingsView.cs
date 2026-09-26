@@ -67,6 +67,33 @@ public class SettingsView : SheetView
     }
 
     public void HelpForTest() => Help();
+
+    /// 致谢：开源字体（SIL OFL 1.1，许可原文随包在 Art/licenses/）、Kevin MacLeod 的音乐（CC BY 4.0 要求署名）、Kenney 音效（CC0）
+    public void Credits()
+    {
+        float h = Mathf.Min(refH - 60, 560);
+        var box = Sheet("致　谢", h);
+        float w = box.sizeDelta.x;
+        var l = Label(box,
+            "霸业江山　Made by Liang\n" +
+            "玩法源自 J2ME 游戏《三国志霸王的大陆》（JustGame Studio），向原作致敬。\n\n" +
+            "【字体】SIL Open Font License 1.1\n" +
+            "思源宋体 / 思源黑体（Noto Serif / Sans SC）© Adobe，Reserved Font Name 'Source'\n" +
+            "楷体取自霞鹜文楷 LXGW WenKai © LXGW（已裁剪改名为 BYJS Kai）\n" +
+            "站酷小薇 ZCOOL XiaoWei © The ZCOOL XiaoWei Project Authors\n\n" +
+            "【音乐】\n" +
+            "古地图卷、铁骑冲锋：Suno 创作\n" +
+            "Heroic Age、Five Armies、Heartbreaking、Sad Trio\n" +
+            "Kevin MacLeod (incompetech.com)\n" +
+            "Licensed under Creative Commons: By Attribution 4.0\n" +
+            "http://creativecommons.org/licenses/by/4.0/\n\n" +
+            "【音效】Kenney (kenney.nl)，CC0；其余为程序合成\n" +
+            "【美术】AI 生成",
+            12, Ink, TextAnchor.UpperLeft);
+        l.horizontalOverflow = HorizontalWrapMode.Wrap; l.lineSpacing = 1.15f;
+        Place(l.rectTransform, 24, 50, w - 48, h - 50 - BTN_H - 30); Cjk(l);
+        Btn(box, "返回", (w - 136) / 2, h - BTN_H - 20, 136, BTN_H, Close);
+    }
     /// 原版「关于游戏」（c.java 6866），按键说明换成触屏的
     void Help()
     {

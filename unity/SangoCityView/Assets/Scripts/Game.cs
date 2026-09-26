@@ -289,7 +289,7 @@ public partial class Game : MonoBehaviour
                 afterBuild(); break;
             }
             else if (a == "-album") { afterBuild = () => { Album.Preview(data, data.cities[12].owner); album.Open(); if (System.Array.IndexOf(argv, "-detail") >= 0) album.DetailForTest(); }; afterBuild(); break; }   // 截图用：配 -title，先把洛阳那家的人算进去
-            else if (a == "-settings") { afterBuild = () => { if (System.Array.IndexOf(argv, "-help") >= 0) settings.HelpForTest(); else settings.Open(); }; afterBuild(); break; }   // 截图用：配 -title
+            else if (a == "-settings") { afterBuild = () => { if (System.Array.IndexOf(argv, "-help") >= 0) settings.HelpForTest(); else if (System.Array.IndexOf(argv, "-credits") >= 0) settings.Credits(); else settings.Open(); }; afterBuild(); break; }   // 截图用：配 -title
             else if (a == "-sys") { afterBuild = () => { sys.InGame = System.Array.IndexOf(argv, "-load") < 0; sys.Open(); }; afterBuild(); break; }
             else if (a == "-savetest") { SaveSelfCheck(); break; }
             else if (a == "-rs")                          // 截图用：-rs <0..3> [-at 城名]，直接开一条人事指令
@@ -552,6 +552,7 @@ public partial class Game : MonoBehaviour
             title.OnCustom = () => custom.Open(officers);
             title.OnSettings = () => settings.Open();
             title.OnAlbum = () => album.Open();
+            title.OnCredits = () => settings.Credits();
         }
         rulerPick = new RulerPickView(root, RefW, RefH, cityView.PanelSprite, cityView.BtnSprite);
         rulerPick.OnPick = BeginAs;

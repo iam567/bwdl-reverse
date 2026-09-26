@@ -7,7 +7,7 @@ using static UIKit;
 
 public class TitleView : SheetView
 {
-    public System.Action OnNew, OnLoadMenu, OnCustom, OnSettings, OnAlbum;
+    public System.Action OnNew, OnLoadMenu, OnCustom, OnSettings, OnAlbum, OnCredits;
 
     /// 封面：Art/title/cover_0..7.jpg，每次启动随机挑一张，这一次运行里固定（回主界面不换）
     static int coverPick = -1;
@@ -65,6 +65,12 @@ public class TitleView : SheetView
             int k = i;
             Btn(Root, items[i], (w - BW) / 2, y + i * (BTN_H + GAPY), BW, BTN_H, () => acts[k]());
         }
+        // 最底下一行低调的小字；点它看「致谢」（字体 / 音乐的授权署名）
+        var by = Label(Root, "Made by Liang", 11, new Color(1f, .92f, .75f, .6f), TextAnchor.MiddleCenter);
+        Place(by.rectTransform, (w - 160) / 2, h - 22, 160, 18);
+        by.raycastTarget = true;
+        var bb = by.gameObject.AddComponent<Button>(); bb.transition = Selectable.Transition.None;
+        bb.onClick.AddListener(() => OnCredits?.Invoke());
         Root.gameObject.SetActive(true);
     }
 
