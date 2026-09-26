@@ -136,8 +136,8 @@ public class CityView
         hlCache.Clear();
         curKey = key;
 
-        city = Load("cityview/" + key + ".jpg");
-        mask = Load("cityview/" + key + "_mask.png");
+        city = LoadFresh("cityview/" + key + ".jpg");                 // 不进缓存：换城就 Destroy
+        mask = LoadFresh("cityview/" + key + "_mask.png", true);      // 要 GetPixel，留 CPU 副本
         meta = JsonUtility.FromJson<CityMeta>(
             File.ReadAllText(Path.Combine(ArtDir, "cityview/" + key + ".json")));
         cityImg.texture = city;

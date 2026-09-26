@@ -31,7 +31,7 @@ public class AlbumView : SheetView
         Release(); Clear();
         Root.gameObject.SetActive(true);
         var bg = Node("bg", Root).gameObject.AddComponent<RawImage>();
-        var tex = TitleView.Cover() ?? TryLoad("title.jpg") ?? Load("bg.jpg"); loaded.Add(tex);   // 跟主界面同一张封面
+        var tex = TitleView.Cover() ?? TryLoad("title.jpg") ?? Load("bg.jpg");   // 跟主界面同一张封面（缓存里的，别 Destroy）
         bg.texture = tex;
         float s = Mathf.Max(refW / tex.width, refH / tex.height);
         Place(bg.rectTransform, (refW - tex.width * s) / 2, (refH - tex.height * s) / 2, tex.width * s, tex.height * s);
@@ -90,7 +90,7 @@ public class AlbumView : SheetView
         frame.color = on ? new Color(1.4f, 1.25f, .9f, 1) : new Color(.45f, .42f, .38f, 1);
         var img = Node("img", frame.transform).gameObject.AddComponent<Image>();
         Place(img.rectTransform, 3, 3, w, h); img.raycastTarget = false;
-        var tex = TryLoad(Path.Combine("battle", "card", c.art + ".jpg"));
+        var tex = TryLoadFresh(Path.Combine("battle", "card", c.art + ".jpg"));
         if (tex != null) { loaded.Add(tex); img.sprite = Whole(tex); }
         img.color = on ? Color.white : new Color(.07f, .07f, .09f, 1);               // 没解锁：压成一片暗影
         if (!on)
@@ -131,7 +131,7 @@ public class AlbumView : SheetView
         frame.sprite = BattleUi.PlateSp(); frame.type = Image.Type.Sliced; frame.color = new Color(1.4f, 1.25f, .9f, 1); frame.raycastTarget = false;
         var img = Node("img", frame.transform).gameObject.AddComponent<Image>();
         Place(img.rectTransform, 5, 5, w, h); img.raycastTarget = false;
-        var tex = TryLoad(Path.Combine("battle", "card", c.art + ".jpg"));
+        var tex = TryLoadFresh(Path.Combine("battle", "card", c.art + ".jpg"));
         if (tex != null) { loaded.Add(tex); img.sprite = Whole(tex); }
         Corner(frame.rectTransform, c.tier, w + 10, w * .36f, true);
         var nm = Label(dim.transform, c.name, 26, Gold, TextAnchor.MiddleCenter, FontStyle.Bold);

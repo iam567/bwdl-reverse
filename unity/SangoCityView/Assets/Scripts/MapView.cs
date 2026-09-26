@@ -211,6 +211,8 @@ public class MapView
 
     /// 用传进来的参考分辨率算，不能读 parent.rect——构造时画布还没布局，那会儿宽高是 0，
     /// 拿它算出来的居中会整体偏掉半屏。
+    /// 镜头对准某城（从城里回大地图、重建界面后用）
+    public void Focus(MapData.City c) { if (c != null) CenterOn(c); }
     void CenterOn(MapData.City c)
     {
         // 城在地图边上时别把镜头推出图外（下边会露出一条黑）

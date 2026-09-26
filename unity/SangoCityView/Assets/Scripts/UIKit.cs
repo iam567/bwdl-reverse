@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 // uGUI 的几个重复动作，抽出来给地图和城内共用。
 using System.IO;
 using UnityEngine;
@@ -13,13 +14,26 @@ public static class UIKit
     public static Texture2D TryLoad(string rel)
         => File.Exists(Path.Combine(ArtDir, rel)) ? Load(rel) : null;
 
+    // ── 贴图缓存（2026-09-26 手机上内存涨到 600 多 MB 被系统杀掉）──
+    // 以前每次 Load 都新建一张：重建界面时大地图（3277² 那张）、城图、弹框底等整套重读、旧的不放；
+    // 读进来的还留着一份 CPU 可读副本，内存翻倍。现在：
+    //   Load / TryLoad —— 按路径缓存、共用，读完丢掉 CPU 副本（只有 *_mask.png 要 GetPixel，留着）。**不要 Destroy 它们**。
+    //   LoadFresh / TryLoadFresh —— 不进缓存，调用方用完自己 Destroy（城图、天下霸图卡面、动画帧的 LRU）。
+    static readonly Dictionary<string, Texture2D> texCache = new();
     public static Texture2D Load(string rel)
+    {
+        if (texCache.TryGetValue(rel, out var c) && c != null) return c;
+        return texCache[rel] = LoadFresh(rel, rel.EndsWith("_mask.png"));
+    }
+    public static Texture2D LoadFresh(string rel, bool readable = false)
     {
         var t = new Texture2D(2, 2, TextureFormat.RGBA32, false);
         t.LoadImage(File.ReadAllBytes(Path.Combine(ArtDir, rel)));
-        t.wrapMode = TextureWrapMode.Clamp; t.Apply();
+        t.wrapMode = TextureWrapMode.Clamp; t.Apply(false, !readable);
         return t;
     }
+    public static Texture2D TryLoadFresh(string rel, bool readable = false)
+        => File.Exists(Path.Combine(ArtDir, rel)) ? LoadFresh(rel, readable) : null;
 
     /// 九宫格。Sliced 显示的边 = borderPx × (100 / PPU)，所以按想要的厚度反推 PPU。
     public static Sprite Slice(Texture2D t, float bx, float by, float wx, float wy) =>

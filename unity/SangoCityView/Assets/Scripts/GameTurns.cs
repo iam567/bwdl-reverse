@@ -109,6 +109,7 @@ public partial class Game
         cityView.Show(data.stats.Find(x => x.id == curCity.id), curCity.key);
         UpdateDate();
         if (!resume) Toast(Hud.Date(year, month) + "　主公可下 " + orders + " 道令");
+        if (!resume && !Sim) { try { SaveTo(SaveGame.Auto); } catch (System.Exception e) { Debug.LogWarning("[自动存档] " + e.Message); } }   // 每回合开始自动存一档
         playerTurnActive = true;
         if (Sim) playerTurnActive = false;
         while (playerTurnActive && !gameOver) yield return null;
@@ -237,6 +238,7 @@ public partial class Game
         var evs = new List<MonthEnd.Ev>();
         int r = MonthEnd.Run(data, officers, ref month, year, turnRng, evs);
         CheckLords();                                                    // 兜底；读旧档时已经错位的也在这里修正
+        if (!Sim) Resources.UnloadUnusedAssets();                        // 每月清一次没人引用的贴图
         if (r != 0) { Ending(r > 0); yield break; }
         cityView.Root.gameObject.SetActive(false); mapView.Root.gameObject.SetActive(true);
         foreach (var e in evs) events.Push(e.Key, e.Title, e.Text);

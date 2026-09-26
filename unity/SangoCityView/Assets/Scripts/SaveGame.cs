@@ -9,6 +9,7 @@ using UnityEngine;
 public static class SaveGame
 {
     public const int Slots = 3;
+    public const int Auto = 3;               // 自动存档（save_3.json）：每回合开始自动写，读档列表里多一行，玩家不能手动存进去
     public const string Empty = "尚无存档";
 
     [System.Serializable] public class OfficerState

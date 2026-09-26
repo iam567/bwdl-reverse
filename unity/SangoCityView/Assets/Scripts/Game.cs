@@ -50,6 +50,7 @@ public partial class Game : MonoBehaviour
     void Start()
     {
         Application.targetFrameRate = 60;                                   // 手机默认 30 帧，拖地图发涩
+        Application.lowMemory += () => { SheetView.DropCgCache(); Resources.UnloadUnusedAssets(); System.GC.Collect(); };   // iOS 内存警告
         UIKit.UIFont = font;
         if (fonts != null && fonts.Length > 0) FontChoice.Init(fonts);
         if (!Sim && System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-batchmode") < 0)
@@ -146,6 +147,21 @@ public partial class Game : MonoBehaviour
                     int before = data.stats.Find(x => x.name == "洛阳").黄金;
                     cityView.CheatForTest(g);
                     Debug.Log("[作弊自检] 金子 " + before + " → " + data.stats.Find(x => x.name == "洛阳").黄金);
+                };
+                afterBuild(); break;
+            }
+            else if (a == "-memtest")                      // 自检：重建界面 8 次 + 所有事件动画各弹一次，看内存涨不涨
+            {
+                afterBuild = () => { afterBuild = null; StartCoroutine(MemTest()); };
+                afterBuild(); break;
+            }
+            else if (a == "-autosavetest")                 // 自检：直接进一次玩家回合开头，看自动存档写没写
+            {
+                afterBuild = () => {
+                    afterBuild = null; var f = Realm.Of("caocao"); Realm.Player = playerFaction = f.Key; atTitle = false;
+                    StartCoroutine(PlayerTurn(false));
+                    Debug.Log("[自动存档自检] " + (SaveGame.Has(SaveGame.Auto) ? "已写入：" + SaveGame.Label(SaveGame.Auto) : "没有写入"));
+                    Application.Quit();
                 };
                 afterBuild(); break;
             }
@@ -274,7 +290,7 @@ public partial class Game : MonoBehaviour
             }
             else if (a == "-album") { afterBuild = () => { Album.Preview(data, data.cities[12].owner); album.Open(); if (System.Array.IndexOf(argv, "-detail") >= 0) album.DetailForTest(); }; afterBuild(); break; }   // 截图用：配 -title，先把洛阳那家的人算进去
             else if (a == "-settings") { afterBuild = () => { if (System.Array.IndexOf(argv, "-help") >= 0) settings.HelpForTest(); else settings.Open(); }; afterBuild(); break; }   // 截图用：配 -title
-            else if (a == "-sys") { afterBuild = () => { sys.InGame = true; sys.Open(); }; afterBuild(); break; }
+            else if (a == "-sys") { afterBuild = () => { sys.InGame = System.Array.IndexOf(argv, "-load") < 0; sys.Open(); }; afterBuild(); break; }
             else if (a == "-savetest") { SaveSelfCheck(); break; }
             else if (a == "-rs")                          // 截图用：-rs <0..3> [-at 城名]，直接开一条人事指令
             {
@@ -406,6 +422,10 @@ public partial class Game : MonoBehaviour
         foreach (Transform t in root) if (t.name != "events" && t.name != "council") Destroy(t.gameObject);   // 事件弹窗跨重建保留，排着的队不丢
 
         mapView  = new MapView(root, data, RefW, RefH);
+        {                                                                    // 镜头：当前所在的城 > 主公所在的城 > 陈留（MapView 默认）
+            var focus = curCity ?? (string.IsNullOrEmpty(playerFaction) ? null : Capital());
+            mapView.Focus(focus);
+        }
         cityView = new CityView(root, RefW, RefH);
         cityView.Orders = orders;
         cityView.Root.gameObject.SetActive(false);
@@ -521,6 +541,7 @@ public partial class Game : MonoBehaviour
         cityView.OnBack = () => {
             cityView.Root.gameObject.SetActive(false);
             mapView.Root.gameObject.SetActive(true);
+            mapView.Focus(curCity);                                          // 从哪座城出来就看哪座城
         };
 
         if (atTitle)
@@ -765,6 +786,16 @@ public partial class Game : MonoBehaviour
             }
         }
         Debug.Log("[守城自检] 找不到相邻的敌城"); Application.Quit();
+    }
+
+    System.Collections.IEnumerator MemTest()
+    {
+        long M() { System.GC.Collect(); Resources.UnloadUnusedAssets(); return System.Diagnostics.Process.GetCurrentProcess().WorkingSet64 / 1048576; }   // 进程实际占用
+        yield return null;
+        Debug.Log("[内存自检] 开始 " + M() + "MB");
+        for (int i = 0; i < 8; i++) { Build(); yield return null; Debug.Log("[内存自检] 重建 " + (i + 1) + " 次 " + M() + "MB"); }
+        for (int r = 0; r < 3; r++) { events.ShowAllForTest(); yield return null; Debug.Log("[内存自检] 事件动画全弹第 " + (r + 1) + " 轮 " + M() + "MB"); }
+        Application.Quit();
     }
 
     System.Collections.IEnumerator ShotAndQuit(string path)

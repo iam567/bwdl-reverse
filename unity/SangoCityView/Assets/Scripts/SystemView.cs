@@ -41,7 +41,8 @@ public class SystemView : SheetView
     /// 三个档位。存：空档直接写，有档先问一句；读：空档点了没反应
     void Slots(bool save)
     {
-        var box = Sheet(save ? "存储进度" : "读取进度", 56 + SaveGame.Slots * (BTN_H + GAP) + BTN_H + 12 + FOOT);
+        int rows = SaveGame.Slots + (save ? 0 : 1);                          // 读档多一行「自动存档」
+        var box = Sheet(save ? "存储进度" : "读取进度", 56 + rows * (BTN_H + GAP) + BTN_H + 12 + FOOT);
         float w = box.sizeDelta.x;
         Divider(box, 36);
         float sw = Mathf.Min(w - 60, 300);
@@ -58,7 +59,12 @@ public class SystemView : SheetView
                 else if (SaveGame.Has(k)) { Close(); OnLoad?.Invoke(k); }
             });
         }
-        Btn(box, "返回", (w - 136) / 2, 58 + SaveGame.Slots * (BTN_H + GAP) + 4, 136, BTN_H,
+        if (!save)
+        {
+            Btn(box, "自动存档　" + SaveGame.Label(SaveGame.Auto), (w - sw) / 2, 58 + SaveGame.Slots * (BTN_H + GAP), sw, BTN_H,
+                () => { if (SaveGame.Has(SaveGame.Auto)) { Close(); OnLoad?.Invoke(SaveGame.Auto); } }, 15);
+        }
+        Btn(box, "返回", (w - 136) / 2, 58 + rows * (BTN_H + GAP) + 4, 136, BTN_H,
             () => { if (InGame) Open(); else Close(); });
     }
 

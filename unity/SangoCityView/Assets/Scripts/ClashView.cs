@@ -85,11 +85,8 @@ public class ClashView
     }
     static Sprite Avatar(int id)
     {
-        var p = Path.Combine(ArtDir, "battle", "avatar", BattleRules.Face(id) + ".jpg");
-        if (!File.Exists(p)) return null;
-        var t = new Texture2D(2, 2);
-        t.LoadImage(File.ReadAllBytes(p)); t.Apply();
-        return Whole(t);
+        var t = TryLoad(Path.Combine("battle", "avatar", BattleRules.Face(id) + ".jpg"));
+        return t != null ? Whole(t) : null;
     }
 
     // ── 阵型选择 ───────────────────────────────────────────────────────

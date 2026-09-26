@@ -24,6 +24,15 @@ public class EventView : SheetView
     /// 敌方「战略中」遮罩开着的时候先攒着不弹，遮罩收了再一条条出（不然弹窗和遮罩叠在一起）
     bool hold;
     public bool Hold { get => hold; set { hold = value; if (!hold && !Root.gameObject.activeSelf && q.Count > 0) Next(); } }                     // 自检：不弹，直接当点过了，只记日志
+    /// 内存自检：把 eventcg 里每一组动画都弹一次（不等点「知道了」）
+    public void ShowAllForTest()
+    {
+        var keys = new System.Collections.Generic.HashSet<string>();
+        foreach (var f in System.IO.Directory.GetFiles(System.IO.Path.Combine(UIKit.ArtDir, "eventcg"), "ev_*_f0.jpg"))
+            keys.Add(System.IO.Path.GetFileName(f).Replace("ev_", "").Replace("_f0.jpg", ""));
+        foreach (var k in keys) { Say("测", "测", false, System.IO.Path.Combine("eventcg", "ev_" + k)); }
+        Root.gameObject.SetActive(false);
+    }
     public void Push(string key, string title, string text, Officer who = null, System.Action after = null)
     {
         if (Auto) { Debug.Log("[事件] " + title + "：" + text.Replace("\n", " ")); after?.Invoke(); return; }

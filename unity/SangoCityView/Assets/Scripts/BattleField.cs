@@ -644,7 +644,12 @@ public class BattleField
         if (plotCache.TryGetValue(k, out var sp)) return sp;
         var p = Path.Combine(ArtDir, "battle", "plotcg", "plot_" + plot + "_f" + f + ".jpg");
         if (!File.Exists(p)) return plotCache[k] = null;
-        var t = new Texture2D(2, 2); t.LoadImage(File.ReadAllBytes(p)); t.Apply(); t.filterMode = FilterMode.Point;
+        if (plotCache.Count >= 24)                                  // 只留最近三条计策的帧，旧的释放
+        {
+            foreach (var s in plotCache.Values) if (s != null) { Object.Destroy(s.texture); Object.Destroy(s); }
+            plotCache.Clear();
+        }
+        var t = new Texture2D(2, 2, TextureFormat.RGBA32, false); t.LoadImage(File.ReadAllBytes(p)); t.filterMode = FilterMode.Point; t.Apply(false, true);
         return plotCache[k] = Whole(t);
     }
     /// caster / target 是我们加的：原版弹框只写「使用计策: ○○」，
@@ -904,17 +909,13 @@ public class BattleField
     void CloseInfo() { if (infoPop != null) Object.Destroy(infoPop.gameObject); infoPop = null; if (infoShade != null) Object.Destroy(infoShade.gameObject); infoShade = null; }
     static Sprite AvatarOf(int id)
     {
-        var p = Path.Combine(ArtDir, "battle", "avatar", BattleRules.Face(id) + ".jpg");
-        if (!File.Exists(p)) return null;
-        var t = new Texture2D(2, 2); t.LoadImage(File.ReadAllBytes(p)); t.Apply();
-        return Whole(t);
+        var t = TryLoad(Path.Combine("battle", "avatar", BattleRules.Face(id) + ".jpg"));     // 缓存：以前每点一次「情报」新读一张
+        return t != null ? Whole(t) : null;
     }
     static Sprite CardOf(int id)
     {
-        var p = Path.Combine(ArtDir, "battle", "card", BattleRules.Face(id) + ".jpg");   // 自建武将按他挑的那张脸找卡面
-        if (!File.Exists(p)) return null;
-        var t = new Texture2D(2, 2); t.LoadImage(File.ReadAllBytes(p)); t.Apply();
-        return Whole(t);
+        var t = TryLoad(Path.Combine("battle", "card", BattleRules.Face(id) + ".jpg"));       // 自建武将按他挑的那张脸找卡面
+        return t != null ? Whole(t) : null;
     }
     void ShowInfo(Unit u)
     {
@@ -1235,7 +1236,13 @@ public class BattleField
         if (cc == 1 || cc == 3)                                     // 敌方谁倒了
         {
             Release(tookByFoe, true);                               // 敌方手里的我方俘虏放还
-            if (foe == foeCmd) { TakeCity(); return; }
+            if (foe == foeCmd)
+            {
+                // 敌方主将倒了 → 敌方全军逃窜。我方攻城：城拿下；我方守城：守住了（以前两边都写成「我军攻占了 X」）
+                if (WeAttack) TakeCity();
+                else ShowOver("敌方全军逃窜! " + CityNameNow() + " 守住了!");
+                return;
+            }
         }
         if (cc == 2 || cc == 4)
         {

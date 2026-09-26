@@ -464,12 +464,30 @@ public abstract class SheetView
     const float CG_FRAME = 0.14f;                      // 和计策动图同一个节拍
 
     static readonly Dictionary<string, Sprite> cgCache = new();
+    static readonly List<string> cgStems = new();
+    /// 手机报内存吃紧：动画帧全放掉（下次用到再读）
+    public static void DropCgCache()
+    {
+        foreach (var s in cgCache.Values) if (s != null) { Object.Destroy(s.texture); Object.Destroy(s); }
+        cgCache.Clear(); cgStems.Clear();
+    }
     /// dir/prefix 例：politicscg/zc_0 → politicscg/zc_0_f3.jpg
     static Sprite CgFrame(string stem, int f)
     {
         string k = stem + "_" + f;
         if (cgCache.TryGetValue(k, out var sp)) return sp;
-        var t = Load(stem + "_f" + f + ".jpg");
+        // 只留最近 6 组动画（一组 8 帧），更早的整组释放——几十组全留着就是两三百 MB
+        if (!cgStems.Contains(stem))
+        {
+            cgStems.Add(stem);
+            while (cgStems.Count > 6)
+            {
+                string old = cgStems[0]; cgStems.RemoveAt(0);
+                for (int i = 0; i < 8; i++)
+                    if (cgCache.TryGetValue(old + "_" + i, out var os)) { if (os != null) { Object.Destroy(os.texture); Object.Destroy(os); } cgCache.Remove(old + "_" + i); }
+            }
+        }
+        var t = TryLoadFresh(stem + "_f" + f + ".jpg");
         return cgCache[k] = t == null ? null : Whole(t);
     }
 
