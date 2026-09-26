@@ -121,13 +121,13 @@ public static class Builder
     }
 
     /// 出 iOS 的 Xcode 工程（Build/iOS），自动签名用玩家自己的开发者团队。
-    /// 桌面名「三国志王者大陆」；productName 只在这里改，BuildMac 会改回 SangoCityView（Mac 版存档位置靠它）。
+    /// 桌面名「霸业江山」；productName 只在这里改，BuildMac 会改回 SangoCityView（Mac 版存档位置靠它）。
     public const string IOS_TEAM = "N4SK575992", IOS_BUNDLE = "com.jingtaoliang.sgwzdl";
     public static void BuildIOS()
     {
         MakeScene();
         PlayerSettings.companyName = "sango";
-        PlayerSettings.productName = "三国志王者大陆";
+        PlayerSettings.productName = "霸业江山";
         PlayerSettings.SetApplicationIdentifier(UnityEditor.Build.NamedBuildTarget.iOS, IOS_BUNDLE);
         PlayerSettings.bundleVersion = "0.1";
         PlayerSettings.iOS.buildNumber = System.DateTime.Now.ToString("yyMMddHHmm");

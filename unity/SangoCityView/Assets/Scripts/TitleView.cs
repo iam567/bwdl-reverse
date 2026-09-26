@@ -1,4 +1,4 @@
-// 主界面：封面（平台 title_cover_0..7 → Art/title/cover_*.jpg，标题「三国志 王者大陆」画在图里，每次启动随机一张）+ 五项菜单。
+// 主界面：封面（平台 title_cover2_0..7（以 title_cover_0..7 为参考改标题）→ Art/title/cover_*.jpg，标题「霸业江山」画在图里，每次启动随机一张）+ 五项菜单。
 // 没有封面图时退回旧的 title.jpg + 文字标题。
 // 原版开机是 JustGame 的标题画面接「新游戏 / 继续」；图还没到的时候退回城内那张木板底。
 using UnityEngine;
@@ -32,7 +32,7 @@ public class TitleView : SheetView
     {
         var bg = Node("bg", Root).gameObject.AddComponent<RawImage>();
         var tex = Cover();
-        bool baked = tex != null;                                   // 新封面：标题「三国志 王者大陆」画在图里
+        bool baked = tex != null;                                   // 新封面：标题「霸业江山」画在图里
         if (!baked) tex = TryLoad("title.jpg") ?? Load("bg.jpg");
         bg.texture = tex;
         // 铺满屏幕、按比例裁边（cover），竖图在瘦长屏上不留黑边
@@ -43,9 +43,9 @@ public class TitleView : SheetView
         {
             var shade = Node("shade", Root).gameObject.AddComponent<Image>();      // 压暗一层，字和按钮才站得住
             Fill((RectTransform)shade.transform); shade.color = new Color(0, 0, 0, .28f); shade.raycastTarget = false;
-            var t1 = Label(Root, "三 国 志", 44, new Color32(0xF6,0xE3,0xB0,255), TextAnchor.MiddleCenter, FontStyle.Bold);
+            var t1 = Label(Root, "霸 业 江 山", 44, new Color32(0xF6,0xE3,0xB0,255), TextAnchor.MiddleCenter, FontStyle.Bold);
             Place(t1.rectTransform, 0, h * .14f, w, 60);
-            var t2 = Label(Root, "王 者 大 陆", 24, new Color32(0xE8,0xC0,0x6A,255), TextAnchor.MiddleCenter, FontStyle.Bold);
+            var t2 = Label(Root, "", 24, new Color32(0xE8,0xC0,0x6A,255), TextAnchor.MiddleCenter, FontStyle.Bold);
             Place(t2.rectTransform, 0, h * .14f + 62, w, 34);
             foreach (var t in new[] { t1, t2 })
             {

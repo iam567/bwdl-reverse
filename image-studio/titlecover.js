@@ -35,3 +35,17 @@ const buildTitleCovers = () => THEMES.map(([k, scene], i) => ({
 
 module.exports = { buildTitleCovers };
 if (require.main === module) process.stdout.write(JSON.stringify(buildTitleCovers(), null, 1));
+
+/* 2026-09-26 改名「霸业江山」：以现有 8 张封面为参考图（refItem），画面不动、只换标题 */
+const RENAME =
+  '以参考图为唯一依据，画面的构图、人物、姿势、场景、天气、光影、配色、笔触全部保持不变，就像同一张画。' +
+  '只改一处：画面上方的游戏标题。把原来的两行标题文字（「三国志」和「王者大陆」）完全去掉，' +
+  '在同一位置换成一行鎏金书法大字「霸业江山」——只有这四个汉字，一字不多、一字不少、一笔不错。' +
+  '新标题延续原标题的风格：精雕细琢的书法字体标志，鎏金金属质感、立体浮雕、描边与高光，和画面光效融为一体（火光、烟尘、光晕照在字上），' +
+  '水平居中，整体宽度约为画面宽度的六成，不要比原标题更靠下。' +
+  '\n\n绝对禁止：出现「三国志」「王者大陆」的任何残留笔画；标题以外的任何文字、字母、数字、印章、签名、水印；标题错字、多字、少字；改变画面其他任何部分。';
+const buildRenameCovers = () => THEMES.map(([k], i) => ({
+  id: 'title_cover2_' + i, category: 'cg', label: '主界面封面·' + k + '（霸业江山）', meta: { 用途: '主界面随机封面 改名 ' + (i + 1) + '/8' },
+  source: null, size: '1024x1536', refItem: 'title_cover_' + i, prompt: RENAME, status: 'idle', attempts: 0,
+}));
+module.exports.buildRenameCovers = buildRenameCovers;
