@@ -57,6 +57,7 @@ public static class UIKit
         rt.pivot = new Vector2(0, 1);
         rt.anchoredPosition = new Vector2(x, -y);
         rt.sizeDelta = new Vector2(w, h);
+        if (rt.TryGetComponent<LText>(out var lt)) lt.Refit();          // 译文放不下就缩字（框宽现在才定）
     }
     public static void Fill(RectTransform rt)
     {
@@ -67,7 +68,7 @@ public static class UIKit
         TextAnchor a = TextAnchor.MiddleLeft, FontStyle st = FontStyle.Normal)
     {
         var rt = Node("t", p);
-        var t = rt.gameObject.AddComponent<Text>();
+        var t = rt.gameObject.AddComponent<LText>();             // 显示时自动翻译（多语言）
         bool bold = st == FontStyle.Bold || st == FontStyle.BoldAndItalic;
         t.font = bold && UIFontBold != null ? UIFontBold : UIFont;
         t.fontSize = size; t.color = c; t.alignment = a; t.text = s;
@@ -84,6 +85,7 @@ public static class UIKit
     public static void Cjk(Text t)
     {
         if (t == null || string.IsNullOrEmpty(t.text) || t.font == null) return;
+        if (!Loc.CjkWrap) { t.horizontalOverflow = HorizontalWrapMode.Wrap; return; }   // 英文 / 韩文按词换行，Unity 自带的 Wrap 就对
         float width = t.rectTransform.rect.width; if (width <= 1) width = t.rectTransform.sizeDelta.x;
         if (width <= 1) return;
         var f = t.font; int size = t.fontSize; var st = t.fontStyle;
@@ -107,7 +109,8 @@ public static class UIKit
         }
         sb.Append(line);
         t.horizontalOverflow = HorizontalWrapMode.Overflow;
-        t.text = sb.ToString();
+        if (t is LText lt) { bool raw = lt.Raw; lt.Raw = true; t.text = sb.ToString(); lt.Raw = raw; }   // 已经是译文了
+        else t.text = sb.ToString();
     }
 
     public static Image Panel(Transform p, string n, Sprite s, bool sliced = true)

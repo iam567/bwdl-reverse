@@ -17,6 +17,10 @@ public static class Builder
         "NotoSansSC-Regular.otf", "NotoSansSC-Bold.otf",
         "LXGWWenKai-Regular.ttf", "LXGWWenKai-Medium.ttf",
         "ZCOOLXiaoWei-Regular.ttf",
+        // 繁中 / 日 / 韩（v1.01 多语言）：各 [宋常规, 宋粗, 黑常规, 黑粗]
+        "NotoSerifTC-Regular.otf", "NotoSerifTC-Bold.otf", "NotoSansTC-Regular.otf", "NotoSansTC-Bold.otf",
+        "NotoSerifJP-Regular.otf", "NotoSerifJP-Bold.otf", "NotoSansJP-Regular.otf", "NotoSansJP-Bold.otf",
+        "NotoSerifKR-Regular.otf", "NotoSerifKR-Bold.otf", "NotoSansKR-Regular.otf", "NotoSansKR-Bold.otf",
     };
     /// 站酷小薇缺 11 个汉字和一些符号：缺字时退到思源宋体（打进包里的后备字体）
     static void SetupFonts()
@@ -129,7 +133,7 @@ public static class Builder
         PlayerSettings.companyName = "sango";
         PlayerSettings.productName = "霸业江山";
         PlayerSettings.SetApplicationIdentifier(UnityEditor.Build.NamedBuildTarget.iOS, IOS_BUNDLE);
-        PlayerSettings.bundleVersion = "1.0";
+        PlayerSettings.bundleVersion = "1.01";                            // v1.01：多语言
         PlayerSettings.iOS.buildNumber = System.DateTime.Now.ToString("yyMMddHHmm");
         PlayerSettings.iOS.appleEnableAutomaticSigning = true;
         PlayerSettings.iOS.appleDeveloperTeamID = IOS_TEAM;

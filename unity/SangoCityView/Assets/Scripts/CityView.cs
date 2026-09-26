@@ -19,7 +19,14 @@ public class CityView
     string yearStr = "", rulerStr = "";
     /// 顶栏年月，Game 每翻一个月塞进来（跟君主写在城名下面那一行）
     public string YearText { set { yearStr = value; SubLine(); } }
-    void SubLine() { if (hOwner != null) hOwner.text = (rulerStr.Length > 0 ? "君主 " + rulerStr + "　·　" : "") + yearStr; }
+    void SubLine()
+    {
+        if (hOwner == null) return;
+        string tier = SealFits || st == null ? "" : st.tierName + "　·　";        // 英文的城格写不进印章，挪到这一行最前面
+        hOwner.text = tier + (rulerStr.Length > 0 ? "君主 " + rulerStr + "　·　" : "") + yearStr;
+    }
+    /// 印章 30×30 只放得下两个方块字（中日韩）；英文「Imperial Capital」放不下
+    static bool SealFits => Loc.Code != "en";
     Image seal; RectTransform leftP, rightP;
     public System.Action<string> OnCommand;         // 点了浮窗里的某条指令
     readonly List<(RectTransform rt, string cmd)> cmdRects = new();
@@ -169,7 +176,7 @@ public class CityView
         LoadCity(key);
         st = s;
         Cheat = false; nameTaps = 0;                           // 进城（换城 / 新回合）作弊都要重新激活
-        hName.text = s.name; hTier.text = s.tierName;
+        hName.text = s.name; hTier.text = SealFits ? s.tierName : "";
         float nw = Mathf.Min(hName.preferredWidth, 150);                       // 印章紧跟在城名后面
         Place(seal.rectTransform, 12 + 2 + nw + 8, 8 + 6, 30, 30);
         Place(hTier.rectTransform, 0, 0, 30, 30);

@@ -1,0 +1,448 @@
+# 专有名词：武将 / 城池 / 兵器 / 计策（tools/loc/make_names.py 生成）
+万彧	Wan Yu
+严政	Yan Zheng
+严畯	Yan Jun
+严白虎	Yan Baihu
+严颜	Yan Yan
+乌丸	Wuhuan Chief
+乌丸头目	Wuhuan Chief
+乐琳	Yue Lin
+乐进	Yue Jin
+于吉	Yu Ji
+于禁	Yu Jin
+仑直	Lun Zhi
+任双	Ren Shuang
+任峻	Ren Jun
+伊籍	Yi Ji
+侯成	Hou Cheng
+侯选	Hou Xuan
+兀突骨	Wutugu
+全琮	Quan Cong
+公孙康	Gongsun Kang
+公孙渊	Gongsun Yuan
+公孙瓒	Gongsun Zan
+公孙越	Gongsun Yue
+关兴	Guan Xing
+关平	Guan Ping
+关彝	Guan Yi
+关索	Guan Suo
+关统	Guan Tong
+关羽	Guan Yu
+典满	Dian Man
+典韦	Dian Wei
+凌操	Ling Cao
+凌统	Ling Tong
+刑道荣	Xing Daorong
+刘备	Liu Bei
+刘封	Liu Feng
+刘度	Liu Du
+刘晔	Liu Ye
+刘氏	Lady Liu
+刘焉	Liu Yan
+刘璋	Liu Zhang
+刘禅	Liu Chan
+刘虞	Liu Yu
+刘表	Liu Biao
+刘辟	Liu Pi
+!北斗	Beidou
+华歆	Hua Xin
+华雄	Hua Xiong
+!南斗	Nandou
+卞氏	Lady Bian
+卢植	Lu Zhi
+史焕	Shi Huan
+司马伷	Sima Zhou
+司马师	Sima Shi
+司马懿	Sima Yi
+司马攸	Sima You
+司马昭	Sima Zhao
+司马炎	Sima Yan
+吕凯	Lü Kai
+吕布	Lü Bu
+吕度	Lü Du
+吕旷	Lü Kuang
+吕玲绮	Lü Lingqi
+吕翔	Lü Xiang
+吕范	Lü Fan
+吕蒙	Lü Meng
+吴兰	Wu Lan
+吴国太	Lady Wu
+吴懿	Wu Yi
+周仓	Zhou Cang
+周善	Zhou Shan
+周旨	Zhou Zhi
+周泰	Zhou Tai
+周瑜	Zhou Yu
+周鲂	Zhou Fang
+夏侯令女	Xiahou Lingnü
+夏侯兰	Xiahou Lan
+夏侯和	Xiahou He
+夏侯惇	Xiahou Dun
+夏侯惠	Xiahou Hui
+夏侯渊	Xiahou Yuan
+夏侯琳	Xiahou Lin
+夏侯霸	Xiahou Ba
+大乔	Da Qiao
+太史慈	Taishi Ci
+妫览	Gui Lan
+姜维	Jiang Wei
+孔伷	Kong Zhou
+孔融	Kong Rong
+孙乾	Sun Qian
+孙仲	Sun Zhong
+孙匡	Sun Kuang
+孙坚	Sun Jian
+孙尚香	Sun Shangxiang
+孙权	Sun Quan
+孙氏	Lady Sun
+孙礼	Sun Li
+孙策	Sun Ce
+孙观	Sun Guan
+孙诩	Sun Xu
+孙鲁班	Sun Luban
+孟优	Meng You
+孟获	Meng Huo
+孟虬	Meng Qiu
+孟达	Meng Da
+宋宪	Song Xian
+审配	Shen Pei
+小乔	Xiao Qiao
+尚龙	Shang Long
+尹楷	Yin Kai
+尹赏	Yin Shang
+崔琰	Cui Yan
+崔谅	Cui Liang
+带来洞主	Dailai Dongzhu
+庐植	Lu Zhi
+庞德	Pang De
+庞柔	Pang Rou
+庞统	Pang Tong
+廖化	Liao Hua
+张严	Zhang Yan
+张任	Zhang Ren
+张南	Zhang Nan
+张卫	Zhang Wei
+张宝	Zhang Bao
+张春华	Zhang Chunhua
+张曼成	Zhang Mancheng
+张松	Zhang Song
+张梁	Zhang Liang
+张横	Zhang Heng
+张济	Zhang Ji
+张燕	Zhang Yan
+张绍	Zhang Shao
+张翼	Zhang Yi
+张苞	Zhang Bao
+张虎	Zhang Hu
+张角	Zhang Jiao
+张辽	Zhang Liao
+张遵	Zhang Zun
+张郃	Zhang He
+张飞	Zhang Fei
+张鲁	Zhang Lu
+徐庶	Xu Shu
+徐晃	Xu Huang
+徐氏	Lady Xu
+徐盛	Xu Sheng
+徐荣	Xu Rong
+徐质	Xu Zhi
+忙牙长	Mangyachang
+成宜	Cheng Yi
+文丑	Wen Chou
+文聘	Wen Pin
+文钦	Wen Qin
+文鸯	Wen Yang
+曹丕	Cao Pi
+曹仁	Cao Ren
+曹休	Cao Xiu
+曹冲	Cao Chong
+曹叡	Cao Rui
+曹宇	Cao Yu
+曹彰	Cao Zhang
+曹操	Cao Cao
+曹昂	Cao Ang
+曹植	Cao Zhi
+曹洪	Cao Hong
+曹熊	Cao Xiong
+曹真	Cao Zhen
+曹睿	Cao Rui
+曹纯	Cao Chun
+曹芳	Cao Fang
+木鹿大王	King Mulu
+朱恒	Zhu Huan
+朱桓	Zhu Huan
+朱治	Zhu Zhi
+朱灵	Zhu Ling
+朱然	Zhu Ran
+朱褒	Zhu Bao
+朵思大王	King Duosi
+李严	Li Yan
+李傕	Li Jue
+李儒	Li Ru
+李典	Li Dian
+李异	Li Yi
+李硅	Li Gui
+李通	Li Tong
+杨仪	Yang Yi
+杨修	Yang Xiu
+杨洪	Yang Hong
+杨锋	Yang Feng
+杨阜	Yang Fu
+樊稠	Fan Chou
+步隙	Bu Zhi
+步骘	Bu Zhi
+武安国	Wu Anguo
+沙摩柯	Shamoke
+沮授	Ju Shou
+法正	Fa Zheng
+淳于琼	Chunyu Qiong
+淳干琼	Chunyu Qiong
+满宠	Man Chong
+牛金	Niu Jin
+献帝	Emperor Xian
+王允	Wang Yun
+王双	Wang Shuang
+王平	Wang Ping
+王建	Wang Jian
+王忠	Wang Zhong
+王甫	Wang Fu
+王粲	Wang Can
+王累	Wang Lei
+甘宁	Gan Ning
+田丰	Tian Feng
+田畴	Tian Chou
+申耽	Shen Dan
+留平	Liu Ping
+祝融	Lady Zhurong
+祝融夫人	Lady Zhurong
+程志远	Cheng Yuanzhi
+程昱	Cheng Yu
+程普	Cheng Pu
+程秉	Cheng Bing
+程远志	Cheng Yuanzhi
+程银	Cheng Yin
+简雍	Jian Yong
+管亥	Guan Hai
+管辂	Guan Lu
+糜氏	Lady Mi
+糜竺	Mi Zhu
+糜芳	Mi Fang
+纪灵	Ji Ling
+胡车儿	Hu Che'er
+臧霸	Zang Ba
+花鬘	Hua Man
+苏飞	Su Fei
+荀彧	Xun Yu
+荀湛	Xun Zhan
+董允	Dong Yun
+董卓	Dong Zhuo
+董承	Dong Cheng
+董茶奴	Dong Chanu
+董袭	Dong Xi
+蒋义渠	Jiang Yiqu
+蒋干	Jiang Gan
+蒋琬	Jiang Wan
+蒋钦	Jiang Qin
+蒯良	Kuai Liang
+蒯越	Kuai Yue
+蔡氏	Lady Cai
+蔡琰	Cai Yan
+蔡瑁	Cai Mao
+蔡阳	Cai Yang
+薛综	Xue Zong
+虞翻	Yu Fan
+袁尚	Yuan Shang
+袁熙	Yuan Xi
+袁绍	Yuan Shao
+袁谭	Yuan Tan
+裴元绍	Pei Yuanshao
+许仪	Xu Yi
+许攸	Xu You
+许褚	Xu Chu
+诸葛亮	Zhuge Liang
+诸葛恪	Zhuge Ke
+诸葛瑾	Zhuge Jin
+诸葛瞻	Zhuge Zhan
+谭雄	Tan Xiong
+貂蝉	Diao Chan
+费祎	Fei Yi
+贾充	Jia Chong
+贾华	Jia Hua
+贾范	Jia Fan
+贾诩	Jia Xu
+赵云	Zhao Yun
+赵广	Zhao Guang
+赵弘	Zhao Hong
+赵月	Zhao Yue
+赵统	Zhao Tong
+越吉	Yueji
+辛宪英	Xin Xianying
+辛毗	Xin Pi
+辛评	Xin Ping
+逢纪	Pang Ji
+邓艾	Deng Ai
+邓芝	Deng Zhi
+邓茂	Deng Mao
+邢道荣	Xing Daorong
+郝昭	Hao Zhao
+郭嘉	Guo Jia
+郭图	Guo Tu
+郭汜	Guo Si
+郭淮	Guo Huai
+鄂焕	E Huan
+金环三结	Jinhuan Sanjie
+金环结	Jinhuan Sanjie
+钟会	Zhong Hui
+阎圃	Yan Pu
+阿会喃	Ahuinan
+阿哙喃	Ahuinan
+陆抗	Lu Kang
+陆绩	Lu Ji
+陆逊	Lu Xun
+陈兰	Chen Lan
+陈宫	Chen Gong
+陈武	Chen Wu
+陈泰	Chen Tai
+陈珪	Chen Gui
+陈琳	Chen Lin
+陈登	Chen Deng
+陈群	Chen Qun
+陈震	Chen Zhen
+陶谦	Tao Qian
+雅丹	Yadan
+雍圃	Yong Pu
+!雷同	Lei Tong
+雷薄	Lei Bao
+雷铜	Lei Tong
+韦康	Wei Kang
+韩当	Han Dang
+韩德	Han De
+韩忠	Han Zhong
+韩猛	Han Meng
+韩玄	Han Xuan
+韩琪	Han Qi
+韩遂	Han Sui
+韩馥	Han Fu
+顾雍	Gu Yong
+颜良	Yan Liang
+马云禄	Ma Yunlu
+马休	Ma Xiu
+马岱	Ma Dai
+马延	Ma Yan
+马腾	Ma Teng
+马良	Ma Liang
+马谡	Ma Su
+马超	Ma Chao
+马遵	Ma Zun
+马铁	Ma Tie
+高定	Gao Ding
+高干	Gao Gan
+高翔	Gao Xiang
+高览	Gao Lan
+高顺	Gao Shun
+魏延	Wei Yan
+鲁肃	Lu Su
+鲍三娘	Bao Sanniang
+黄忠	Huang Zhong
+黄月英	Huang Yueying
+黄权	Huang Quan
+黄盖	Huang Gai
+龚都	Gong Du
+上庸	Shangyong
+下弁	Xiabian
+云南	Yunnan
+会稽	Kuaiji
+兖州	Yanzhou
+冀州	Jizhou
+凉州	Liangzhou
+北平	Beiping
+北海	Beihai
+天水	Tianshui
+寿春	Shouchun
+山越	Shanyue
+!平原	Pingyuan
+并州	Bingzhou
+幽州	Youzhou
+广陵	Guangling
+庐江	Lujiang
+建业	Jianye
+建宁	Jianning
+徐州	Xuzhou
+成都	Chengdu
+扬州	Yangzhou
+敦煌	Dunhuang
+晋阳	Jinyang
+桂阳	Guiyang
+梓桐	Zitong
+武威	Wuwei
+武陵	Wuling
+汉中	Hanzhong
+江夏	Jiangxia
+江州	Jiangzhou
+江陵	Jiangling
+洛阳	Luoyang
+淮南	Huainan
+渤海	Bohai
+濮阳	Puyang
+荆州	Jingzhou
+荑州	Tizhou
+襄平	Xiangping
+襄阳	Xiangyang
+西平	Xiping
+豫州	Yuzhou
+豫章	Yuzhang
+辽东	Liaodong
+邺城	Ye
+长安	Chang'an
+长沙	Changsha
+陈留	Chenliu
+零陵	Lingling
+青州	Qingzhou
+短剑	Short Sword
+飞剑	Flying Sword
+长剑	Long Sword
+破斩剑	Cleaver Sword
+大剑	Great Sword
+七星剑	Seven Star Sword
+青釭剑	Qinggang Sword
+倚天剑	Yitian Sword
+雍刀	Yong Blade
+眉尖刀	Brow-tip Blade
+三尖刀	Trident Blade
+钩镰刀	Hook Sickle
+偃月刀	Crescent Glaive
+凤嘴刀	Phoenix Beak Blade
+龙牙刀	Dragon Fang Blade
+关王刀	Guan's Glaive
+!矛	Spear
+双戟	Twin Halberds
+单钩枪	Hook Spear
+战斧	Battle Axe
+双钩枪	Twin Hook Spear
+方天化戟	Sky Piercer
+狼牙枪	Wolf Fang Spear
+蛇矛	Serpent Spear
+纶巾	Silk Scarf
+笼手	Gauntlets
+!兜	Helmet
+硬皮	Hard Leather
+鹤氅	Crane Cloak
+甲胄	Armor
+圣者之衣	Sage's Robe
+龙鳞宝铠	Dragon Scale Mail
+火计	Fire Attack
+陷阱	Pitfall
+虚兵	Feint
+要击	Waylay
+乱水	Riptide
+火箭	Fire Arrows
+共杀	Infighting
+伪击转杀	Feint & Strike
+笼络	Win Over
+落石	Rockslide
+连环	Chain Trap
+十面埋伏	Tenfold Ambush
+水攻	Flood
+连弩	Repeating Crossbow
+劫火	Inferno
+奇门遁甲	Mystic Arts

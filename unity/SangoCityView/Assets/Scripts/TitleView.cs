@@ -11,9 +11,12 @@ public class TitleView : SheetView
 
     /// 封面：Art/title/cover_0..7.jpg，每次启动随机挑一张，这一次运行里固定（回主界面不换）
     static int coverPick = -1;
+    public static void ResetCover() => coverPick = -1;   // 换了语言：封面那一组不一样了，重挑
     public static Texture2D Cover()
     {
-        var dir = System.IO.Path.Combine(ArtDir, "title");
+        string sub = "title";                                             // 别的语言：Art/title/<语言>/cover_*.jpg（标题写成该语言）
+        if (!Loc.Source && System.IO.Directory.Exists(System.IO.Path.Combine(ArtDir, "title", Loc.Code))) sub = "title/" + Loc.Code;
+        var dir = System.IO.Path.Combine(ArtDir, sub);
         if (!System.IO.Directory.Exists(dir)) return null;
         var files = System.IO.Directory.GetFiles(dir, "cover_*.jpg");
         if (files.Length == 0) return null;
@@ -24,7 +27,7 @@ public class TitleView : SheetView
             coverPick = ci >= 0 ? int.Parse(av[ci + 1]) : new System.Random().Next(files.Length);
         }
         coverPick = Mathf.Clamp(coverPick, 0, files.Length - 1);
-        return TryLoad(System.IO.Path.Combine("title", System.IO.Path.GetFileName(files[coverPick])));
+        return TryLoad(sub + "/" + System.IO.Path.GetFileName(files[coverPick]));
     }
 
     public TitleView(Transform parent, float w, float h, Sprite panelSp, Sprite btnSp)

@@ -189,7 +189,7 @@ public class MapView
         foreach (var p in pl.plaques)
         {
             var c = data.cities.Find(q => q.id == p.id);
-            if (c == null || c.name == p.name) continue;
+            if (c == null || (Loc.Source && c.name == p.name)) continue;          // 别的语言：图上画的是简体字，全盖
             float w = pl.w / K, h = pl.h / K;
             var bg = Node("plaque_" + p.id, map).gameObject.AddComponent<Image>();
             bg.color = fill; bg.raycastTarget = false;
@@ -198,7 +198,7 @@ public class MapView
             rt.sizeDelta = new Vector2(w, h); rt.anchoredPosition = new Vector2(p.x / K, -p.y / K);
             // 字按 10 倍字号排、再缩 10 倍：地图放大六倍也不糊
             var t = Label(rt, c.name, 70, new Color32(0xF8, 0xEC, 0xD6, 255), TextAnchor.MiddleCenter);
-            t.raycastTarget = false;
+            t.raycastTarget = false; t.resizeTextForBestFit = true; t.resizeTextMinSize = 20; t.resizeTextMaxSize = 70;   // 英文城名长，缩字
             var tr = t.rectTransform;
             tr.anchorMin = tr.anchorMax = new Vector2(0.5f, 0.5f); tr.pivot = new Vector2(0.5f, 0.5f);
             tr.sizeDelta = new Vector2(w * 10, h * 10); tr.anchoredPosition = Vector2.zero; tr.localScale = Vector3.one * 0.1f;

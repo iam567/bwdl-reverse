@@ -427,3 +427,16 @@ lo = n2 / 2;  hi = n2 - 1
 - 出包：Unity BuildIOS → xcodebuild archive（generic/platform=iOS）→ xcodebuild -exportArchive，导出选项 tools/ExportOptions-testflight.plist（app-store-connect / upload / 自动签名）。
   构建号是时间戳 yyMMddHHmm，每次上传自动递增。IOSPostBuild.cs 自动写 ITSAppUsesNonExemptEncryption=false。
 - 放大看卡（天下霸图大图、战场武将信息）用 576×864 高清卡面 Art/battle/card_hd/（平台原图 1024×1536 缩出，逐张比对过跟小卡同一版本）；小卡列表仍用 192×288。战场信息框关掉就释放高清图。
+
+## 多语言 v1.01（2026-09-26）
+- 五种语言：简体中文（原文）/ 繁體中文 / English / 日本語 / 한국어。第一次打开跟系统语言（繁中按台港澳地区判断，其他没有的语言给英文）；设置页最上面「语言 · Language」随时切，切完整个界面重建。
+- 做法是**显示时翻译**：所有文字走 LText（UIKit.Label 建的就是它），赋值那一刻过 Loc.T()；代码里的中文字面量一律不动（很多同时是逻辑里比对用的标识）。
+  - 英 / 日 / 韩：整句查 phrases.tsv → 抽名词（{0}…）和数字（{#0}…）按句式查 → 再按标点切段逐段查。专有名词（武将 / 城 / 兵器 / 计策）在 names.tsv。
+  - 繁中：简繁逐字 / 逐词对应，整句直接转（chars.tsv 单字 + OpenCC 词表里本游戏出现过的词，最长匹配），动态拼的句子也不漏。「征」保持「征」（出征），征兵 / 征粮等词才用「徵」。
+  - 原版数据里的异写（刑道荣 / 程志远 / 庐植 / 步隙 / 淳干琼 / 朱恒 / 雷同 / 曹睿 …）译名一律归到正字；简中照旧显示原样。
+  - 玩家自建武将的名字不翻译；英文名可输 12 个字母，其余 4 字。
+- 表的来源（tools/loc/）：make_names.py（拼音 / 汉字音 / OpenCC + 人工校正）、make_hant.py、collect.py（代码字面量 + 运行时 -locdump 记下的句式）、templates.py（从代码拼接静态还原完整句式）、sweep.sh（-lang en -locdump 把各画面跑一遍）。
+- 字体：繁 / 日 / 韩各用自己字形的 Noto Serif / Sans（TC / JP / KR，常用字 + 本游戏用字裁过，SIL OFL），设置里只有宋 / 黑两套；英文用简中那四套。英文 / 韩文按词换行（UIKit.Cjk 只管中日）。
+- 封面：每种语言 4 张（平台 title_cover3_<语言>_{0,1,3,5}，以霸业江山版为参考只换标题：霸業江山 / Realm of Hegemony / 三国！やばいね / 패업강산），放 Art/title/<语言>/。
+- 大地图铜牌上的城名是画在图上的简体字：非简中时每块都盖一层写译名。
+- iOS 主屏 App 名跟系统语言：IOSPostBuild 写各 lproj 的 InfoPlist.strings（霸业江山 / 霸業江山 / Realm of Hegemony / 三国！やばいね / 패업강산）。版本号 1.01。

@@ -1,0 +1,1524 @@
+# phrases（tools/loc/work/source_ctx.tsv / source_ctx2.tsv / source_ctx3.tsv 译出）
+# —— 第一批：source_ctx.tsv
+情报	Intel
+糟了,	Alas,
+糟了	Alas
+投奔了	 defected to 
+正与敌方会谈中...	 is in talks with the enemy...
+天 下 霸 图	Hall of Heroes
+天	Heaven
+下	Under
+霸	Hegemony
+图	Map
+已收集	Collected
+全部	All
+上一页	Prev
+下一页	Next
+返回	Back
+·　登场：	·  Appears in:
+登场	Appears in
+移动	Move
+计策	Tactics
+攻击	Attack
+撤退	Retreat
+待机	Wait
+我方	Ours
+金	Gold
+粮	Food
+敌方	Enemy
+看我军	Our Units
+回合结束	End Turn
+看敌军	Foe Units
+第	No.
+日	Day
+｜我方头将	| Our lead
+投降，退出战场	surrenders and leaves the field
+投降	surrenders
+退出战场	leaves the field
+武将中计,无法动弹!	Officer is trapped and cannot move!
+武将中计	Officer trapped
+无法动弹	cannot move
+敌军行动中...	Enemy moving...
+先点一支我方部队	Select one of your units first
+点相邻的敌将	Tap an adjacent enemy
+邻近无敌将!	No adjacent enemy!
+邻近无敌将	No adjacent enemy
+请选择要侦察的武将	Select an officer to scout
+我军待机中...	Our army waits...
+是否进入村庄?	Enter the village?
+是否进入村庄	Enter the village
+退出村庄!	Left the village!
+退出村庄	Left the village
+当前武将毋需治疗!	This officer needs no healing!
+当前武将毋需治疗	This officer needs no healing
+金子不够,无法进行治疗!	Not enough gold to heal!
+金子不够	Not enough gold
+无法进行治疗	cannot heal
+是否对武将进行治疗?	Heal this officer?
+是否对武将进行治疗	Heal this officer
+武将体力恢复了	Officer's vitality restored
+选择武将下命令	Select an officer to command
+是	Yes
+否	No
+计策 · 机动力	Tactics · MP
+机动力	MP
+种可用	usable
+：施展范围内没有敌军!	: No enemy in range!
+施展范围内没有敌军	No enemy in range
+选择计策实施地点 ·	Choose target spot ·
+选择计策实施地点	Choose target spot
+点一条看说明，再点一次施展	Tap for details, tap again to use
+点一条看说明	Tap one for details
+再点一次施展	tap again to use
+· 需机动力	· MP cost
+需机动力	MP cost
+· 再点一次施展	· Tap again to use
+失败	Failed
+使用计策:	Tactic:
+使用计策	uses tactic
+使用计策: {0}	Tactic: {0}
+埋伏完毕	Ambush set
+此地无法使用该计策	That tactic can't be used here
+计策实施失败!	Tactic failed!
+计策实施失败	Tactic failed
+对	vs.
+机动力不足	Not enough MP
+君主所在城市被攻占,无可退城市!	Our ruler's city has fallen. Nowhere to retreat!
+君主所在城市被攻占	Our ruler's city has fallen
+无可退城市	nowhere to retreat
+无城可退，背水一战吧	No city to fall back on. Fight to the last!
+无城可退	No city to fall back on
+背水一战吧	Fight to the last!
+撤退武将	Retreat
+退往何处	Retreat where?
+下野	Go Free
+(空)	(empty)
+空	Empty
+退入空城	retreats into empty city
+，就势占了	, and seizes it
+就势占了	and seizes it
+退往	retreats to
+武将信息	Officer Info
+平军	Plains
+水军	Naval
+山军	Mountain
+兵力	Troops
+武	STR
+智	INT
+体	VIT
+德	VIR
+忠	LOY
+经	EXP
+升级还差	Next Lv in
+已满级	Max Level
+武器	Weapon
+防具	Armor
+众叛亲离,军心动摇!	is abandoned by all; morale wavers!
+众叛亲离	is abandoned by all
+军心动摇	morale wavers
+我军攻占了	We captured
+敌军攻打	Enemy attack on
+失败了!	failed!
+失败了	failed
+我军攻打	Our attack on
+敌军占领了	The enemy took
+我军粮草	Our food supply
+敌军占领	Enemy occupation
+全军撤退	All units retreat
+点此返回	Tap to return
+敌军占领我方城池!	The enemy took our city!
+敌军占领我方城池	The enemy took our city
+战死	is slain
+溃走	is routed
+敌方全军逃窜!	The enemy has fled!
+敌方全军逃窜	The enemy has fled
+守住了!	holds!
+守住了	holds
+君主战亡!	Our ruler has fallen!
+君主战亡	Our ruler has fallen
+主将战殁,全军撤退!	Our commander has fallen! All units retreat!
+主将战殁	Our commander has fallen
+擒获敌将	Captured enemy officer
+!　押入营中	!  Taken to camp
+押入营中	Taken to camp
+我方武将	Our officer
+被俘!	is captured!
+被俘	is captured
+(守军带走了库中金粮)	(The garrison carried off the gold and food)
+守军带走了库中金粮	The garrison carried off the gold and food
+入库 金	Stored: Gold
+入库	Stored
+敌方全军逃窜! 我军攻占了	The enemy has fled! We captured
+我军粮草耗竭,全军撤退!	Our food has run out! All units retreat!
+我军粮草耗竭	Our food has run out
+敌方粮草耗竭,已全军逃窜! 我军攻占了	Enemy food ran out and they fled! We captured
+敌方粮草耗竭	Enemy food ran out
+已全军逃窜	they have all fled
+敌方粮草耗竭,已全军逃窜!	Enemy food ran out and they have all fled!
+战争回合结束！敌军撤退了	Battle time is up! The enemy withdrew
+战争回合结束	Battle time is up
+敌军撤退了	The enemy withdrew
+战争回合结束！	Battle time is up!
+回合结束，第	End of turn. Day
+日　已选中	Day  Selected
+已选中	Selected
+，请下命令	, give orders
+请下命令	give orders
+敌军撤退!	Enemy retreats!
+敌军撤退	Enemy retreats
+敌将遁逃!	Enemy officer fled!
+敌将遁逃	Enemy officer fled
+计策失败！	Tactic failed!
+计策失败	Tactic failed
+敌军攻打我军!	The enemy attacks!
+敌军攻打我军	The enemy attacks
+中计谋{0}	falls for {0}
+中计谋	falls for 
+武将移动 · 点亮格走 · 确定落定 / 取消还原	Move · Tap a lit tile · OK to confirm / Cancel to undo
+武将移动	Move officer
+点亮格走	Tap a lit tile
+确定落定	OK to confirm
+取消还原	Cancel to undo
+移动消耗	Move cost
+点 · 剩	pts · Left
+点	pts
+剩	Left
+· 可继续走 / 确定 / 取消	· Keep moving / OK / Cancel
+可继续走	Keep moving
+确定	OK
+取消	Cancel
+{#0}_战棋层	{#0}_board
+_战棋层	_board
+{#0}b_移动范围	{#0}b_move_range
+b_移动范围	b_move_range
+{#0}c_走了两格	{#0}c_moved_two
+c_走了两格	c_moved_two
+{#0}d_取消还原	{#0}d_cancel_undo
+d_取消还原	d_cancel_undo
+{#0}a_计策菜单	{#0}a_tactic_menu
+a_计策菜单	a_tactic_menu
+{#0}a{#1}_计策{#2}种	{#0}a{#1}_tactics_{#2}
+_计策	_tactics
+种	kinds
+{#0}a{#1}_计策落点	{#0}a{#1}_tactic_target
+_计策落点	_tactic_target
+{#0}c_情报	{#0}c_intel
+c_情报	c_intel
+{#0}h_敌军回合	{#0}h_enemy_turn
+h_敌军回合	h_enemy_turn
+{#0}n_主公孤立	{#0}n_lord_isolated
+n_主公孤立	n_lord_isolated
+{#0}i_失城逐将撤退	{#0}i_city_lost_retreat
+i_失城逐将撤退	i_city_lost_retreat
+{#0}k_中计不能动	{#0}k_trapped
+k_中计不能动	k_trapped
+{#0}l_被擒归我军	{#0}l_captive_joins
+l_被擒归我军	l_captive_joins
+{#0}m_攻占	{#0}m_capture
+m_攻占	m_capture
+{#0}j_粮草耗竭	{#0}j_out_of_food
+j_粮草耗竭	j_out_of_food
+{#0}e_村庄	{#0}e_village
+e_村庄	e_village
+{#0}f_治疗问	{#0}f_heal_ask
+f_治疗问	f_heal_ask
+{#0}g_治疗后	{#0}g_healed
+g_治疗后	g_healed
+{#0}d_撤退	{#0}d_retreat
+d_撤退	d_retreat
+{#0}d{#1}_主公无城	{#0}d{#1}_lord_no_city
+_主公无城	_lord_no_city
+{#0}_贴住敌军	{#0}_adjacent_foe
+_贴住敌军	_adjacent_foe
+{#0}_阵型选择	{#0}_formation_pick
+_阵型选择	_formation_pick
+{#0}_阵型战·野战	{#0}_formation·field
+_阵型战	_formation
+野战	Field Battle
+{#0}b_计策点能力	{#0}b_tactic_pts
+b_计策点能力	b_tactic_pts
+{#0}c_点兵种下令	{#0}c_unit_orders
+c_点兵种下令	c_unit_orders
+{#0}d_菜单开着不动	{#0}d_menu_paused
+d_菜单开着不动	d_menu_paused
+{#0}_打了一阵	{#0}_mid_fight
+_打了一阵	_mid_fight
+{#0}i_围捕	{#0}i_surround
+i_围捕	i_surround
+{#0}j_溃走	{#0}j_routed
+j_溃走	j_routed
+{#0}h_缩到整场	{#0}h_zoom_out
+h_缩到整场	h_zoom_out
+{#0}d_呐喊_	{#0}d_war_cry_
+d_呐喊_	d_war_cry_
+{#0}e_咒缚_	{#0}e_bind_
+e_咒缚_	e_bind_
+{#0}f_爆炎_	{#0}f_blaze_
+f_爆炎_	f_blaze_
+{#0}g_命中	{#0}g_hit
+g_命中	g_hit
+{#0}c_火矢_	{#0}c_flame_shot_
+c_火矢_	c_flame_shot_
+{#0}b_单挑	{#0}b_duel
+b_单挑	b_duel
+{#0}_攻城·阵型选择	{#0}_siege·formation
+_攻城	_siege
+阵型选择	Formation
+{#0}_攻城·守方贴墙	{#0}_siege·wall_defense
+守方贴墙	Defenders on wall
+{#0}b_攻城·打了一阵	{#0}b_siege·mid_fight
+b_攻城	b_siege
+打了一阵	Mid-fight
+用于{0},树林的敌军.	Use on enemies in {0} or forest.
+用于	Use on
+树林的敌军.	forest enemies.
+用于山地,树林的敌军.减少敌将的体力.	Use on enemies in mountains or forest. Reduces enemy officer's VIT.
+用于山地	Use on mountains
+树林的敌军.减少敌将的体力.	forest enemies. Reduces enemy officer's VIT.
+用于山地,树林的敌军,限制敌军移动.	Use on enemies in mountains or forest. Stops enemy movement.
+树林的敌军	forest enemies
+限制敌军移动.	Stops enemy movement.
+用于山地,树林的敌军,武力低的武将使用效果不好.	Use on enemies in mountains or forest. Weak when used by low-STR officers.
+武力低的武将使用效果不好.	Weak when used by low-STR officers.
+用于水中的敌军.	Use on enemies in water.
+用于主将,减少军粮.	Use on the enemy commander. Reduces food.
+用于主将	Use on the commander
+减少军粮.	Reduces food.
+用于两支以上相邻的敌军,而且一支必须在山地,我军必须与山地军相邻.	Use on 2+ adjacent enemies, one in mountains. You must be next to that unit.
+用于两支以上相邻的敌军	Use on 2+ adjacent enemies
+而且一支必须在山地	one must be in mountains
+我军必须与山地军相邻.	You must be next to that unit.
+用于城中的敌军,但必须与敌军相邻.	Use on enemies in a castle. You must be adjacent.
+用于城中的敌军	Use on enemies in a castle
+但必须与敌军相邻.	but you must be adjacent.
+{0}敌军中忠诚低的武将.	{0} a low-loyalty enemy officer.
+敌军中忠诚低的武将.	low-loyalty enemy officers.
+我军在山地或城中,敌军相邻.杀伤敌兵,减少敌将体力.	You in mountains or a castle, enemy adjacent. Kills troops and reduces enemy VIT.
+我军在山地或城中	You in mountains or a castle
+敌军相邻.杀伤敌兵	enemy adjacent. Kills troops
+减少敌将体力.	Reduces enemy officer's VIT.
+用于两支以上的相邻敌军,而且一支必须在水中.限制复数敌军的行动.	Use on 2+ adjacent enemies, one in water. Halts several enemy units.
+用于两支以上的相邻敌军	Use on 2+ adjacent enemies
+而且一支必须在水中.限制复数敌军的行动.	one must be in water. Halts several enemy units.
+我军在树林中,施用此计,我军自损{#0}兵,但如果敌军进入此树林,则伤亡惨重.	Use while in a forest. Costs you {#0} troops, but enemies entering the forest suffer heavy losses.
+我军在树林中	You are in a forest
+施用此计	use this tactic
+我军自损	you lose
+兵	TRP
+但如果敌军进入此树林	but if the enemy enters this forest
+则伤亡惨重.	it suffers heavy losses.
+用于两支以上相邻敌军,而且一支必须在水中.	Use on 2+ adjacent enemies, one in water.
+用于两支以上相邻敌军	Use on 2+ adjacent enemies
+而且一支必须在水中.	one must be in water.
+适用于守城,对敌军造成大伤害.	For castle defense. Deals heavy damage.
+适用于守城	For castle defense
+对敌军造成大伤害.	Deals heavy damage to the enemy.
+用于两支以上相邻敌军,而且一支在{0}或树林.	Use on 2+ adjacent enemies, one in {0} or forest.
+而且一支在	one in
+或树林.	or forest.
+用于山地,树林,{0}的敌军.限制敌军移动,且日减{#0}兵.	Use on enemies in mountains, forest or {0}. Stops movement; -{#0} troops daily.
+树林	Forest
+的敌军.限制敌军移动	enemies. Stops enemy movement
+且日减	and daily loss of
+兵.	troops.
+武将体力减少	Officer VIT reduced by
+军队中计被困	Unit is trapped
+粮食减少	Food reduced by
+成功{0}武将!	{0} succeeded!
+成功	Success
+武将	Officer
+将体力减少	Officer VIT reduced by
+,兵数减少	, troops reduced by
+兵数减少	troops reduced by
+军队中计, 被困三天	Unit trapped for 3 days
+军队中计	Unit trapped
+被困三天	stuck for 3 days
+军队埋伏完毕!	Ambush is set!
+军队埋伏完毕	Ambush is set
+{0}施展成功!	{0} succeeded!
+施展成功	Succeeded
+士兵数减少	Troops reduced by
+获得	Obtained
+牵制	Jab
+全力	All-out
+劝降	Persuade
+逃跑	Flee
+咒缚	Bind
+挑战	Challenge
+呐喊	War Cry
+火矢	Flame Shot
+爆炎	Blaze
+限制敌将行动	Restricts enemy officer's action
+向敌将发出单挑邀请	Challenge an enemy officer to a duel
+箭手射程增加	Archer range up
+全军攻击力增加	All units' attack up
+箭手攻击力大大增加	Archer attack greatly up
+利用火器攻击敌军	Attack the enemy with fire weapons
+呐喊×{#0} / 火矢×{#1} 是我们加的，原版这两处乘的是 {#2}	War Cry ×{#0} / Flame Shot ×{#1} are our additions; the original multiplied both by {#2}
+呐喊×	War Cry ×
+火矢×	Flame Shot ×
+是我们加的	are our additions
+原版这两处乘的是	the original multiplied both by
+城	City
+内政	Domestic
+开垦	Cultivate
+劝商	Commerce
+治水	Flood Ctrl
+巡查	Patrol
+人事	Personnel
+搜索	Search
+登用	Recruit
+奖赏	Reward
+任命	Appoint
+军事	Military
+战争	War
+征兵	Draft
+输送	Transport
+外交	Diplomacy
+同盟	Alliance
+离间	Sow Discord
+招揽	Entice
+金粮	Trade
+买入粮草	Buy Food
+卖出粮草	Sell Food
+购买武器	Buy Weapon
+学院	Academy
+提升智力	Raise INT
+医馆	Clinic
+治疗武将	Heal Officer
+君主	Ruler
+军 政	State
+军	Army
+政	Gov
+民 生	Populace
+民	People
+生	Life
+太守	Governor
+人	men
+金子	Gold
+粮食	Food
+人口	Population
+统治	Order
+农业	Farming
+工业	Industry
+防灾	Flood Ctrl
+（已到上限 {#0}）	(max {#0} reached)
+已到上限	Max reached
+无主	None
+我军	Our Army
+前进	Advance
+包围	Surround
+骑兵	Cavalry
+弓兵	Archers
+步兵	Infantry
+战争 ·	War ·
+攻城战	Siege
+出阵	Deploy
+武力	Strength
+智力	Intellect
+体力	Vitality
+未分胜负 r	Undecided r
+未分胜负	Undecided
+敌令	Foe orders
+骑	CAV
+弓	ARC
+步	INF
+双方罢兵	Both sides withdraw
+体力减少	VIT reduced by
+击毙敌将	Slew enemy officer
+阵亡!	has fallen!
+阵亡	has fallen
+敌将	Enemy officer
+逃窜!	fled!
+逃窜	fled
+已撤退!	has retreated!
+已撤退	has retreated
+计策使用中!	Tactic in effect!
+计策使用中	Tactic in effect
+战术能力不够	Not enough tactic points
+计策[	Tactic [
+] 施用成功！	] succeeded!
+施用成功	used successfully
+] 施用	] use
+施用	use
+成功！	succeeded!
+失败！	failed!
+计策点	Tactic Pts
+余	left
+暂停	Paused
+交战中	Fighting
+· 攻城战	· Siege
+· 野战	· Field Battle
+计策 · 余	Tactics · Left
+文	Civil
+随机	Random
+武将名不能为空!	Name cannot be empty!
+武将名不能为空	Name cannot be empty
+武将名重复!	Name already taken!
+武将名重复	Name already taken
+自建武将	Custom Officers
+尚未创建武将	No officers created yet
+已创建：	Created:
+已创建	Created
+创建武将	Create Officer
+删除武将	Delete Officer
+自建武将数量已满!	Custom officer limit reached!
+自建武将数量已满	Custom officer limit reached
+创建武将　选择类型	Create Officer  Choose Type
+选择类型	Choose Type
+文　武{#0} 智{#1} 体{#2} 德{#3}　可加 {#4} 点	Civil  STR{#0} INT{#1} VIT{#2} VIR{#3}  +{#4} pts
+可加	Bonus
+武　武{#0} 智{#1} 体{#2} 德{#3}　可加 {#4} 点	Martial  STR{#0} INT{#1} VIT{#2} VIR{#3}  +{#4} pts
+随机　四项各 {#0}~{#1}　不可加点	Random  All four {#0}~{#1}  No bonus pts
+四项各	All four
+不可加点	No bonus pts
+德行	Virtue
+男	Male
+女	Female
+剩余点数	Points left
+随机生成，不可加点	Random stats, no bonus pts
+随机生成	Random stats
+掷	Roll
+重掷	Reroll
+点此输入武将名（{#0} 字内）	Tap to enter name (max {#0} chars)
+点此输入武将名	Tap to enter name
+字内	chars max
+创建成功!	created!
+创建成功	Created
+删除自建武将	Delete Custom Officer
+删除成功!	Deleted!
+删除成功	Deleted
+初级	Easy
+中级	Normal
+困难	Hard
+已与所有势力同盟	Already allied with every force
+同盟　请选择势力进行操作	Alliance  Choose a force
+请选择势力进行操作	Choose a force
+同盟　遣何人出使	Alliance  Send whom as envoy?
+遣何人出使	Send whom as envoy?
+成功结盟	Alliance formed
+与	With
+结为同盟，为期一年	allied for one year
+结为同盟	allied
+为期一年	for one year
+同盟失败	Alliance failed
+不肯结盟	refuses the alliance
+本城置吏已足!	This city is fully staffed!
+本城置吏已足	This city is fully staffed
+请选择目的城池	Choose a target city
+将	OFC
+请选择离间的武将	Choose a target for discord
+请选择要招揽武将	Choose an officer to entice
+选择执行武将	Choose who will go
+离间成功	Discord sown
+忠诚 −	LOY −
+忠诚	Loyalty
+离间失败	Discord failed
+招揽成功	Entice succeeded
+率兵	brings
+投入我军	troops to our side
+招揽失败	Entice failed
+情报　请选择侦查的城池	Intel  Choose a city to scout
+请选择侦查的城池	Choose a city to scout
+空城	Empty City
+城市基本信息	City Info
+开	AGR
+商	COM
+治	FLD
+商业	Commerce
+知道了	Got it
+侦查完毕	Scouting done
+该城武将信息	City Officers
+(盟)	(Ally)
+盟	Ally
+放弃	Give Up
+成功招降!	Persuaded to join!
+成功招降	Persuaded to join
+自军成功撤离!	We escaped!
+自军成功撤离	We escaped
+我方投降!	We surrender!
+我方投降	We surrender
+敌方武将逃窜!	Enemy officer fled!
+敌方武将逃窜	Enemy officer fled
+落空，反受	 missed, taking
+落空	 missed
+反受	taking
+被闪开	 was dodged
+命中	 hits for
+战亡沙场.	 dies on the battlefield.
+攻击敌方中...	Attacking...
+敌方武将攻击中....	Enemy officer attacking....
+请选择执行命令	Choose a command
+思源宋体	Noto Serif
+思源黑体	Noto Sans
+霞鹜文楷	WenKai
+站酷小薇	XiaoWei
+存档读取失败	Failed to load save
+读取完毕	Loaded
+此城不归我方管辖	This city is not under our rule
+本回合指令已用尽	No Orders left this turn
+还没做	not done yet
+万事开头难	Every beginning is hard
+放屁	Rubbish!
+作弊已开启：点金子 / 粮食各 {#0}，离城失效	Cheat on: tap Gold / Food for {#0} each; ends when you leave the city
+作弊已开启	Cheat on
+点金子	tap Gold
+粮食各	Food each
+离城失效	ends when you leave the city
+是啊	Indeed
+选城建都　选择一个空城建都	Found Capital  Choose an empty city
+选城建都	Found Capital
+选择一个空城建都	Choose an empty city as capital
+请选择空城!	Choose an empty city!
+请选择空城	Choose an empty city
+再点一次 在此建都 · 点空白处取消	Tap again to found capital here · Tap blank area to cancel
+再点一次	Tap again
+在此建都	to found capital here
+点空白处取消	Tap blank area to cancel
+本月余令作废，轮到下一家	Remaining Orders forfeited; next faction's turn
+本月余令作废	Remaining Orders forfeited
+轮到下一家	next faction's turn
+请选择高亮的城池	Choose a highlighted city
+再点一次 确定 · 点空白处取消	Tap again to confirm · Tap blank area to cancel
+(智	(INT
+统治{{#0}} 金{{#1}} 农{{#2}} 工{{#3}} 人{{#4}} 防{{#5}}	Order{{#0}} Gold{{#1}} Agr{{#2}} Ind{{#3}} Pop{{#4}} Flood{{#5}}
+统治{	Order{
+金{	Gold{
+农{	Agr{
+工{	Ind{
+人{	Pop{
+防{	Flood{
+全部一致	All match
+有出入!	Mismatch!
+有出入	Mismatch
+主	Lord
+守	Gov
+势力灭亡了!	forces destroyed!
+势力灭亡了	forces destroyed
+死亡,新君主	 has died. New ruler
+死亡	 has died
+新君主	new ruler
+继位!	takes the throne!
+继位	takes the throne
+天下霸图　解锁武将卡「	Hall of Heroes  Card unlocked: "
+天下霸图	Hall of Heroes
+解锁武将卡	Card unlocked
+天下霸图　解锁	Hall of Heroes  Unlocked
+解锁	Unlocked
+张武将卡	officer cards
+主公可下	My lord, you may issue
+道令	Orders
+战略中.....	 is planning.....
+占领空城	Takes Empty City
+出兵	Sortie
+军攻打	army attacks
+城池易主	City Changes Hands
+攻城失败	Siege Failed
+军攻占了	army captured
+势力灭亡	Force Destroyed
+新君继位	New Ruler
+敌军来犯	Enemy Invasion
+守城	City Defense
+年	Year
+位新人物登场	new figures appear
+武将来投	Officer Joins
+跟随	 follows
+加入我军为君主效力!	and joins us to serve our ruler!
+加入我军为君主效力	and joins us to serve our ruler
+月报	Monthly Report
+(亡)	(fallen)
+亡	Fallen
+空:	Empty:
+总兵:	Troops:
+总兵	Total Troops
+势力覆灭	Force Destroyed
+势力被消灭了,全国局势仍处于混乱之中...	forces have been wiped out. The land remains in chaos...
+势力被消灭了	forces have been wiped out
+全国局势仍处于混乱之中...	The land remains in chaos...
+天下一统	Unification
+经过多年征战,终于实现了宇内混一!	after years of war, has at last unified the realm!
+经过多年征战	after years of war
+终于实现了宇内混一	has at last unified the realm
+统一	Unification
+统一度:	Unification:
+统一度	Unification
+分数:	Score:
+分数	Score
+月	Month
+再点一次 进入城中 · 点空白处取消	Tap again to enter city · Tap blank area to cancel
+进入城中	to enter city
+已抵达	Arrived at
+行军中	on the march
+不与	is not next to
+相邻	Adjacent
+选择目的地：	Choose destination:
+选择目的地	Choose destination
+非我方城池 · 点空白处取消	Not our city · Tap blank area to cancel
+非我方城池	Not our city
+本城无粮店,无法买卖粮草	No granary here; can't trade food
+本城无粮店	No granary here
+无法买卖粮草	can't trade food
+本城无武器店,无法购入武器	No armory here; can't buy weapons
+本城无武器店	No armory here
+无法购入武器	can't buy weapons
+本城无学堂,无法修习智力	No academy here; can't study
+本城无学堂	No academy here
+无法修习智力	can't study
+本城武将皆才华横溢, 无需学习	All officers here are brilliant; no study needed
+本城武将皆才华横溢	All officers here are brilliant
+无需学习	no study needed
+本城无医院,无法治疗武将	No clinic here; can't heal officers
+本城无医院	No clinic here
+无法治疗武将	can't heal officers
+将士均龙精虎猛!	All officers are in fine fettle!
+将士均龙精虎猛	All officers are in fine fettle
+资财不足	Insufficient funds
+剑	Swords
+刀	Blades
+枪戟	Polearms
+武力 > {#0}	STR > {#0}
+德行 > {#0}	VIR > {#0}
+武器　为何人购置	Weapon  Buy for whom?
+为何人购置	Buy for whom?
+学院　遣何人修习	Academy  Who will study?
+遣何人修习	Who will study?
+费	Fee
+医馆　为何人疗伤（{#0} 金）	Clinic  Heal whom? ({#0} Gold)
+为何人疗伤	Heal whom?
+体力上限	Max VIT
+金粮　买入粮草	Trade  Buy Food
+金粮　卖出粮草	Trade  Sell Food
+城内金子	City Gold
+每 {#0} 金买 {#1} 粮	{#0} Gold buys {#1} Food
+每	Per
+金买	Gold buys
+每 {#0} 粮卖 {#1} 金	{#0} Food sells for {#1} Gold
+粮卖	Food sells for
+出金	Pay Gold
+出粮	Pay Food
+可得粮	Food gained
+可得金	Gold gained
+成交	Deal
+交易成功	Trade complete
+得粮	Got Food
+得金	Got Gold
+现用	Using
+城中金子	City Gold
+启禀主公,属下无法使用此武器	My lord, I cannot wield this weapon
+启禀主公	My lord
+属下无法使用此武器	I cannot wield this weapon
+成功购得武器	Weapon purchased
+换上了	equips
+金子 −	Gold −
+武将智力得到提高	Officer's INT improved
+智力 +	INT +
+）　金子 −	)  Gold −
+体力恢复了	Vitality restored
+体力 +	VIT +
+当前无可移动的城!	No city to move to!
+当前无可移动的城	No city to move to
+移动　往何处	Move  To where?
+往何处	To where?
+移动　遣何人前往	Move  Send whom to
+遣何人前往	Send whom to
+移动武将数过多!	Too many officers to move!
+移动武将数过多	Too many officers to move
+是否放弃此城市？	Abandon this city?
+是否放弃此城市	Abandon this city
+请任命新太守	Appoint a new governor
+末将即刻出发!	I set out at once!
+末将即刻出发	I set out at once
+等已抵达	and others arrived at
+已弃守	is abandoned
+当前无可输送的城!	No city to transport to!
+当前无可输送的城	No city to transport to
+输送　送往何处	Transport  Send to where?
+送往何处	Send to where?
+宝物	Treasure
+城内金子:	City Gold:
+粮食:	Food:
+宝:	Treasure:
+宝	TRS
+送往	Sent to
+：金	: Gold
+征{#0}兵 需 {#1}金　　城中金子	{#0} troops cost {#1} Gold    City Gold
+征	Draft
+需	Cost
+现有预备兵	Reserves
+最多可征	Max draft
+需金	Gold cost
+征兵　分派兵力	Draft  Assign Troops
+分派兵力	Assign Troops
+预备兵	Reserves
+分派完毕	Done
+征兵完毕	Draft complete
+本城兵力	City troops
+暂不分派	Not Now
+当前无可战争城市!	No city to attack!
+当前无可战争城市	No city to attack
+战争　欲攻打何城?	War  Attack which city?
+欲攻打何城	Attack which city
+战争　选择执行武将	War  Choose officers
+战争　携带金粮	War  Take Supplies
+携带金粮	Take Supplies
+每日耗粮约	Daily food use ~
+，粮尽即全军撤退	; if food runs out, all retreat
+粮尽即全军撤退	If food runs out, all retreat
+出征	March
+吾誓与此城同命!	I shall live or die with this city!
+吾誓与此城同命	I shall live or die with this city
+请任命军队主将	Appoint the commander
+誓死拿下敌军城池!	We'll take the enemy city or die trying!
+誓死拿下敌军城池	We'll take the enemy city or die trying
+率	leads
+将、兵	officers, troops
+兵不血刃，占领空城	takes the empty city without a fight
+兵不血刃	without a fight
+君主死亡!　请选择继位君主	Ruler has died!  Choose a successor
+君主死亡	Ruler has died
+请选择继位君主	Choose a successor
+确　认	Confirm
+确	Confirm
+认	Acknowledge
+发生旱灾!波及城市:	Drought! Cities affected:
+发生旱灾	Drought strikes
+波及城市	Cities affected
+发生水灾!波及城市:	Flood! Cities affected:
+发生水灾	Flood strikes
+发生蝗灾!波及城市:	Locusts! Cities affected:
+发生蝗灾	Locusts strike
+旱灾	Drought
+水灾	Flood
+蝗灾	Locusts
+瘟疫	Plague
+发生瘟疫!波及城市:	Plague! Cities affected:
+发生瘟疫	Plague strikes
+骚乱	Riot
+百姓发生骚乱,波及城市:	Riots! Cities affected:
+百姓发生骚乱	The people riot
+收金	Taxes
+收金的季节到了!	Tax season has come!
+收金的季节到了	Tax season has come
+收粮	Harvest
+收粮的季节到了!	Harvest season has come!
+收粮的季节到了	Harvest season has come
+同盟解除	Alliance Ended
+同盟解除!	Alliance ended!
+极度贫瘠的土地, 根本无法生产出粮食,饿殍遍野,百姓苦不堪言	Utterly barren land that yields no food. The starving lie everywhere and the people suffer terribly.
+极度贫瘠的土地	Utterly barren land
+根本无法生产出粮食	no food can be grown
+饿殍遍野	the starving lie everywhere
+百姓苦不堪言	the people suffer terribly
+土地资源非常匮乏,粮食收成非常低下,各地百姓饿死现象时有发生,无法继续生活下去	Farmland is very scarce and harvests are poor. People often starve and can barely go on living.
+土地资源非常匮乏	Farmland is very scarce
+粮食收成非常低下	harvests are very poor
+各地百姓饿死现象时有发生	people starve here and there
+无法继续生活下去	they can barely go on living
+农业发展较为落后,粮食产量仍无法满足百姓的生活,各地田里,地里一片菜色	Farming lags behind; harvests cannot feed the people, and hunger shows in every field.
+农业发展较为落后	Farming lags behind
+粮食产量仍无法满足百姓的生活	harvests cannot feed the people
+各地田里	in every field
+地里一片菜色	hunger shows everywhere
+随着农业地逐步发展,粮食产量基本达到了百姓生活地需求	As farming slowly develops, harvests now roughly meet the people's needs.
+随着农业地逐步发展	As farming slowly develops
+粮食产量基本达到了百姓生活地需求	harvests roughly meet the people's needs
+随着土地地不断开发,粮食产量已较为富裕,百姓吃饭问题已完全解决了	With steady land reclamation, food is fairly plentiful and no one goes hungry.
+随着土地地不断开发	With steady land reclamation
+粮食产量已较为富裕	food is fairly plentiful
+百姓吃饭问题已完全解决了	no one goes hungry anymore
+新的农业工具地不断出现,在土地作业中的逐渐普及,各地粮食已极为充裕	New farm tools keep appearing and spreading through the fields; food is abundant everywhere.
+新的农业工具地不断出现	New farm tools keep appearing
+在土地作业中的逐渐普及	and spread through the fields
+各地粮食已极为充裕	food is abundant everywhere
+农业发展空前,粮食年年丰产,人民衣食无忧	Farming flourishes as never before. Bumper harvests every year; the people want for nothing.
+农业发展空前	Farming flourishes as never before
+粮食年年丰产	bumper harvests every year
+人民衣食无忧	the people want for nothing
+极度落后的商业,人们最基本的物品交换都无法进行.国家贫苦不堪	Commerce is utterly backward; even basic barter is impossible. The land is wretchedly poor.
+极度落后的商业	Utterly backward commerce
+人们最基本的物品交换都无法进行.国家贫苦不堪	even basic barter is impossible. The land is wretchedly poor
+商业资源非常贫乏,人们无法得到最基本的生活用品,生活非常艰辛	Trade is very scarce; people lack basic goods and life is very hard.
+商业资源非常贫乏	Trade is very scarce
+人们无法得到最基本的生活用品	people lack basic goods
+生活非常艰辛	life is very hard
+商业发展仍较为落后,商务活动较少, 百姓生活水平非常低下	Commerce still lags; there is little trade and living standards are very low.
+商业发展仍较为落后	Commerce still lags
+商务活动较少	there is little trade
+百姓生活水平非常低下	living standards are very low
+随着商业地逐步发展,商务活动基本达到了百姓生活地需求	As commerce slowly develops, trade now roughly meets the people's needs.
+随着商业地逐步发展	As commerce slowly develops
+商务活动基本达到了百姓生活地需求	trade roughly meets the people's needs
+随着官府的不断重视,商业发展已较为发达,国家经济状况有了很大改善	With steady official support, commerce is fairly developed and the economy has greatly improved.
+随着官府的不断重视	With steady official support
+商业发展已较为发达	commerce is fairly developed
+国家经济状况有了很大改善	the economy has greatly improved
+与外国的经济往来,使得国家商务发展极度发达,百姓生活在了一个富裕的国家中	Trade with foreign lands has made commerce thrive; the people live in a prosperous land.
+与外国的经济往来	Trade with foreign lands
+使得国家商务发展极度发达	has made commerce thrive
+百姓生活在了一个富裕的国家中	the people live in a prosperous land
+国家的经济发展举世罕见, 新的领域的经济往来不断增强本国的经济实力	The economy is the envy of the world; new trade ventures keep strengthening the realm.
+国家的经济发展举世罕见	The economy is the envy of the world
+新的领域的经济往来不断增强本国的经济实力	new trade ventures keep strengthening the realm
+瘟疫,蝗虫,旱涝,各种灾害遍地,民不聊生	Plague, locusts, drought and flood ravage the land; the people cannot live.
+蝗虫	Locusts
+旱涝	Drought and flood
+各种灾害遍地	disasters everywhere
+民不聊生	the people cannot live
+瘟疫等这种灾害仍时有发生,百姓灾难深重	Plague and other disasters still strike at times; the people suffer greatly.
+瘟疫等这种灾害仍时有发生	Plague and other disasters still strike at times
+百姓灾难深重	the people suffer greatly
+由于新国家官府的一定重视,灾害在一定程度上得到了遏制	With some attention from the new government, disasters have been partly contained.
+由于新国家官府的一定重视	With some attention from the new government
+灾害在一定程度上得到了遏制	disasters have been partly contained
+经过官府的不断努力,灾害防御措施逐渐实施,百姓基本远离了灾害痛苦	Through steady official effort, disaster defenses are in place and the people are largely spared.
+经过官府的不断努力	Through steady official effort
+灾害防御措施逐渐实施	disaster defenses are gradually in place
+百姓基本远离了灾害痛苦	the people are largely spared from disaster
+大坝建成,各种治理灾害措施井然有序,百姓再无灾害之忧	Great dams stand and every safeguard is in order; the people fear disaster no more.
+大坝建成	Great dams stand
+各种治理灾害措施井然有序	every safeguard is in good order
+百姓再无灾害之忧	the people fear disaster no more
+经过多年的战争,各地一片荒芜,各城市人丁稀少,百里难见一人	Years of war have left the land desolate; the cities are nearly empty, with scarcely a soul for miles.
+经过多年的战争	After years of war
+各地一片荒芜	the land lies desolate
+各城市人丁稀少	the cities are sparsely peopled
+百里难见一人	scarcely a soul for miles
+战后恢复仍没有足够的进行,各城市劳动力资源仍稍显不足	Postwar recovery is incomplete; the cities still lack enough labor.
+战后恢复仍没有足够的进行	Postwar recovery is incomplete
+各城市劳动力资源仍稍显不足	the cities still lack enough labor
+战争的硝烟逐渐远去,各城市人口资源已完全满足了劳动的需求	The smoke of war has cleared; the cities now have all the labor they need.
+战争的硝烟逐渐远去	The smoke of war has cleared
+各城市人口资源已完全满足了劳动的需求	the cities now have all the labor they need
+国家开始重视了城市的建设,城市规模发展稳定,大型城市逐步兴起	The state now invests in its cities; they grow steadily and great cities are rising.
+国家开始重视了城市的建设	The state now invests in its cities
+城市规模发展稳定	cities grow steadily
+大型城市逐步兴起	great cities are rising
+经过国家多方面努力,城市向都市化发展开始,各城市欣欣向荣	Through broad state effort, cities are becoming metropolises and thriving.
+经过国家多方面努力	Through broad state effort
+城市向都市化发展开始	cities are becoming metropolises
+各城市欣欣向荣	every city is thriving
+各地发展平衡,都市化发展完成,国家发展空前,百姓安居乐业	Balanced growth everywhere, cities fully developed, the realm at its peak; the people live in peace and joy.
+各地发展平衡	Balanced growth everywhere
+都市化发展完成	cities fully developed
+国家发展空前	the realm at its peak
+百姓安居乐业	the people live in peace and joy
+部下野心勃勃,叛变,反乱事件层出不穷,国家马上将被颠覆	Ambitious vassals, betrayals and revolts abound; the state is on the brink of collapse.
+部下野心勃勃	Ambitious vassals
+叛变	Betrayal
+反乱事件层出不穷	revolts abound
+国家马上将被颠覆	the state is on the brink of collapse
+属下人心浮动,流言四起,某些武将的叛乱似乎已在眼前	Vassals are restless and rumors fly; some officers seem close to revolt.
+属下人心浮动	Vassals are restless
+流言四起	rumors fly
+某些武将的叛乱似乎已在眼前	some officers seem close to revolt
+大多武将忠于君主,但奸臣当道,叛变的种子仍远未消失	Most officers are loyal, but traitors hold sway; the seeds of betrayal remain.
+大多武将忠于君主	Most officers are loyal to the ruler
+但奸臣当道	but traitors hold sway
+叛变的种子仍远未消失	the seeds of betrayal remain
+君主赏罚分明,恩威并施,下属武将对国家较为忠诚	The ruler is just in reward and punishment, kind yet stern; the officers are fairly loyal.
+君主赏罚分明	The ruler is just in reward and punishment
+恩威并施	kind yet stern
+下属武将对国家较为忠诚	the officers are fairly loyal to the state
+君主善于御人之道, 武将们对君主, 国家忠心耿耿	The ruler leads men well; the officers are devoted to ruler and realm.
+君主善于御人之道	The ruler leads men well
+武将们对君主	the officers, to ruler
+国家忠心耿耿	and realm, are utterly devoted
+以恩义著称的新君主,得到了属下誓死效忠,各武将绝无二心	The new ruler, famed for kindness and honor, has vassals sworn unto death; no officer wavers.
+以恩义著称的新君主	The new ruler, famed for kindness and honor
+得到了属下誓死效忠	has vassals sworn unto death
+各武将绝无二心	no officer wavers
+经过多年的同生共死,臣僚们用鲜血来发誓,子子孙孙誓死效忠君主	After years of shared life and death, the vassals have sworn in blood to serve the ruler for generations.
+经过多年的同生共死	After years of shared life and death
+臣僚们用鲜血来发誓	the vassals have sworn in blood
+子子孙孙誓死效忠君主	to serve the ruler for generations
+新国家的所作所为,百姓深恶痛疾,各地烽烟四起,起义遍地,无法控制	The people loathe the new regime; beacon fires burn and uprisings spread beyond control.
+新国家的所作所为	The deeds of the new regime
+百姓深恶痛疾	are loathed by the people
+各地烽烟四起	beacon fires burn everywhere
+起义遍地	uprisings spread
+无法控制	beyond control
+新国家并没有实施仁政,百姓对新国家非常不满, 起义的种子四处萌发	The new regime shows no benevolence; the people are angry and seeds of revolt sprout everywhere.
+新国家并没有实施仁政	The new regime shows no benevolence
+百姓对新国家非常不满	the people are deeply discontent
+起义的种子四处萌发	seeds of revolt sprout everywhere
+新国家的仁政思想逐渐传播,逐渐使得百姓对新的国家基本上认可了	Word of the new regime's benevolence spreads, and the people have largely accepted it.
+新国家的仁政思想逐渐传播	Word of the new regime's benevolence spreads
+逐渐使得百姓对新的国家基本上认可了	and the people have largely accepted it
+君主一向以仁政而闻名,国家建立以来,得到了各地百姓的支持和欢迎	The ruler has long been known for benevolence; since the founding, the people everywhere have welcomed the realm.
+君主一向以仁政而闻名	The ruler has long been known for benevolence
+国家建立以来	since the founding
+得到了各地百姓的支持和欢迎	the people everywhere welcome and support it
+君主贤名远播,管理国家政策得当,施以百姓的仁政深入人心	The ruler's wisdom is renowned; wise policy and benevolent rule have won every heart.
+君主贤名远播	The ruler's wisdom is renowned
+管理国家政策得当	policies are sound
+施以百姓的仁政深入人心	benevolent rule has won every heart
+全国百姓坚决拥护新的国家,君主已成为大众的偶像,和精神砥柱	The whole nation firmly backs the new realm; the ruler is the people's idol and pillar of spirit.
+全国百姓坚决拥护新的国家	The whole nation firmly backs the new realm
+君主已成为大众的偶像	the ruler is the people's idol
+和精神砥柱	and pillar of spirit
+多年战争造成国家兵甲极度不足,远远无法抵御外敌侵略,随时有灭国危险	Years of war have drained arms and men; the realm cannot repel invaders and may fall at any time.
+多年战争造成国家兵甲极度不足	Years of war have drained arms and men
+远远无法抵御外敌侵略	the realm cannot repel invaders
+随时有灭国危险	it may fall at any time
+战后兵甲仍然不足,无法抵御匈奴等外敌的大规模进攻,国家岌岌可危	Arms remain short after the war; the realm cannot withstand a major Xiongnu invasion and is in peril.
+战后兵甲仍然不足	Arms remain short after the war
+无法抵御匈奴等外敌的大规模进攻	a major invasion by the Xiongnu could not be withstood
+国家岌岌可危	the realm is in peril
+匈奴,外族虎视耽耽,全部兵丁已派往前线,与强大的敌人达成微弱的军事平衡	The Xiongnu and other tribes watch hungrily; all troops are at the front, holding a fragile balance against a strong foe.
+匈奴	Xiongnu
+外族虎视耽耽	foreign tribes watch hungrily
+全部兵丁已派往前线	all troops are at the front
+与强大的敌人达成微弱的军事平衡	holding a fragile balance against a strong foe
+在战争积累了足够军事经验,国家军事实力稳定,在随后的战争中数次战败外侵略者	Seasoned by war, the realm's military is steady and has repeatedly defeated invaders.
+在战争积累了足够军事经验	Seasoned by war
+国家军事实力稳定	the realm's military is steady
+在随后的战争中数次战败外侵略者	it has repeatedly defeated invaders
+武器,阵法的更新,将领的培养,使得军事实力强大,征服了许多周围的小国家	New weapons and formations and well-trained generals have made the army mighty, conquering many small neighbors.
+阵法的更新	new formations
+将领的培养	trained generals
+使得军事实力强大	have made the army mighty
+征服了许多周围的小国家	conquering many small neighbors
+军事实力空前,对周边国家形成了强大的震慑作用.各国纷纷遣使进贡,或从属.强大的帝国已经产生	Unmatched military might awes all neighbors. Nations send tribute or submit. A mighty empire is born.
+军事实力空前	Unmatched military might
+对周边国家形成了强大的震慑作用.各国纷纷遣使进贡	awes all neighbors. Nations send tribute
+或从属.强大的帝国已经产生	or submit. A mighty empire is born
+民心	Support
+关	Off
+低	Low
+中	Med
+高	High
+野无遗贤!	No talent left to find!
+野无遗贤	No talent left to find
+吏士皆忠心不贰!	All retainers are steadfastly loyal!
+吏士皆忠心不贰	All retainers are steadfastly loyal
+此城乃君主治所!	This is the ruler's own seat!
+此城乃君主治所	This is the ruler's own seat
+征得粮草:	Food found:
+征得粮草	Food found
+获得黄金	Gold found: 
+偶遇贤才	Found a talent
+寻得宝物.	Found a treasure.
+一无所获!	Found nothing!
+一无所获	Found nothing
+搜索　遣何人前往	Search  Send whom?
+登用　招揽何人	Recruit  Recruit whom?
+招揽何人	Recruit whom?
+奖赏　赏赐何人	Reward  Reward whom?
+赏赐何人	Reward whom?
+任命　何人任太守	Appoint  Who will govern?
+何人任太守	Who will govern?
+登用成功	Recruited
+愿效犬马之劳，带兵	will serve you faithfully, with troops
+愿效犬马之劳	will serve you faithfully
+带兵	with troops
+）隐居于此，可遣人登用	) lives here in seclusion; send someone to recruit
+隐居于此	lives here in seclusion
+可遣人登用	send someone to recruit
+宝物 +	Treasure +
+（现有	(now
+现有	now
+件，可用于奖赏）	pcs, usable as rewards)
+件	pcs
+可用于奖赏	usable as rewards
+登用　遣何人往说	Recruit  Who will persuade
+遣何人往说	Who will persuade
+登用失败	Recruit failed
+婉拒了	politely refused
+赏金	Gold reward
+城中已无金子可赏	No gold left to give
+赏宝物一件（现有	Give 1 Treasure (have
+赏宝物一件	Give 1 Treasure
+宝物 {#0}	Treasure {#0}
+武将的忠诚度提高!	Officer's loyalty rose!
+武将的忠诚度提高	Officer's loyalty rose
+忠诚 +	LOY +
+：吾誓与此城同命!	: I shall live or die with this city!
+太守改由	governor is now
+担任	in office
+此城田土广辟	Farmland here is fully developed
+此城人民丰赡	The people here are already prosperous
+此城无惧水旱	This city fears no flood or drought
+此城户口殷盛	This city is already populous
+本城农业水平提高了!	Farming in this city improved!
+本城农业水平提高了	Farming in this city improved
+城市的经济迅猛发展!	The city's economy is booming!
+城市的经济迅猛发展	The city's economy is booming
+本城抗灾能力提高	Disaster resistance improved
+城市秩序更加稳定	Public order is more stable
+城中无将可遣	No officer here to send
+农业 {#0}　金子 {#1}	Farming {#0}  Gold {#1}
+将消耗金子	Costs Gold
+农业 +	Farming +
+工业 +	Industry +
+防灾 +	Flood Ctrl +
+人口 +	Population +
+统治 {#0}	Order {#0}
+自建	Custom
+君主选择　请选择扮演君主	Choose Ruler  Pick a ruler to play
+君主选择	Choose Ruler
+请选择扮演君主	Pick a ruler to play
+自建势力	Custom Force
+武将尚未创建!	No officers created yet!
+武将尚未创建	No officers created yet
+选择自建武将	Choose custom officers
+任命自建君主	Appoint custom ruler
+经验	EXP
+尚无存档	Empty
+无名	Nameless
+游戏设置	Settings
+语言 · Language	Language
+语言	Language
+难度（开新局时生效）	Difficulty (applies to new games)
+难度	Difficulty
+开新局时生效	applies to new games
+字体	Font
+音乐	Music
+音效	Sound FX
+游戏帮助	Help
+致　谢	Credits
+致	Credits
+谢	Thanks
+霸业江山　Made by Liang	Realm of Hegemony  Made by Liang
+霸业江山	Realm of Hegemony
+玩法源自 J{#0}ME 游戏《三国志霸王的大陆》（JustGame Studio），向原作致敬。	Gameplay based on the J{#0}ME game "Three Kingdoms: Continent of the Hegemon" (JustGame Studio), in tribute to the original.
+玩法源自	Gameplay based on
+游戏	game
+三国志霸王的大陆	Three Kingdoms: Continent of the Hegemon
+向原作致敬	in tribute to the original
+【字体】SIL Open Font License {#0}	[Fonts] SIL Open Font License {#0}
+思源宋体 / 思源黑体（Noto Serif / Sans SC · TC · JP · KR）© Adobe，Reserved Font Name 'Source'	Noto Serif / Noto Sans SC · TC · JP · KR (Source Han) © Adobe, Reserved Font Name 'Source'
+楷体取自霞鹜文楷 LXGW WenKai © LXGW（已裁剪改名为 BYJS Kai）	Kai font from LXGW WenKai © LXGW (subset and renamed BYJS Kai)
+楷体取自霞鹜文楷	Kai font from LXGW WenKai
+已裁剪改名为	subset and renamed
+站酷小薇 ZCOOL XiaoWei © The ZCOOL XiaoWei Project Authors	ZCOOL XiaoWei © The ZCOOL XiaoWei Project Authors
+【音乐】	[Music]
+古地图卷、铁骑冲锋：Suno 创作	Ancient Map Scroll, Iron Cavalry Charge: made with Suno
+古地图卷	Ancient Map Scroll
+铁骑冲锋	Iron Cavalry Charge
+创作	creation
+【音效】Kenney (kenney.nl)，CC{#0}；其余为程序合成	[Sound FX] Kenney (kenney.nl), CC{#0}; the rest synthesized in code
+其余为程序合成	the rest synthesized in code
+【美术】AI 生成	[Art] AI-generated
+美术	Art
+生成	generated
+《霸业江山》采用了指令牌游戏系统，君主拥有城数越多，每月可以发布指令的令牌越多。在只有一座城的情况下每月只可以做三件事。	Realm of Hegemony uses an order-token system: the more cities a ruler holds, the more Orders can be issued each month. With only one city, you can do just three things a month.
+采用了指令牌游戏系统	uses an order-token system
+君主拥有城数越多	the more cities a ruler holds
+每月可以发布指令的令牌越多	the more Orders can be issued each month
+在只有一座城的情况下每月只可以做三件事	With only one city, you can do just three things a month
+搜索武将主要取决于君主的德行，德行值越高越容易让武将加入旗下。游戏中还首创了以人望值决定行动力的概念。	Finding officers depends mainly on the ruler's Virtue: the higher it is, the more easily officers join you. The game also pioneered letting reputation determine how many actions you get.
+搜索武将主要取决于君主的德行	Finding officers depends mainly on the ruler's Virtue
+德行值越高越容易让武将加入旗下	the higher it is, the more easily officers join you
+游戏中还首创了以人望值决定行动力的概念	The game also pioneered letting reputation determine how many actions you get
+外交策略共有三项，分别为同盟、离间和招揽。同盟是与其它国家签定互不侵犯条约，离间用来降低敌方武将的忠诚度，招揽即将对方武将拉至麾下。	Diplomacy has three options: Alliance, Sow Discord and Entice. Alliance signs a non-aggression pact with another state; Sow Discord lowers enemy officers' loyalty; Entice lures enemy officers to your side.
+外交策略共有三项	Diplomacy has three options
+分别为同盟	namely Alliance
+离间和招揽	Sow Discord and Entice
+同盟是与其它国家签定互不侵犯条约	Alliance signs a non-aggression pact with another state
+离间用来降低敌方武将的忠诚度	Sow Discord lowers enemy officers' loyalty
+招揽即将对方武将拉至麾下	Entice lures enemy officers to your side
+游戏最大的亮点还是在于其战争系统，阵型的设定和重大作用让战争过程充满策略性。	The highlight of the game is its war system: formations and their major effects make every battle full of strategy.
+游戏最大的亮点还是在于其战争系统	The highlight of the game is its war system
+阵型的设定和重大作用让战争过程充满策略性	formations and their major effects make every battle full of strategy
+操作：大地图上拖动、双指缩放；点城池选中，再点一次进城。城内点建筑弹出指令，右上角山河舆图徽章回大地图；大地图右上角的齿轮徽章是系统设置（存档、读档、结束本月）。	Controls: drag the world map, pinch to zoom; tap a city to select it, tap again to enter. In a city, tap a building for commands; the map badge at top right returns to the world map. The gear badge at top right of the world map opens system settings (Save, Load, End Month).
+操作	Controls
+大地图上拖动	drag the world map
+双指缩放	pinch to zoom
+点城池选中	tap a city to select it
+再点一次进城	tap again to enter
+城内点建筑弹出指令	in a city, tap a building for commands
+右上角山河舆图徽章回大地图	the map badge at top right returns to the world map
+大地图右上角的齿轮徽章是系统设置	the gear badge at top right of the world map opens system settings
+存档	Save
+读档	Load
+结束本月	End Month
+火	Fire
+水	Water
+石	Rock
+箭	Arrow
+弩	Crossbow
+已装备	Equipped
+防御 +	DEF +
+防御	Defense
+攻击 +	ATK +
+继续游戏	Continue
+新	New
+优选	Best
+推荐	Good
+不推荐	Poor
+优选<	Best<
+推荐<	Good<
+一般<	Fair<
+不推荐<	Poor<
+武智体德忠	STR INT VIT VIR LOY
+力行诚	power/conduct/loyalty
+已选	Selected
+满	Max
+零	Zero
+存储进度	Save Game
+读取进度	Load Game
+返回主界面	Title Screen
+系　统	System
+系	System
+统	Command
+结束本月？	End this month?
+没用完的令就作废了	Unused Orders will be lost
+一二三	1 2 3
+档	Slot
+覆盖第	Overwrite Slot
+档？	Slot?
+自动存档	Autosave
+已存入第	Saved to Slot
+返回主界面？	Return to the title screen?
+未存储的进度将会丢失	Unsaved progress will be lost
+霸 业 江 山	Realm of Hegemony
+业	Deeds
+江	River
+山	Mountain
+开创霸业	New Game
+再续征程	Resume
+万	×10k
+村庄	Village
+武器　请选择购买的兵器	Weapons  Choose a weapon to buy
+请选择购买的兵器	Choose a weapon to buy
+战场金	Field Gold
+阁下无能力购买此兵器!	You cannot wield this weapon!
+阁下无能力购买此兵器	You cannot wield this weapon
+金子不足,无法购买兵器!	Not enough gold to buy the weapon!
+金子不足	Not enough gold
+无法购买兵器	can't buy the weapon
+武器购买成功!	Weapon purchased!
+武器购买成功	Weapon purchased
+购买粮食	Buy Food
+购买黄金	Buy Gold
+（{#0}米 可易 {#1}金）	({#0} Food trades for {#1} Gold)
+米	Food
+可易	trades for
+购买数量不能为{#0}!	Amount cannot be {#0}!
+购买数量不能为	Amount cannot be
+购买成功!	Purchased!
+购买成功	Purchased
+无路可退，被擒归降	is cornered, captured and surrenders
+无路可退	is cornered
+被擒归降	captured and surrenders
+被放还	is released
+已不在本国,	is no longer in our realm,
+已不在本国	is no longer in our realm
+敌	Enemy
+{#0}年{#1}月	Year {#0}, Month {#1}
+◆ 困难	◆ Hard
+◆ 霞鹜文楷	◆ LXGW WenKai
+◆低	◆Low
+◆高	◆High
+《霸业江山》采用了指令牌游戏系统，君主拥有城数越多，每月可以发布指令的令牌越多。在只有一座城的情况下每月只可以做三件事。搜索武将主要取决于君主的德行，德行值越高越容易让武将加入旗下。游戏中还首创了以人望值决定行动力的概念。外交策略共有三项，分别为同盟、离间和招揽。同盟是与其它国家签定互不侵犯条约，离间用来降低敌方武将的忠诚度，招揽即将对方武将拉至麾下。游戏最大的亮点还是在于其战争系统，阵型的设定和重大作用让战争过程充满策略性。	Realm of Hegemony uses an order-token system: the more cities a ruler holds, the more Orders can be issued each month. With only one city, you can do just three things a month. Finding officers depends mainly on the ruler's Virtue: the higher it is, the more easily officers join you. The game also pioneered letting reputation determine how many actions you get. Diplomacy has three options: Alliance, Sow Discord and Entice. Alliance signs a non-aggression pact with another state; Sow Discord lowers enemy officers' loyalty; Entice lures enemy officers to your side. The highlight of the game is its war system: formations and their major effects make every battle full of strategy.
+已收集 {#0} / {#1}	Collected {#0} / {#1}
+◆全部	◆All
+GOD　·　登场：初级 / 中级 / 困难	GOD  ·  Appears in: Easy / Normal / Hard
+城 {#0}	Cities {#0}
+创建武将　文	Create Officer  Civil
+◆男	◆Male
+武力  {#0}	Strength  {#0}
+智力  {#0}	Intellect  {#0}
+体力  {#0}	Vitality  {#0}
+德行  {#0}	Virtue  {#0}
+剩余点数 {#0}	Points left {#0}
+创建武将　随机	Create Officer  Random
+◆女	◆Female
+重镇	Stronghold
+{0}　·　{#0} 城	{0}  ·  {#0} cities
+太守府	Gov. Office
+·内政	·Domestic
+功曹府	Registry
+·人事	·Personnel
+校场	Drill Ground
+·军事	·Military
+驿馆	Embassy
+·外交	·Diplomacy
+常平仓	Granary
+·金粮	·Trade
+武库	Armory
+·武器	·Weapons
+药庐	Apothecary
+·医馆	·Clinic
+君主 {0}　·　{#0}年{#1}月	Ruler {0}  ·  Year {#0}, Month {#1}
+{#0} 人	{#0}
+{#0}万	{#0}×10k
+{0} 战略中.....	{0} is planning.....
+{0} 占领空城 {1}!	{0} takes the empty city of {1}!
+第一档　尚无存档	Slot 1  Empty
+第一档	Slot 1
+第二档　尚无存档	Slot 2  Empty
+第二档	Slot 2
+第三档　尚无存档	Slot 3  Empty
+第三档	Slot 3
+自动存档　{0} {#0}年{#1}月	Autosave  {0} Year {#0}, Month {#1}
+郡学	School
+·学院	·Academy
+帝都	Imperial Capital
+雄城	Great City
+君主 无主　·　{#0}年{#1}月	Ruler None  ·  Year {#0}, Month {#1}
+离间　请选择目的城池	Sow Discord  Choose a target city
+招揽　请选择目的城池	Entice  Choose a target city
+城内金子 {#0}　粮食 {#1}	City Gold {#0}  Food {#1}
+出金  {#0}	Pay Gold  {#0}
+可得粮 {#0}	Food gained {#0}
+出粮  {#0}	Pay Food  {#0}
+可得金 {#0}	Gold gained {#0}
+费{#0}	Fee {#0}
+武器　{0}	Weapon  {0}
+现用 {0} / {1}　武 {#0} 德 {#1}　城中金子 {#2}	Using {0} / {1}  STR {#0} VIR {#1}  City Gold {#2}
+◆剑	◆Swords
+攻击 {#0}%	ATK {#0}%
+{#0} 金	{#0} Gold
+{0}  已装备	{0}  Equipped
+{0}：一无所获!	{0}: Found nothing!
+登用　遣何人往说 {0}	Recruit  Who will persuade {0}?
+{0}　忠 {#0}	{0}  LOY {#0}
+赏金 {#0}	Gold reward {#0}
+城中金子 {#0}　宝物 {#1}	City Gold {#0}  Treasure {#1}
+赏宝物一件（现有 {#0}）	Give 1 Treasure (have {#0})
+征{#0}兵 需 {#1}金　　城中金子 {#2}　人口 {#3}	{#0} troops cost {#1} Gold    City Gold {#2}  Pop. {#3}
+现有预备兵 {#0}　最多可征 {#1}	Reserves {#0}  Max draft {#1}
+征  {#0}	Draft  {#0}
+需金 {#0}	Gold cost {#0}
+{0}：吾誓与此城同命!	{0}: I shall live or die with this city!
+{0} 太守改由 {1} 担任	{1} is now governor of {0}
+开垦　遣何人前往	Cultivate  Send whom?
+{0}　智 {#0}	{0}  INT {#0}
+将消耗金子 {#0}	Costs {#0} Gold
+# —— 第二批：source_ctx2.tsv（完整句式）
+糟了,{0}投奔了{1}	Alas! {0} has defected to {1}
+{0}正与敌方会谈中...	{0} is in talks with the enemy...
+{#0}　·　登场：{#1}	{#0}  ·  Appears in: {#1}
+金 {#0}  粮 {#1}	Gold {#0}  Food {#1}
+{0} 投降，退出战场	{0} surrenders and leaves the field
+计策 · 机动力 {#0} · {#1} 种可用	Tactics · MP {#0} · {#1} usable
+{0}：施展范围内没有敌军!	{0}: No enemy in range!
+选择计策实施地点 · {0}	Choose target spot · {0}
+{0} · 需机动力 {1} · 再点一次施展	{0} · MP cost {1} · Tap again to use
+{0} 使用计策: {1}	{0} uses tactic: {1}
+{0} 对 {1} 使用计策: {2}	{0} uses {2} on {1}
+撤退武将 {0}	Retreating {0}
+退入空城 {#0}，就势占了	retreats into empty {#0} and seizes it
+退往 {#0}	retreats to {#0}
+{0} 下野	{0} becomes a free officer
+兵力 {#0}	Troops {#0}
+{#0}   升级还差 {#1}	{#0}   Next Lv in {#1}
+{#0}   已满级	{#0}   Max Level
+{0} 众叛亲离,军心动摇!	{0} is abandoned by all! Morale wavers!
+我军攻占了 {#0}!	We captured {#0}!
+敌军攻打 {#0} 失败了!	The enemy's attack on {#0} failed!
+我军攻打 {#0} 失败了!	Our attack on {#0} failed!
+敌军占领了 {#0}!	The enemy took {#0}!
+敌军占领了 {0}!	The enemy took {0}!
+我军攻占了 {0}!	We captured {0}!
+我军攻打 {0} 失败了!	Our attack on {0} failed!
+敌军攻打 {0} 失败了!	The enemy's attack on {0} failed!
+{0} 战死	{0} is slain
+{0} 溃走	{0} is routed
+敌方全军逃窜! {0} 守住了!	The enemy has fled! {0} holds!
+擒获敌将 {0}!　押入营中	Captured enemy officer {0}!  Taken to camp
+我方武将 {0} 被俘!	Our officer {0} is captured!
+入库 金 {#0}	Stored: Gold {#0}
+粮 {#0}	Food {#0}
+敌方全军逃窜! 我军攻占了 {0}!	The enemy has fled! We captured {0}!
+敌方粮草耗竭,已全军逃窜! 我军攻占了 {0}!	Enemy food ran out and they fled! We captured {0}!
+回合结束，第 {#0} 日	End of turn. Day {#0}
+第 {#0} 日　已选中 {0}，请下命令	Day {#0}  {0} selected. Give orders.
+{0} 中计谋{1}	{0} falls for {1}
+移动消耗 {#0} 点 · 剩 {#1} · 可继续走 / 确定 / 取消	Move cost {#0} · Left {#1} · Keep moving / OK / Cancel
+第 {#0} 日	Day {#0}
+机动力 {#0} / {#1}	MP {#0} / {#1}
+武将体力减少 {#0}	Officer VIT reduced by {#0}
+粮食减少 {#0}	Food reduced by {#0}
+将体力减少 {#0},兵数减少 {#1}	Officer VIT reduced by {#0}, troops by {#1}
+士兵数减少 {#0}	Troops reduced by {#0}
+获得 {0}	Obtained {0}
+城{#0}	City {#0}
+君主 {#0}　·	Ruler {#0}  ·
+金子 {#0}	Gold {#0}
+粮食 {#0}	Food {#0}
+战争 · {#0}	War · {#0}
+未分胜负 r{#0} 敌令 {#1}	Undecided r{#0} Foe orders {#1}
+{0} 投降	{0} surrenders
+体力减少 {#0}	VIT reduced by {#0}
+击毙敌将 {0}!	Slew enemy officer {0}!
+我方武将 {0} 阵亡!	Our officer {0} has fallen!
+擒获敌将 {0}!	Captured enemy officer {0}!
+敌将 {0} 逃窜!{#0}	Enemy officer {0} fled!{#0}
+我方武将 {0} 已撤退!{#0}	Our officer {0} has retreated!{#0}
+计策[{#0}] 施用成功！	Tactic [{#0}] succeeded!
+计策[{#0}] 施用{#1}	Tactic [{#0}]: {#1}
+计策点 {0}	Tactic Pts {0}
+{0} 余 {#0}	{0}: {#0} left
+计策 · 余 {0}	Tactics · Left {0}
+已创建：{0}	Created: {0}
+创建武将　{0}	Create Officer  {0}
+{#0}男	{#0}Male
+{#0}女	{#0}Female
+{0} 创建成功!	{0} created!
+武{#0} 智{#1}	STR{#0} INT{#1}
+德 {#0}	VIR {#0}
+与 {0} 结为同盟，为期一年	Allied with {0} for one year
+{0} 不肯结盟	{0} refuses the alliance
+{#0}　请选择目的城池	{#0}  Choose a target city
+{#0}　将 {#1}	{#0}  OFC {#1}
+智 {#0}　忠 {#1}	INT {#0}  LOY {#1}
+{#0}　选择执行武将	{#0}  Choose who will go
+智 {#0}	INT {#0}
+{0} 忠诚 {#0}（{#1}）	{0} LOY {#0} ({#1})
+{0} 率兵 {#0} 投入我军	{0} brings {#0} troops to our side
+情报　{0}	Intel  {0}
+人口 {#0}	Population {#0}
+开 {#0}　商 {#1}　治 {#2}	AGR {#0}  COM {#1}  FLD {#2}
+金 {#0}　粮 {#1}	Gold {#0}  Food {#1}
+君主 {#0}　太守 {#1}	Ruler {#0}  Governor {#1}
+统治 {#0}　人口 {#1}	Order {#0}  Population {#1}
+武将 {#0}　兵 {#1}	Officers {#0}  TRP {#1}
+开垦 {#0}　商业 {#1}	Farming {#0}  Commerce {#1}
+治水 {#0}	Flood Ctrl {#0}
+武{#0} 智{#1} 忠{#2}	STR{#0} INT{#1} LOY{#2}
+{0}　LV {#0}　兵 {#1}	{0}  LV {#0}  TRP {#1}
+武 {#0}　智 {#1}　体 {#2}　德 {#3}	STR {#0}  INT {#1}  VIT {#2}  VIR {#3}
+忠 {#0}　{#1} / {#2}	LOY {#0}  {#1} / {#2}
+{#0} {#1}落空，反受 {#2} 点	{#0}'s {#1} misses, taking {#2} damage
+{#0} {#1}被闪开	{#0}'s {#1} is dodged
+{#0} {#1}命中 {#2} 点	{#0}'s {#1} hits for {#2} damage
+{0}战亡沙场.	{0} dies on the battlefield.
+读取完毕　{0}	Loaded  {0}
+{#0} 还没做	{#0} is not done yet
+{0}(智{#0})	{0} (INT {#0})
+{0}[{#0} 主{#1} 守{#2} 金{#3} 粮{#4} 兵{#5} 将	{0}[{#0} Lord{#1} Gov{#2} Gold{#3} Food{#4} TRP{#5} OFC
+{0} 势力灭亡了!	{0}'s forces have been destroyed!
+{#0} 势力灭亡了!	{#0}'s forces have been destroyed!
+{0}死亡,新君主 {1} 继位!	{0} has died. New ruler {1} takes the throne!
+天下霸图　解锁武将卡「{0}」{#0}	Hall of Heroes  Card unlocked: "{0}"{#0}
+天下霸图　解锁 {#0} 张武将卡	Hall of Heroes  {#0} officer cards unlocked
+{#0}　主公可下 {#1} 道令	{#0}  My lord, you may issue {#1} Orders
+{0} 军攻打 {1}...	{0}'s army attacks {1}...
+军攻占了 {0}!	army captured {0}!
+军攻打 {0}失败了!	army's attack on {0} failed!
+{#0}年　{#1} 位新人物登场	Year {#0}  {#1} new figures appear
+{0}跟随 {1} 加入我军为君主效力!	{0} follows {1} and joins us to serve our ruler!
+{0} 势力被消灭了,全国局势仍处于混乱之中...	{0}'s forces have been wiped out. The land remains in chaos...
+{0} 经过多年征战,终于实现了宇内混一!	After years of war, {0} has at last unified the realm!
+统一度:{#0} 分数:{#1}	Unification: {#0}  Score: {#1}
+已抵达 {0}	Arrived at {0}
+{0} → {1} 行军中	Marching {0} → {1}
+{0} 不与 {1} 相邻	{0} is not adjacent to {1}
+选择目的地：{0}	Choose destination: {0}
+武{#0} {#1}	STR{#0} {#1}
+智{#0} 费{#1}	INT{#0} Fee{#1}
+体力上限 {#0}	Max VIT {#0}
+出金 {#0}　得粮 {#1}	Paid {#0} Gold  Got {#1} Food
+出粮 {#0}　得金 {#1}	Paid {#0} Food  Got {#1} Gold
+现用 {#0} / {#1}	Using {#0} / {#1}
+武 {#0} 德 {#1}　城中金子 {#2}	STR {#0} VIR {#1}  City Gold {#2}
+{0} 换上了 {1}　金子 {#0}	{0} equips {1}  Gold {#0}
+{0} 智力 {#0}（{#1}）　金子 {#2}	{0} INT {#0} ({#1})  Gold {#2}
+{0} 体力 {#0}（{#1} / {#2}）　金子 {#3}	{0} VIT {#0} ({#1} / {#2})  Gold {#3}
+移动　遣何人前往 {0}	Move  Send whom to {0}?
+兵 {#0}	TRP {#0}
+德 {#0}　忠 {#1}	VIR {#0}  LOY {#1}
+{0} 等已抵达 {1}	{0} and company have reached {1}
+，{0} 已弃守	, {0} has been abandoned
+输送　{0} → {1}	Transport  {0} → {1}
+城内金子:{#0}　粮食:{#1}　宝:{#2}	Gold: {#0}  Food: {#1}  Treasure: {#2}
+送往 {0}：金 {#0}　粮 {#1}　宝 {#2}	Sent to {0}: Gold {#0}  Food {#1}  Treasure {#2}
+预备兵 {#0}	Reserves {#0}
+本城兵力 {#0}　预备兵 {#1}	City troops {#0}  Reserves {#1}
+{#0}　将 {#1}　兵 {#2}	{#0}  OFC {#1}  TRP {#2}
+兵 {#0}　体 {#1}	TRP {#0}  VIT {#1}
+城内金子:{#0}　粮食: {#1}	City Gold: {#0}  Food: {#1}
+每日耗粮约 {#0}，粮尽即全军撤退	Uses ~{#0} Food/day; if food runs out, all retreat
+武 {#0}　兵 {#1}	STR {#0}  TRP {#1}
+{0} 率 {#0} 将、兵 {#1}	{0} leads {#0} officers and {#1} troops
+出征 {0}	marches on {0}
+{0} 兵不血刃，占领空城 {1}!	{0} takes the empty city of {1} without a fight!
+{0} 君主死亡!　请选择继位君主	Ruler {0} has died!  Choose a successor
+智{#0} 武{#1} 德{#2}	INT{#0} STR{#1} VIR{#2}
+发生瘟疫!波及城市:{0}	Plague! Cities affected: {0}
+百姓发生骚乱,波及城市:{0}	Riots! Cities affected: {0}
+{0}　同盟解除!	Alliance with {0} ended!
+征得粮草:{#0}	Food found: {#0}
+获得黄金{#0}	Gold found: {#0}
+智 {#0}　德 {#1}	INT {#0}  VIR {#1}
+忠 {#0}	LOY {#0}
+{0} 愿效犬马之劳，带兵 {#0}	{0} pledges loyal service, bringing {#0} troops
+{0}（{#0}）隐居于此，可遣人登用	{0} ({#0}) lives here in seclusion. Send someone to recruit.
+宝物 {#0}（现有 {#1} 件，可用于奖赏）	Treasure {#0} (now {#1}; usable as rewards)
+{0} 婉拒了 {1}	{0} politely declined {1}
+城中金子 {#0}	City Gold {#0}
+{0} 忠诚 {#0}（{#1}）　{#2}	{0} LOY {#0} ({#1})  {#2}
+{#0}　遣何人前往	{#0}  Send whom?
+农业 {#0}	Farming {#0}
+工业 {#0}	Industry {#0}
+防灾 {#0}	Flood Ctrl {#0}
+{#0}　金子 {#1}	{#0}  Gold {#1}
+德{#0} 智{#1}	VIR{#0} INT{#1}
+{0}　LV {#0}　城 {#1}	{0}  LV {#0}  Cities {#1}
+兵 {#0}　经验 {#1}　{#2} / {#3}	TRP {#0}  EXP {#1}  {#2} / {#3}
+{0} {#0}年{#1}月	{0} Year {#0}, Month {#1}
+需{#0}	Req. {#0}
+已选 {#0}	Selected {#0}
+第{#0}档　{0}	Slot {#0}  {0}
+覆盖第{#0}档？	Overwrite Slot {#0}?
+自动存档　{0}	Autosave  {0}
+已存入第{#0}档	Saved to Slot {#0}
+{0}　现用 {1} / {2}	{0}  Using {1} / {2}
+战场金 {#0}	Field Gold {#0}
+金粮　{#0}	Trade  {#0}
+战场金 {#0}　粮 {#1}　（{#2}米 可易 {#3}金）	Field Gold {#0}  Food {#1}  ({#2} Food = {#3} Gold)
+{#0}购买粮食	{#0}Buy Food
+{#0}购买黄金	{#0}Buy Gold
+{0} 无路可退，被擒归降	{0}, cornered, is captured and surrenders
+{0} 退往 {1}	{0} retreats to {1}
+{0} 被放还	{0} is released
+{#0} 已不在本国,{#1}	{#0} is no longer in our realm; {#1}
+{0} 军攻打 {1} 失败了!	{0}'s attack on {1} failed!
+{#0}年{#1}月　主公可下 {#2} 道令	Year {#0}, Month {#1}  My lord, you may issue {#2} Orders
+郡城	Commandery
+入库 金 {#0}  粮 {#1}	Stored: Gold {#0}  Food {#1}
+县城	County Town
+# —— 第三批：source_ctx3.tsv
+{0} 牵制落空，反受 {#0} 点	{0}'s Jab misses, taking {#0} damage
+{0} 牵制被闪开	{0}'s Jab is dodged
+{0} 牵制命中 {#0} 点	{0}'s Jab hits for {#0} damage
+{0} 攻击落空，反受 {#0} 点	{0}'s Attack misses, taking {#0} damage
+{0} 攻击被闪开	{0}'s Attack is dodged
+{0} 攻击命中 {#0} 点	{0}'s Attack hits for {#0} damage
+{0} 全力落空，反受 {#0} 点	{0}'s All-out misses, taking {#0} damage
+{0} 全力被闪开	{0}'s All-out is dodged
+{0} 全力命中 {#0} 点	{0}'s All-out hits for {#0} damage
+计策[咒缚] 施用成功！	Tactic [Bind] succeeded!
+计策[咒缚] 施用失败！	Tactic [Bind] failed!
+计策[挑战] 施用成功！	Tactic [Challenge] succeeded!
+计策[挑战] 施用失败！	Tactic [Challenge] failed!
+计策[{0}] 施用成功！	Tactic [{0}] succeeded!
+计策[{0}] 施用失败！	Tactic [{0}] failed!
+计策[呐喊] 施用成功！	Tactic [War Cry] succeeded!
+计策[呐喊] 施用失败！	Tactic [War Cry] failed!
+计策[火矢] 施用成功！	Tactic [Flame Shot] succeeded!
+计策[火矢] 施用失败！	Tactic [Flame Shot] failed!
+计策[爆炎] 施用成功！	Tactic [Blaze] succeeded!
+计策[爆炎] 施用失败！	Tactic [Blaze] failed!
+第一档　{0} {#0}年{#1}月	Slot 1  {0} Year {#0}, Month {#1}
+覆盖第一档？	Overwrite Slot 1?
+已存入第一档	Saved to Slot 1
+第二档　{0} {#0}年{#1}月	Slot 2  {0} Year {#0}, Month {#1}
+覆盖第二档？	Overwrite Slot 2?
+已存入第二档	Saved to Slot 2
+第三档　{0} {#0}年{#1}月	Slot 3  {0} Year {#0}, Month {#1}
+覆盖第三档？	Overwrite Slot 3?
+已存入第三档	Saved to Slot 3
+矛	Spear
+兜	Helmet
+用于平原,树林的敌军.	Use on enemies in plains or forest.
+用于平原	Use on plains
+用于两支以上相邻敌军,而且一支在平原或树林.	Use on 2+ adjacent enemies, one in plains or forest.
+而且一支在平原或树林.	one in plains or forest.
+用于山地,树林,平原的敌军.限制敌军移动,且日减{#0}兵.	Use on enemies in mountains, forest or plains. Stops movement; -{#0} troops daily.
+平原的敌军.限制敌军移动	plains enemies. Stops enemy movement
+# —— 补充句式（非 source_ctx* 原有行）
+{0} 率 {#0} 将、兵 {#1} 出征 {1}	{0} leads {#0} officers and {#1} troops against {1}
+{0} 退入空城 {1}(空)，就势占了	{0} retreats into empty {1} and seizes it

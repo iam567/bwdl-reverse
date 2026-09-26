@@ -131,11 +131,12 @@ public class CustomView : SheetView
         bg.color = new Color(1f, .97f, .88f, .9f);
         var t = Label(bg.transform, "", 17, Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
         Place(t.rectTransform, 6, 0, w - 12, h);
-        t.supportRichText = false;
+        t.supportRichText = false; ((LText)t).Raw = true;                    // 玩家输入的名字不翻译
         var ph = Label(bg.transform, "点此输入武将名（4 字内）", 13, new Color32(0x9A,0x8A,0x68,255), TextAnchor.MiddleCenter);
         Place(ph.rectTransform, 6, 0, w - 12, h);
         var f = bg.gameObject.AddComponent<InputField>();
-        f.textComponent = t; f.placeholder = ph; f.characterLimit = 4;       // 原版 TextField 限 4 字（c.java 421）
+        f.textComponent = t; f.placeholder = ph;
+        f.characterLimit = Loc.Code == "en" ? 12 : 4;                         // 原版 TextField 限 4 字（c.java 421）；英文名给 12 个字母
         f.text = text;
         return f;
     }
