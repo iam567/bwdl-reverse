@@ -421,3 +421,8 @@ lo = n2 / 2;  hi = n2 - 1
 - iOS 桌面名 productName「霸业江山」、游戏帮助第一句同步改；Mac 版 productName 仍是 SangoCityView（存档位置靠它）。
 - 主界面最底下一行小字「Made by Liang」，点它打开「致谢」：字体（SIL OFL 1.1，许可原文随包在 Art/licenses/）、Kevin MacLeod 音乐（CC BY 4.0 署名）、Kenney 音效（CC0）、Suno、AI 美术，并注明玩法源自《三国志霸王的大陆》。
 - 霞鹜文楷的 OFL 保留字体名「霞鹜 / LXGW」：裁剪过的子集属修改版，内部字体名改为「BYJS Kai」（文件名未动），致谢里注明来源。
+
+## TestFlight（2026-09-26）
+- App Store Connect：App「霸业江山」，套装 ID com.jingtaoliang.sgwzdl（开发者网站 Identifiers 里显式注册，描述 BayeJiangshan），版本 1.0。
+- 出包：Unity BuildIOS → xcodebuild archive（generic/platform=iOS）→ xcodebuild -exportArchive，导出选项 tools/ExportOptions-testflight.plist（app-store-connect / upload / 自动签名）。
+  构建号是时间戳 yyMMddHHmm，每次上传自动递增。IOSPostBuild.cs 自动写 ITSAppUsesNonExemptEncryption=false。
