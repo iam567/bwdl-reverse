@@ -3,7 +3,7 @@
 APP=/Users/taoo/Documents/claude/sg/bwdl-reverse/unity/SangoCityView/Build/SangoCityView.app/Contents/MacOS/SangoCityView
 OUT=${1:-/tmp/locdump.txt}; SHOT=${2:-/tmp/locshot}; mkdir -p $SHOT
 n=0
-run() { n=$((n+1)); perl -e 'alarm shift; exec @ARGV' 90 $APP -screen-width 428 -screen-height 926 -screen-fullscreen 0 -lang ${LANGC:-en} -locdump $OUT "$@" >/dev/null 2>&1; }
+run() { n=$((n+1)); perl -e 'alarm shift; exec @ARGV' 90 $APP -screen-width 428 -screen-height 926 -screen-fullscreen 0 -diff 0 -lang ${LANGC:-en} -locdump $OUT "$@" >/dev/null 2>&1; }
 shot() { run "$@" -shot $SHOT/$n.png -wait 3; }
 shot -title
 shot -title -settings

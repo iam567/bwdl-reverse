@@ -132,7 +132,7 @@ public class CustomView : SheetView
         var t = Label(bg.transform, "", 17, Ink, TextAnchor.MiddleCenter, FontStyle.Bold);
         Place(t.rectTransform, 6, 0, w - 12, h);
         t.supportRichText = false; ((LText)t).Raw = true;                    // 玩家输入的名字不翻译
-        var ph = Label(bg.transform, "点此输入武将名（4 字内）", 13, new Color32(0x9A,0x8A,0x68,255), TextAnchor.MiddleCenter);
+        var ph = Label(bg.transform, "点此输入武将名（" + (Loc.Code == "en" ? 12 : 4) + " 字内）", 13, new Color32(0x9A,0x8A,0x68,255), TextAnchor.MiddleCenter);
         Place(ph.rectTransform, 6, 0, w - 12, h);
         var f = bg.gameObject.AddComponent<InputField>();
         f.textComponent = t; f.placeholder = ph;

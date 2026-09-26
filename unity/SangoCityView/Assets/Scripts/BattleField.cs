@@ -228,9 +228,10 @@ public class BattleField
             var l = Label(top.transform, t, size, c, a); Place(l.rectTransform, x, 8, w, 22); return l;
         }
         Col(14, 40, "我方", 13, new Color32(0x9C,0xC8,0xFF,255), TextAnchor.MiddleLeft);
-        goldMe = Col(54, 110, "金 " + supply[0] + "  粮 " + supply[1], 13, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleLeft);
+        float gw = Loc.Source ? 110 : 96;                                   // 译文（Gold / Food）长，给中间的「第 N 日」让出地方，放不下自动缩字
+        goldMe = Col(54, gw, "金 " + supply[0] + "  粮 " + supply[1], 13, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleLeft);
         Col(refW - 16 - 14 - 40, 40, "敌方", 13, new Color32(0xFF,0x98,0x90,255), TextAnchor.MiddleRight);
-        goldFoe = Col(refW - 16 - 14 - 40 - 110, 110, "金 " + supply[2] + "  粮 " + supply[3], 13, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleRight);
+        goldFoe = Col(refW - 16 - 14 - 40 - gw, gw, "金 " + supply[2] + "  粮 " + supply[3], 13, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleRight);
         dayText = Col(0, refW - 16, "", 15, new Color32(0xF2,0xE8,0xD4,255), TextAnchor.MiddleCenter);
         mpText  = Label(top.transform, "", 13, new Color32(0xF0,0xD0,0x88,255), TextAnchor.MiddleCenter);
         Place(mpText.rectTransform, 0, 30, refW - 16, 18);

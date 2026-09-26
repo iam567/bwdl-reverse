@@ -1251,7 +1251,7 @@ GOD　·　登场：初级 / 中级 / 困难	GOD  ·  Appears in: Easy / Normal 
 第二档	Slot 2
 第三档　尚无存档	Slot 3  Empty
 第三档	Slot 3
-自动存档　{0} {#0}年{#1}月	Autosave  {0} Year {#0}, Month {#1}
+自动存档　{0} {#0}年{#1}月	Auto  {0}  Y{#0} M{#1}
 郡学	School
 ·学院	·Academy
 帝都	Imperial Capital
@@ -1502,13 +1502,13 @@ GOD　·　登场：初级 / 中级 / 困难	GOD  ·  Appears in: Easy / Normal 
 计策[火矢] 施用失败！	Tactic [Flame Shot] failed!
 计策[爆炎] 施用成功！	Tactic [Blaze] succeeded!
 计策[爆炎] 施用失败！	Tactic [Blaze] failed!
-第一档　{0} {#0}年{#1}月	Slot 1  {0} Year {#0}, Month {#1}
+第一档　{0} {#0}年{#1}月	Slot 1  {0}  Y{#0} M{#1}
 覆盖第一档？	Overwrite Slot 1?
 已存入第一档	Saved to Slot 1
-第二档　{0} {#0}年{#1}月	Slot 2  {0} Year {#0}, Month {#1}
+第二档　{0} {#0}年{#1}月	Slot 2  {0}  Y{#0} M{#1}
 覆盖第二档？	Overwrite Slot 2?
 已存入第二档	Saved to Slot 2
-第三档　{0} {#0}年{#1}月	Slot 3  {0} Year {#0}, Month {#1}
+第三档　{0} {#0}年{#1}月	Slot 3  {0}  Y{#0} M{#1}
 覆盖第三档？	Overwrite Slot 3?
 已存入第三档	Saved to Slot 3
 矛	Spear
@@ -1522,3 +1522,6 @@ GOD　·　登场：初级 / 中级 / 困难	GOD  ·  Appears in: Easy / Normal 
 # —— 补充句式（非 source_ctx* 原有行）
 {0} 率 {#0} 将、兵 {#1} 出征 {1}	{0} leads {#0} officers and {#1} troops against {1}
 {0} 退入空城 {1}(空)，就势占了	{0} retreats into empty {1} and seizes it
+
+# 选将评级图例（带颜色标签，整句）
+<color=#1E7B34>■ 优选</color>　<color=#7E9A12>■ 推荐</color>　<color=#2E2110>■ 一般</color>　<color=#B22A1A>■ 不推荐</color>	<color=#1E7B34>■ Best</color>   <color=#7E9A12>■ Good</color>   <color=#2E2110>■ Fair</color>   <color=#B22A1A>■ Poor</color>
