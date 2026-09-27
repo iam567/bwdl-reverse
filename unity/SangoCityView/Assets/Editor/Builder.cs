@@ -133,7 +133,7 @@ public static class Builder
         PlayerSettings.companyName = "sango";
         PlayerSettings.productName = "霸业江山";
         PlayerSettings.SetApplicationIdentifier(UnityEditor.Build.NamedBuildTarget.iOS, IOS_BUNDLE);
-        PlayerSettings.bundleVersion = "1.01";                            // v1.01：多语言
+        PlayerSettings.bundleVersion = "1.02";                            // v1.01 多语言；v1.02 新手教程
         PlayerSettings.iOS.buildNumber = System.DateTime.Now.ToString("yyMMddHHmm");
         PlayerSettings.iOS.appleEnableAutomaticSigning = true;
         PlayerSettings.iOS.appleDeveloperTeamID = IOS_TEAM;

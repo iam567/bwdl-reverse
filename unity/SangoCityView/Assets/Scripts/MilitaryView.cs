@@ -206,6 +206,7 @@ public class MilitaryView : SheetView
     {
         var to = War.Targets(map, city);
         if (to.Count == 0) { Say(Title, "当前无可战争城市!", false, null, Gov(stat)); return; }   // af(byte) 9083
+        Tutorial.War();                                                     // 新手教程：出征怎么点齐人马金粮
         PickCity("战争　欲攻打何城?", to, c => {
             var s = StatOf(c);
             return c.owner == "none" ? "空城" : s.ruler + "　将 " + Personnel.Of(c.id).A.Count + "　兵 " + s.兵力;

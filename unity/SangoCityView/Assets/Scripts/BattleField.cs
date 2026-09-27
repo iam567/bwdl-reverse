@@ -200,6 +200,9 @@ public class BattleField
     }
 
     Image[] cmdImgs;
+    RectTransform tutTop, tutCmd, tutBig;
+    /// 新手教程：讲战棋这一屏
+    public void Tut() => Tutorial.Battle(() => tutTop, () => mpText.rectTransform, () => tutCmd, () => tutBig);
     /// 桌面窗口被拖动改了大小：整屏重排一次。棋子、日程、机动力这些状态都在 units / 字段里，
     /// 只有画面节点要重建，所以直接把 Root 整棵拆了重搭。手机上只有转屏会走到这儿。
     public void Relayout(float w, float h)
@@ -222,6 +225,7 @@ public class BattleField
         // 顶栏：左我方金粮、中间日数与机动力、右敌方金粮；第二行是提示
         var top = Panel(Root, "top", BattleUi.PlateSp());
         Place((RectTransform)top.transform, 8, TOP_Y, refW - 16, 66);
+        tutTop = (RectTransform)top.transform;
         var lab = new Color32(0xC8,0xA8,0x60,255);
         Text Col(float x, float w, string t, int size, Color32 c, TextAnchor a)
         {
@@ -311,6 +315,8 @@ public class BattleField
             Place(l2.rectTransform, inset, 0, w - inset * 2, 38);
             var sh = l2.gameObject.AddComponent<Shadow>(); sh.effectColor = new Color(0, 0, 0, .8f); sh.effectDistance = new Vector2(1, -1);
         }
+        tutCmd = Node("tutCmd", cmdBar); Place(tutCmd, 12, 10, refW - 24, 36);          // 新手教程圈框用的空节点
+        tutBig = Node("tutBig", cmdBar); Place(tutBig, 10, 54, refW - 20, 38);
         BigBtn("看我军", 10, 110, () => JumpTo(true), 3.4f);
         BigBtn("回合结束", refW / 2 - 66, 132, EndDay, 2.2f);
         BigBtn("看敌军", refW - 10 - 110, 110, () => JumpTo(false), 3.4f);

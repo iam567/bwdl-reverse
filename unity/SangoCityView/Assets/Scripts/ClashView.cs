@@ -189,6 +189,9 @@ public class ClashView
         var gsh = gl.gameObject.AddComponent<UnityEngine.UI.Shadow>();
         gsh.effectColor = new Color(0, 0, 0, .8f); gsh.effectDistance = new Vector2(1, -1);
 
+        var tutCards = Node("tutCards", pick); Place(tutCards, x0, oy + 378, 4 * CW + 3 * GAP, CH);   // 新手教程圈框用
+        var tutVs = (RectTransform)panel.transform;
+        Tutorial.Pick(() => tutVs, () => tutCards, () => go);
         // 底下原来有一行「我方阵型你选，敌方每战随机取一种」和一根分隔条——
         // 那行字是我自己写的说明，原版没有，对玩的人也没有信息量，去掉。
         MarkPick();
@@ -393,7 +396,9 @@ public class ClashView
         BuildField();
         FitView();
         Redraw();
+        Tutorial.Clash(() => tutClip, () => buffT.rectTransform, () => tutInfo);   // 新手教程：头一回进阵型战
     }
+    RectTransform tutClip, tutInfo;
 
     /// 开场视野：照原版一屏 11 列（原版屏宽 176，显示 11 列），镜头对准我方武将；双指 / 滚轮照样能放大缩小。
     /// 以前是 1:1（手机上只看得到 6 列），跑到边上的人就只剩半截
@@ -444,6 +449,7 @@ public class ClashView
         // 场地比视窗宽（16 × 64 = 1024 对 375），所以套一层遮罩，里面那层拖着走。
         var clip = Node("clip", field);
         Place(clip, 0, VIEW_Y, refW, VIEW_H);
+        tutClip = clip;
         var msk = clip.gameObject.AddComponent<Image>();
         msk.color = new Color(.06f, .06f, .07f, 1);
         clip.gameObject.AddComponent<Mask>().showMaskGraphic = true;
@@ -535,6 +541,7 @@ public class ClashView
         // 信息栏：体 / 骑 / 弓 / 步，和原版底部那一栏一样
         var info = Panel(field, "info", UiPlate());
         Place((RectTransform)info.transform, 8, INFO_Y, refW - 16, 124);
+        tutInfo = (RectTransform)info.transform;
         // 两侧各摆一个头像：先贴头像，再把錾金框压在上面。
         // 框中间那个洞的位置是量出来的，写在 battleui.txt 里。
         float pw = refW - 16;                                // 信息栏自己的宽

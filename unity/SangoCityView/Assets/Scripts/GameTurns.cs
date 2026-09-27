@@ -108,6 +108,7 @@ public partial class Game
         cityView.Orders = orders;
         cityView.Show(data.stats.Find(x => x.id == curCity.id), curCity.key);
         UpdateDate();
+        if (!Sim) cityView.Tut();                                          // 新手教程：头一回进城
         if (!resume) Toast(Hud.Date(year, month) + "　主公可下 " + orders + " 道令");
         if (!resume && !Sim) { try { SaveTo(SaveGame.Auto); } catch (System.Exception e) { Debug.LogWarning("[自动存档] " + e.Message); } }   // 每回合开始自动存一档
         playerTurnActive = true;

@@ -23,6 +23,8 @@ public abstract class SheetView
 
     /// 战斗层那套木牌素材这边也用得上，按 battleui.json 的 border 切九宫格
     protected static Sprite Ui(string key, float border) => Ui(key, border, border, border, border);
+    /// 弹框按钮那张木牌底（新手教程的说明框也用它）
+    public static Sprite BtnPlate() => Ui("nameplate", 14, 4, 11, 3.5f);
     /// bx/by 是素材里那圈边的像素数，wx/wy 是希望它在屏幕上占多厚
     protected static Sprite Ui(string key, float bx, float by, float wx, float wy)
     {
@@ -254,6 +256,8 @@ public abstract class SheetView
             var lg = Label(box, "<color=#1E7B34>■ 优选</color>　<color=#7E9A12>■ 推荐</color>　<color=#2E2110>■ 一般</color>　<color=#B22A1A>■ 不推荐</color>",
                            11, Ink, TextAnchor.MiddleCenter);
             Place(lg.rectTransform, 0, y + Mathf.Min(PAGE, Mathf.Max(1, list.Count)) * ROW_H + 2, w, 16);
+            var tut = Node("tutTable", box); Place(tut, x0 - 6, y - HEAD_H, tw + 12, HEAD_H + Mathf.Min(PAGE, Mathf.Max(1, list.Count)) * ROW_H + 18);   // 新手教程圈框用
+            Tutorial.List(() => tut);
             used += 18; y += 18;
         }
         if (pages > 1)                                                     // 翻页

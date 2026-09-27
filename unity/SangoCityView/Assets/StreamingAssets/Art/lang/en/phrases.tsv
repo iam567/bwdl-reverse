@@ -1,4 +1,4 @@
-# phrases（tools/loc/work/source_ctx.tsv / source_ctx2.tsv / source_ctx3.tsv 译出）
+# phrases（tools/loc/work/source_ctx.tsv / source_ctx2.tsv / source_ctx3.tsv / source_ctx4.tsv 译出）
 # —— 第一批：source_ctx.tsv
 情报	Intel
 糟了,	Alas,
@@ -33,7 +33,7 @@
 日	Day
 ｜我方头将	| Our lead
 投降，退出战场	surrenders and leaves the field
-投降	surrenders
+投降	Surrender
 退出战场	leaves the field
 武将中计,无法动弹!	Officer is trapped and cannot move!
 武将中计	Officer trapped
@@ -551,8 +551,8 @@ b_攻城	b_siege
 请选择执行命令	Choose a command
 思源宋体	Noto Serif
 思源黑体	Noto Sans
-霞鹜文楷	WenKai
-站酷小薇	XiaoWei
+霞鹜文楷	LXGW WenKai
+站酷小薇	ZCOOL XiaoWei
 存档读取失败	Failed to load save
 读取完毕	Loaded
 此城不归我方管辖	This city is not under our rule
@@ -1086,7 +1086,7 @@ b_攻城	b_siege
 三国志霸王的大陆	Three Kingdoms: Continent of the Hegemon
 向原作致敬	in tribute to the original
 【字体】SIL Open Font License {#0}	[Fonts] SIL Open Font License {#0}
-思源宋体 / 思源黑体（Noto Serif / Sans SC · TC · JP · KR）© Adobe，Reserved Font Name 'Source'	Noto Serif / Noto Sans SC · TC · JP · KR (Source Han) © Adobe, Reserved Font Name 'Source'
+思源宋体 / 思源黑体（Noto Serif / Sans SC）© Adobe，Reserved Font Name 'Source'	Noto Serif / Noto Sans SC (Source Han Serif / Sans) © Adobe, Reserved Font Name 'Source'
 楷体取自霞鹜文楷 LXGW WenKai © LXGW（已裁剪改名为 BYJS Kai）	Kai font from LXGW WenKai © LXGW (subset and renamed BYJS Kai)
 楷体取自霞鹜文楷	Kai font from LXGW WenKai
 已裁剪改名为	subset and renamed
@@ -1251,7 +1251,7 @@ GOD　·　登场：初级 / 中级 / 困难	GOD  ·  Appears in: Easy / Normal 
 第二档	Slot 2
 第三档　尚无存档	Slot 3  Empty
 第三档	Slot 3
-自动存档　{0} {#0}年{#1}月	Auto  {0}  Y{#0} M{#1}
+自动存档　{0} {#0}年{#1}月	Autosave  {0} Year {#0}, Month {#1}
 郡学	School
 ·学院	·Academy
 帝都	Imperial Capital
@@ -1502,13 +1502,13 @@ GOD　·　登场：初级 / 中级 / 困难	GOD  ·  Appears in: Easy / Normal 
 计策[火矢] 施用失败！	Tactic [Flame Shot] failed!
 计策[爆炎] 施用成功！	Tactic [Blaze] succeeded!
 计策[爆炎] 施用失败！	Tactic [Blaze] failed!
-第一档　{0} {#0}年{#1}月	Slot 1  {0}  Y{#0} M{#1}
+第一档　{0} {#0}年{#1}月	Slot 1  {0} Year {#0}, Month {#1}
 覆盖第一档？	Overwrite Slot 1?
 已存入第一档	Saved to Slot 1
-第二档　{0} {#0}年{#1}月	Slot 2  {0}  Y{#0} M{#1}
+第二档　{0} {#0}年{#1}月	Slot 2  {0} Year {#0}, Month {#1}
 覆盖第二档？	Overwrite Slot 2?
 已存入第二档	Saved to Slot 2
-第三档　{0} {#0}年{#1}月	Slot 3  {0}  Y{#0} M{#1}
+第三档　{0} {#0}年{#1}月	Slot 3  {0} Year {#0}, Month {#1}
 覆盖第三档？	Overwrite Slot 3?
 已存入第三档	Saved to Slot 3
 矛	Spear
@@ -1519,9 +1519,51 @@ GOD　·　登场：初级 / 中级 / 困难	GOD  ·  Appears in: Easy / Normal 
 而且一支在平原或树林.	one in plains or forest.
 用于山地,树林,平原的敌军.限制敌军移动,且日减{#0}兵.	Use on enemies in mountains, forest or plains. Stops movement; -{#0} troops daily.
 平原的敌军.限制敌军移动	plains enemies. Stops enemy movement
+# v1.02 新手教程
+欢迎，主公！这里是你的城池。\n左上是城名和城的规模，下一行是君主和当前年月。	Welcome, my lord! This is your city.\nTop left shows the city's name and size; the line below shows the ruler and the current date.
+令牌：本月还能下几道指令。\n每月的令数等于你拥有的城数（最少 3、最多 8）。令用完了，就轮到其他势力行动。	Orders: how many commands you can still issue this month.\nYou get one Order per city you own (min 3, max 8). When they run out, the other forces take their turns.
+军政：君主、太守、武将人数、兵力、金子、粮食。\n金子和粮食是几乎所有指令的本钱。	State: ruler, governor, officers, troops, Gold and Food.\nGold and Food pay for almost every command.
+民生：人口、统治、农业、工业、防灾。\n每年 4 月收金、10 月收粮，人口越多、农业工业越高，收得越多。\n统治低于 60 可能发生骚乱；防灾到 90 以上才不怕天灾。	Populace: Population, Order, Farming, Industry and Flood Ctrl.\nGold comes in every April and Food every October; more Population, Farming and Industry mean bigger yields.\nOrder below 60 may cause riots; Flood Ctrl must reach 90+ to keep disasters away.
+城里的每座建筑就是一类指令：点建筑，弹出指令，再点一次执行。城图可以上下拖动。	Each building in the city is a group of commands: tap a building to show them, tap a command again to carry it out. Drag the city view up and down.
+太守府·内政：开垦（农业）、劝商（工业）、治水（防灾）、巡查（人口、统治）\n功曹府·人事：搜索、登用、奖赏、任命\n校场·军事：征兵、移动、输送、战争\n驿馆·外交：同盟、离间、招揽、情报\n常平仓·金粮、武库·武器、郡学·学院、药庐·医馆	Gov. Office · Domestic: Cultivate (Farming), Commerce (Industry), Flood Ctrl, Patrol (Population, Order)\nRegistry · Personnel: Search, Recruit, Reward, Appoint\nDrill Ground · Military: Draft, Move, Transport, War\nEmbassy · Diplomacy: Alliance, Sow Discord, Entice, Intel\nGranary · Trade, Armory · Weapons, School · Academy, Apothecary · Clinic
+右上的山河舆图：回到大地图，看天下形势、去别的城。	The map badge at top right takes you back to the world map to survey the realm or visit other cities.
+入门建议：先开垦、劝商攒下金粮，搜索、登用招揽人才，征兵练兵，再攻打相邻的弱城。\n占领全部城池就统一了天下。	Tip: Cultivate and Commerce first to build up Gold and Food, Search and Recruit to find talent, Draft troops, then attack a weak neighboring city.\nCapture every city to unify the realm.
+这是大地图。左上是当前年月，下一行是你的君主和城数。	This is the world map. Top left shows the current date; the line below shows your ruler and city count.
+拖动地图查看，双指缩放。\n点城池选中，再点一次进城——只能进自己的城。	Drag to look around, pinch to zoom.\nTap a city to select it, tap again to enter. You can only enter your own cities.
+齿轮是系统菜单：存档、读档、结束本月（剩下的令作废，直接轮到别家）、回主界面。\n每月开始会自动存一档。	The gear opens the system menu: Save, Load, End Month (unused Orders are lost and the next force moves) and Title Screen.\nThe game autosaves at the start of every month.
+指令里要选城时（移动、输送、战争、外交），也是在这张地图上点金色高亮的城。	When a command needs a city (Move, Transport, War, Diplomacy), tap one of the gold-highlighted cities on this map.
+选武将：每一行是一员武将，右边五列是武力、智力、体力、德行、忠诚。点一行选中。	Choosing officers: each row is one officer; the five columns on the right are STR, INT, VIT, VIR and LOY. Tap a row to select it.
+名字的颜色是这条指令的推荐程度：绿色优选、黄绿推荐、墨色一般、红色不推荐。\n办内政、搜索看智力，登用看德行，打仗看武力和体力。	Name colors show how well suited each officer is: green Best, yellow-green Good, black Fair, red Poor.\nDomestic commands and Search use INT, Recruit uses VIR, and war uses STR and VIT.
+战争：先在大地图上选一座相邻的敌城，再选出征的武将，最后决定带多少金粮。	War: first pick an adjacent enemy city on the world map, then choose the officers to send, and finally decide how much Gold and Food to take.
+出征队伍的第一位是主将。主将被击败（战死或被擒），全军撤退。\n君主亲自出征要小心：君主战死，就得另立新君继位。	The first officer in the army is the commander. If the commander is defeated (slain or captured), the whole army retreats.\nTake care when the ruler leads in person: if the ruler dies, a successor must take the throne.
+兵力：每员武将最多带 1000 兵。\n兵从「校场·征兵」来：每 100 兵花 20 金征成预备兵，再分给各武将。	Troops: each officer can lead up to 1000 troops.\nTroops come from Drill Ground · Draft: every 100 troops cost 20 Gold and become Reserves, which you then assign to officers.
+粮草：战场上每天按兵力消耗粮食，粮尽就全军撤退。\n带去的金子可以在战场上的村庄里治疗武将、买兵器、换粮。	Food: each day in battle uses Food according to troop count; when it runs out, the whole army retreats.\nGold you bring can be spent in battlefield villages to heal officers, buy weapons or trade for Food.
+这是战场。顶栏左右是双方带来的金粮，中间是第几天。	This is the battlefield. The top bar shows the Gold and Food each side brought, with the day in the middle.
+机动力是全军共用的：移动按地形扣点（平地少，山地、水面多），攻击扣 2 点，计策各有消耗。没用完的会攒到下一天（有上限）。	MP is shared by the whole army: moving costs points by terrain (little on flat ground, more in mountains or water), attacking costs 2, and each tactic has its own cost. Unused MP carries over to the next day (up to a limit).
+蓝色是我军，红色是敌军。每天开始会自动选中我方主将；点其他我方武将可以换人。	Blue is our army, red is the enemy. Your commander is selected automatically each day; tap another of your officers to switch.
+选中武将后下命令：\n移动：点亮格走，可以连着走，按「确定」落定、「取消」退回\n计策：火计、落石等，对敌军使用\n攻击：打相邻的敌将，进入阵型战\n情报：查看武将\n撤退：退回相邻的己方城或空城\n待机：结束今天	With an officer selected, give a command:\nMove: tap lit tiles to walk, as far as MP allows; OK to confirm, Cancel to undo\nTactics: Fire Attack, Rockslide and more, used on enemies\nAttack: strike an adjacent enemy officer and start a formation battle\nIntel: view an officer's details\nRetreat: fall back to an adjacent friendly or empty city\nWait: end the day
+看我军 / 看敌军：镜头跳到双方部队。\n回合结束：交给敌军行动，然后进入下一天。	Our Units / Foe Units: jump the camera to either side's forces.\nEnd Turn: let the enemy act, then move on to the next day.
+击败守城主将或全歼守军，就能拿下城池；敌军粮尽也算赢。\n我方主将倒下、粮尽或打满 30 天，都要撤退。\n走到村庄可以治疗（50 金）、买兵器、换粮。	Defeat the defending commander or wipe out the garrison to take the city; the enemy running out of Food also counts as a win.\nIf our commander falls, our Food runs out, or 30 days pass, we must retreat.\nVisit a village to heal (50 Gold), buy weapons or trade for Food.
+阵型战！两员武将带兵对阵。\n这里是双方的武力、智力、体力、兵力和装备。	Formation battle! Two officers clash, each with their troops.\nHere are each side's STR, INT, VIT, troops and equipment.
+选择阵型：红点是武将，白点是士兵的站位。敌军的阵型是随机的。	Choose a formation: red dots are the officer, white dots are where the soldiers stand. The enemy's formation is random.
+选好后按「出阵」开战。	When you're ready, tap Deploy to begin.
+阵型战是实时进行的：双方的兵棋轮流行动，直到一方武将倒下或退出战场。\n拖动场地查看，双指缩放。	Formation battles play out in real time: both sides' pieces take turns until one officer falls or leaves the field.\nDrag to look around, pinch to zoom.
+点场上任意一枚我方兵棋，就能给它那个兵种（骑兵、弓兵、步兵）下令，同兵种一起行动：\n前进：冲向敌将\n待机：原地不动，只打靠近的\n撤退：向左撤出战场\n包围：围上去，但不攻击敌将	Tap any of your pieces to command its whole unit type (Cavalry, Archers, Infantry); they act together:\nAdvance: charge the enemy officer\nWait: hold position, only hit those who come close\nRetreat: withdraw off the left edge\nSurround: close in, but don't attack the enemy officer
+点我方武将本人，多一项「计策」：咒缚、挑战、连弩、呐喊、火矢、爆炎。	Tap your officer for an extra Tactics command: Bind, Challenge, Repeating Crossbow, War Cry, Flame Shot, Blaze.
+右上是计策点（智力越高越多），点数不够就放不出计策。	Top right shows your Tactic Pts (higher INT gives more). Without enough points, a tactic can't be used.
+下方是双方武将的体力和骑、弓、步兵的兵力。\n两员武将碰上就会单挑。武将体力打光就阵亡；撤出战场算溃走，回到战场接着打。	Below are both officers' VIT and their cavalry, archer and infantry troops.\nWhen the two officers meet, they duel. An officer whose VIT hits 0 is slain; one who leaves the field is routed and fights on back on the battle map.
+单挑！上方是双方的体力，打到 0 就阵亡。	Duel! Both officers' VIT is shown at the top; at 0, an officer is slain.
+每回合选一招，对方同时出手：\n牵制：必中，伤害小\n攻击：约七成命中，伤害中等\n全力：约两成命中，伤害大，落空会伤到自己	Each round, pick a move; your foe acts at the same time:\nJab: always hits, small damage\nAttack: hits about 70% of the time, medium damage\nAll-out: hits about 20% of the time, big damage; a miss hurts you
+劝降：对方越虚弱、忠诚越低，越容易成功\n逃跑：武力高才跑得掉，成功后全军撤退\n投降：我方武将被擒，这一仗结束	Persuade: works better the weaker the foe and the lower their LOY\nFlee: needs high STR; if it works, the whole army retreats\nSurrender: our officer is captured and the battle ends
+第一次玩？\n要不要开启新手教程？\n（之后可在「游戏设置」里开关）	First time playing?\nTurn on the tutorial?\n(You can change this later in Settings.)
+新手教程	Tutorial
+开启	On
+关闭	Off
+需要	Yes
+不需要	No thanks
+跳过	Skip
+下一条	Next
+点此输入武将名（12 字内）	Tap to enter name (max 12 letters)
 # —— 补充句式（非 source_ctx* 原有行）
 {0} 率 {#0} 将、兵 {#1} 出征 {1}	{0} leads {#0} officers and {#1} troops against {1}
 {0} 退入空城 {1}(空)，就势占了	{0} retreats into empty {1} and seizes it
-
-# 选将评级图例（带颜色标签，整句）
-<color=#1E7B34>■ 优选</color>　<color=#7E9A12>■ 推荐</color>　<color=#2E2110>■ 一般</color>　<color=#B22A1A>■ 不推荐</color>	<color=#1E7B34>■ Best</color>   <color=#7E9A12>■ Good</color>   <color=#2E2110>■ Fair</color>   <color=#B22A1A>■ Poor</color>

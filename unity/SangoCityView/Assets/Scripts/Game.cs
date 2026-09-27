@@ -60,6 +60,7 @@ public partial class Game : MonoBehaviour
         var canvas = go.GetComponent<Canvas>(); canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         ScreenFit.Attach(go.GetComponent<CanvasScaler>());
         root = UIKit.Node("Safe", go.transform);                   // 安全区：手机上避开刘海 / 灵动岛 / 底部横条
+        Tutorial.Init(root);
         ScreenFit.AttachSafe(root);
 
         ResetState();
@@ -219,6 +220,18 @@ public partial class Game : MonoBehaviour
                 break;
             }
             else if (a == "-newgame") { NewGame(); break; }                 // 截图：君主选择
+            else if (a == "-tutshot")                                        // 截图：新手教程各段（配 -tut <段>）：map / pick / duel 这几屏直接搭出来
+            {
+                string what = argv[System.Array.IndexOf(argv, "-tutshot") + 1];
+                if (what == "map") { BeginAs(Realm.Of("caocao")); cityView.OnBack(); break; }
+                afterBuild = () => {                                          // 窗口定下尺寸、界面重建之后再搭，不然按开窗前的尺寸排
+                    var c0 = data.cities.Find(x => x.name == "洛阳"); var l = Personnel.Of(c0.id).A;
+                    if (what == "pick") clash = new ClashView(root, l[0], l[1], 0, true, RefW, RefH, BattleGame.ThemeOf(c0.id), c0.id);
+                    else if (what == "duel") duel = new DuelView(root, l[0], l[1], 0, RefW, RefH, BattleGame.ThemeOf(c0.id), c0.id);
+                };
+                afterBuild();
+                break;
+            }
             else if (a == "-play")                                           // 截图：-play <势力键> [-ai]，开局后那一屏 / 敌方回合遮罩
             {
                 var av = System.Environment.GetCommandLineArgs();
@@ -542,6 +555,7 @@ public partial class Game : MonoBehaviour
             cityView.Root.gameObject.SetActive(false);
             mapView.Root.gameObject.SetActive(true);
             mapView.Focus(curCity);                                          // 从哪座城出来就看哪座城
+            if (!string.IsNullOrEmpty(playerFaction)) Tutorial.Map(() => mapYearRT, () => mapSysRT);   // 新手教程：头一回出城
         };
 
         if (atTitle)
@@ -588,6 +602,7 @@ public partial class Game : MonoBehaviour
             mapView.BeginPick(cities, title, "请选择高亮的城池", "再点一次 确定 · 点空白处取消",
                 c => { home(); pick(c); }, () => { home(); cancel(); }, back);
         };
+        if (atTitle && !Tutorial.Asked) settings.AskTutorial();          // 第一次打开游戏：问要不要新手教程
         if (events == null) events = new EventView(root, RefW, RefH, cityView.PanelSprite, cityView.BtnSprite);
         events.Root.SetAsLastSibling();
 
@@ -836,6 +851,7 @@ public partial class Game : MonoBehaviour
         string theme = BattleGame.ThemeOf(cityId);
         field = new BattleField(root, cityId, theme, roster, RefW, RefH, supply, War.World.LordId(Realm.Player));
         field.OnQuit = onQuit;
+        field.Tut();                                                                 // 新手教程：头一回上战场
         // 战场村庄：地形 1 武器村 / 3 金粮村，用这一仗的战场金粮（原版 aj() / ak()）
         field.VillageTier = ts.村档;
         village = new VillageView(root, RefW, RefH, cityView.PanelSprite, cityView.BtnSprite);
@@ -947,7 +963,8 @@ public partial class Game : MonoBehaviour
         if (inBattle)                                   // 打仗的时候城池层整个停下，只跑战场
         {
             if (ScreenFit.Changed() && duel == null) { if (clash != null) clash.Relayout(RefW, RefH); else field?.Relayout(RefW, RefH); }
-            duel?.Tick(); if (duel == null) clash?.Tick(); if (clash == null && duel == null) { field?.Tick(); field?.PlotPopTick(); }
+            if (!Tutorial.Active)                        // 新手教程讲解时，实时的阵型战 / 单挑 / 敌军行动都停下
+            { duel?.Tick(); if (duel == null) clash?.Tick(); if (clash == null && duel == null) { field?.Tick(); field?.PlotPopTick(); } }
             village?.Tick();
             TickToast();
             return;

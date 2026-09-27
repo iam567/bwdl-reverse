@@ -143,7 +143,9 @@ public class DuelView
 
         Menu();
         Refresh();
+        Tutorial.Duel(() => hdRT, () => menu);                             // 新手教程：头一回单挑
     }
+    RectTransform hdRT;
 
     // Tex 只管 battle/duel/ 下的（背景、面板、光标）；
     // 立绘在 battle/duelskin/<套>/，走 TexB，别让两条路径混在一起——
@@ -204,6 +206,7 @@ public class DuelView
         // 「第 N 合 · 兵种吃亏」是我自己编的，删掉。数字按你要的压进槽里。
         var plate = Panel(Root, "hd", BattleUi.PlateSp());
         Place((RectTransform)plate.transform, 8, 8, refW - 16, 62);
+        hdRT = (RectTransform)plate.transform;
 
         var n1 = Label(plate.transform, me.Name, 16, Color.white, TextAnchor.MiddleCenter);
         Place(n1.rectTransform, 0, 6, (refW - 16) / 2, 22);

@@ -77,6 +77,7 @@ public class CityView
         Place(coin.rectTransform, tokX, y+9, cs, cs);
         hTok = Label(Root, "", 22, new Color32(0xF4,0xC8,0x5A,255), TextAnchor.MiddleLeft, FontStyle.Bold);
         Place(hTok.rectTransform, tokX+cs+3, y+9, 40, cs);
+        tokRT = Node("tutTok", Root); Place(tokRT, tokX, y+9, cs+3+40, cs);     // 新手教程圈「令 ×N」用的空框
         var tsh = hTok.gameObject.AddComponent<Shadow>(); tsh.effectColor = new Color(0,0,0,.9f); tsh.effectDistance = new Vector2(1,-1);
         y += 64;
 
@@ -127,7 +128,9 @@ public class CityView
         btnSprite = Slice(Load("btn.png"), 75, 16, 16.7f, 3.6f);
         popBg.gameObject.SetActive(false);
     }
-    RectTransform backRT, plaqueRoot, picView;
+    RectTransform backRT, plaqueRoot, picView, tokRT;
+    /// 新手教程：讲城内这一屏
+    public void Tut() => Tutorial.City(() => hName.rectTransform, () => tokRT, () => leftP, () => rightP, () => picView, () => backRT);
     ScrollRect picScroll;
     float picW, picY;
     string curKey;

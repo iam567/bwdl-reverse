@@ -1,4 +1,4 @@
-// 主界面「游戏设置」（顶了原版主菜单第四项「游戏帮助」的位置）：语言 + 难度 + 字体 + 音乐 + 音效 + 游戏帮助。
+// 主界面「游戏设置」（顶了原版主菜单第四项「游戏帮助」的位置）：语言 + 难度 + 字体 + 音乐 + 音效 + 新手教程 + 游戏帮助。
 // 难度是家规，见 Difficulty.cs / HOUSE_RULES。
 // 难度在开新局（开创霸业）时才生效；读档沿用存档里的城池数值。
 using UnityEngine;
@@ -18,7 +18,7 @@ public class SettingsView : SheetView
         const float FROW = BTN_H + 10;
         int fr = (FontChoice.Names.Length + 1) / 2;                          // 字体键排几行（繁日韩只有两套 → 一行）
         const float LANG = 26 + BTN_H + 14;
-        var box = Sheet("游戏设置", 56 + LANG + 26 + n * ROW + 8 + 26 + fr * FROW + 30 + FROW + 30 + FROW + 22 + BTN_H + FOOT);
+        var box = Sheet("游戏设置", 56 + LANG + 26 + ROW + 8 + 26 + fr * FROW + 30 + FROW + 30 + FROW + 30 + FROW + 22 + BTN_H + FOOT);
         float w = box.sizeDelta.x;
         Divider(box, 36);
         // 语言：一个键写着当前语言（用该语言自己的写法），点开挑
@@ -30,14 +30,15 @@ public class SettingsView : SheetView
         var hd = Label(box, "难度（开新局时生效）", 14, Rust, TextAnchor.MiddleCenter, FontStyle.Bold);
         Place(hd.rectTransform, 0, top, w, 22);
         int cur = Difficulty.Level;
+        // 三档排一行（v1.02 加了新手教程一行，竖排三个太高）
+        float dw = (116 * 2 + 16 - (n - 1) * 8) / n;
         for (int i = 0; i < n; i++)
         {
             int k = i;
-            float y = top + 28 + i * ROW;
-            Btn(box, (k == cur ? "◆ " : "") + Difficulty.Names[k], (w - 220) / 2, y, 220, BTN_H, () => { Difficulty.Level = k; Open(); });
+            Btn(box, (k == cur ? "◆ " : "") + Difficulty.Names[k], w / 2 - 116 - 8 + i * (dw + 8), top + 28, dw, BTN_H, () => { Difficulty.Level = k; Open(); }, 15);
         }
         // 字体：四个键排两行，每个键的字就用那套字体写，一眼看出长什么样
-        float fy = top + 28 + n * ROW + 8;
+        float fy = top + 28 + ROW + 8;
         var fh = Label(box, "字体", 14, Rust, TextAnchor.MiddleCenter, FontStyle.Bold);
         Place(fh.rectTransform, 0, fy, w, 22);
         int fc = FontChoice.Level; float fw = 116;
@@ -69,12 +70,32 @@ public class SettingsView : SheetView
             int k = i;
             Btn(box, (k == sl ? "◆" : "") + Sfx.Levels[k], w / 2 - fw - 8 + i * (mw + 8), sy + 28, mw, BTN_H, () => { Sfx.Level = k; Open(); }, 15);
         }
-        float by = sy + 28 + FROW + 14;
+        // 新手教程：开 / 关（重新开启 = 各段从头再讲一遍）
+        float ty = sy + 28 + FROW + 4;
+        var th = Label(box, "新手教程", 14, Rust, TextAnchor.MiddleCenter, FontStyle.Bold);
+        Place(th.rectTransform, 0, ty, w, 22);
+        bool ton = Tutorial.On;
+        Btn(box, (ton ? "◆ " : "") + "开启", w / 2 - fw - 8, ty + 28, fw, BTN_H, () => { Tutorial.On = true; Tutorial.Asked = true; Open(); }, 15);
+        Btn(box, (!ton ? "◆ " : "") + "关闭", w / 2 + 8, ty + 28, fw, BTN_H, () => { Tutorial.On = false; Tutorial.Asked = true; Open(); }, 15);
+        float by = ty + 28 + FROW + 14;
         Btn(box, "游戏帮助", w / 2 - 124, by, 116, BTN_H, Help);
         Btn(box, "返回", w / 2 + 8, by, 116, BTN_H, Close);
     }
 
     public void HelpForTest() => Help();
+
+    /// 第一次打开游戏：问要不要新手教程（主界面上弹，选了就不再问；以后在设置里开关）
+    public void AskTutorial()
+    {
+        var box = Sheet(Tutorial.AskTitle, 150 + BTN_H + FOOT);
+        float w = box.sizeDelta.x;
+        Divider(box, 36);
+        var l = Label(box, Tutorial.AskText, 16, Ink, TextAnchor.MiddleCenter);
+        l.lineSpacing = 1.2f;
+        Place(l.rectTransform, 20, 50, w - 40, 84);
+        Btn(box, "需要", w / 2 - 124, 146, 116, BTN_H, () => { Tutorial.On = true; Tutorial.Asked = true; Close(); });
+        Btn(box, "不需要", w / 2 + 8, 146, 116, BTN_H, () => { Tutorial.On = false; Tutorial.Asked = true; Close(); });
+    }
 
     /// 键上的字不翻译（语言名就用它自己的写法）
     static void RawLast(RectTransform box)
