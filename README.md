@@ -1,9 +1,46 @@
 # 三国志霸王的大陆 · 复刻
 
-把 J2ME 老游戏《三国志霸王的大陆 V3.2.2》复刻成竖屏 iOS 游戏。
+把 J2ME 老游戏《三国志霸王的大陆 V3.2.2》复刻成竖屏手机游戏，成品叫《霸业江山》。
 原版逻辑从字节码反编译还原，美术全部用 AI 重绘。
 
 > 私有仓库。包含反编译的原版代码与解包的原版素材，仅供个人研究，请勿公开。
+
+## 画面
+
+<table>
+<tr>
+<td width="25%"><img src="docs/shots/1.jpg" alt="主界面"></td>
+<td width="25%"><img src="docs/shots/2.jpg" alt="城内"></td>
+<td width="25%"><img src="docs/shots/3.jpg" alt="战棋层"></td>
+<td width="25%"><img src="docs/shots/4.jpg" alt="阵型战"></td>
+</tr>
+<tr>
+<td align="center">主界面</td>
+<td align="center">城内·太守府指令</td>
+<td align="center">战棋层·移动与计策</td>
+<td align="center">阵型战·野战</td>
+</tr>
+<tr>
+<td><img src="docs/shots/5.jpg" alt="大地图"></td>
+<td><img src="docs/shots/6.jpg" alt="人事"></td>
+<td><img src="docs/shots/7.jpg" alt="集市"></td>
+<td><img src="docs/shots/8.jpg" alt="天下霸图"></td>
+</tr>
+<tr>
+<td align="center">大地图·势力与事件</td>
+<td align="center">人事·搜索贤才</td>
+<td align="center">集市·购置兵器</td>
+<td align="center">天下霸图·武将图鉴</td>
+</tr>
+</table>
+
+原图是 1284×2778 的 App Store 截图，在 `assets/store/`。
+
+## 下载
+
+成品包在 [Releases](../../releases)：macOS、Windows、Android APK、未签名 iOS ipa 四个平台。
+iOS 那个未签名，要自己用 AltStore / Sideloadly 签了再装；
+Android 用的是 Unity 的 debug 密钥，能直接装但不能上 Google Play。
 
 ## 目录
 
