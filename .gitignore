@@ -15,3 +15,9 @@ unity/*/Logs/
 unity/*/FontsRetired/
 # Unity 批处理日志
 unity/*/*.log
+
+# 安卓出包时由 Builder.WriteManifest() 生成的素材清单（2797 行，派生文件）
+unity/*/Assets/StreamingAssets/Art/_manifest.txt
+unity/*/Assets/StreamingAssets/Art/_manifest.txt.meta
+# Unity 批处理留下的临时目录
+unity/*/.utmp/

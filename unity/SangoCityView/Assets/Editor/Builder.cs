@@ -156,6 +156,112 @@ public static class Builder
         EditorApplication.Exit(r.summary.result == BuildResult.Succeeded ? 0 : 3);
     }
 
+    // ── Windows / 安卓 / 未签名 iPA ────────────────────────────────────
+
+    public static void BuildWindows()
+    {
+        MakeScene();
+        PlayerSettings.companyName = "sango";
+        PlayerSettings.productName = "霸业江山";
+        PlayerSettings.bundleVersion = "1.02";
+        PlayerSettings.defaultScreenWidth = 500;          // 和 Mac 一样的竖屏窗口
+        PlayerSettings.defaultScreenHeight = 1083;
+        PlayerSettings.defaultIsNativeResolution = false;
+        PlayerSettings.resizableWindow = true;
+        PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
+        PlayerSettings.runInBackground = true;
+
+        var opt = new BuildPlayerOptions {
+            scenes = new[] { SCENE },
+            locationPathName = "Build/Windows/霸业江山.exe",
+            target = BuildTarget.StandaloneWindows64,
+            targetGroup = BuildTargetGroup.Standalone,
+            options = BuildOptions.None,
+        };
+        var r = BuildPipeline.BuildPlayer(opt);
+        Debug.Log("Windows 构建结果: " + r.summary.result + " 用时 " + r.summary.totalTime);
+        EditorApplication.Exit(r.summary.result == BuildResult.Succeeded ? 0 : 3);
+    }
+
+    /// 安卓上 StreamingAssets 压在 APK 里、普通文件接口读不到，运行时要解包到可写目录；
+    /// 而 APK 里的文件又没法枚举，所以出包前先把文件名列成清单带进去（见 AssetUnpack）。
+    public static void WriteManifest()
+    {
+        const string root = "Assets/StreamingAssets/Art";
+        var sb = new System.Text.StringBuilder();
+        int n = 0;
+        foreach (var f in Directory.GetFiles(root, "*", SearchOption.AllDirectories))
+        {
+            var rel = f.Substring(root.Length + 1).Replace('\\', '/');
+            if (rel.EndsWith(".meta") || rel == AssetUnpack.MANIFEST) continue;
+            sb.Append(rel).Append('\n'); n++;
+        }
+        File.WriteAllText(Path.Combine(root, AssetUnpack.MANIFEST), sb.ToString());
+        Debug.Log("素材清单: " + n + " 个文件");
+    }
+
+    public static void BuildAndroid()
+    {
+        WriteManifest();
+        MakeScene();
+        PlayerSettings.companyName = "sango";
+        PlayerSettings.productName = "霸业江山";
+        PlayerSettings.SetApplicationIdentifier(UnityEditor.Build.NamedBuildTarget.Android, IOS_BUNDLE);
+        PlayerSettings.bundleVersion = "1.02";
+        PlayerSettings.Android.bundleVersionCode = 102;
+        PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel26;
+        PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
+        PlayerSettings.statusBarHidden = true;
+        PlayerSettings.runInBackground = false;
+        // 用 Unity 自带的 debug keystore 签名：能直接装，但不能上 Google Play。
+        // 以后要上架得换成自己的正式密钥，而且一旦用了就不能再换。
+        PlayerSettings.Android.useCustomKeystore = false;
+        EditorUserBuildSettings.buildAppBundle = false;         // 出 APK，不出 AAB
+        var icon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Icons/icon.png");
+        if (icon != null) PlayerSettings.SetIcons(UnityEditor.Build.NamedBuildTarget.Android, new[] { icon }, IconKind.Any);
+
+        var opt = new BuildPlayerOptions {
+            scenes = new[] { SCENE },
+            locationPathName = "Build/Android/bayejiangshan.apk",
+            target = BuildTarget.Android,
+            targetGroup = BuildTargetGroup.Android,
+            options = BuildOptions.None,
+        };
+        var r = BuildPipeline.BuildPlayer(opt);
+        Debug.Log("安卓构建结果: " + r.summary.result + " 用时 " + r.summary.totalTime);
+        EditorApplication.Exit(r.summary.result == BuildResult.Succeeded ? 0 : 3);
+    }
+
+    /// 不签名的 iOS 工程：谁要玩自己签。和 BuildIOS 的差别只在关掉自动签名。
+    public static void BuildIOSUnsigned()
+    {
+        MakeScene();
+        PlayerSettings.companyName = "sango";
+        PlayerSettings.productName = "霸业江山";
+        PlayerSettings.SetApplicationIdentifier(UnityEditor.Build.NamedBuildTarget.iOS, IOS_BUNDLE);
+        PlayerSettings.bundleVersion = "1.02";
+        PlayerSettings.iOS.buildNumber = System.DateTime.Now.ToString("yyMMddHHmm");
+        PlayerSettings.iOS.appleEnableAutomaticSigning = false;
+        PlayerSettings.iOS.appleDeveloperTeamID = "";
+        PlayerSettings.iOS.targetOSVersionString = "15.0";
+        PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
+        PlayerSettings.statusBarHidden = true;
+        PlayerSettings.runInBackground = false;
+        var icon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Icons/icon.png");
+        if (icon != null) PlayerSettings.SetIcons(UnityEditor.Build.NamedBuildTarget.Unknown, new[] { icon }, IconKind.Any);
+
+        var opt = new BuildPlayerOptions {
+            scenes = new[] { SCENE },
+            locationPathName = "Build/iOS",
+            target = BuildTarget.iOS,
+            targetGroup = BuildTargetGroup.iOS,
+            options = BuildOptions.None,
+        };
+        var r = BuildPipeline.BuildPlayer(opt);
+        Debug.Log("iOS(未签名) 构建结果: " + r.summary.result + " 用时 " + r.summary.totalTime);
+        EditorApplication.Exit(r.summary.result == BuildResult.Succeeded ? 0 : 3);
+    }
+
     /// 不出包，直接把主地图（选中某城）渲一张 PNG，方便自查
     public static void RenderMap()
     {

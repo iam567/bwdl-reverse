@@ -8,7 +8,11 @@ public static class UIKit
 {
     public static Font UIFont;
     public static Font UIFontBold;                      // 当前字体的粗字重；没有（站酷小薇）就用常规，不假加粗
-    public static string ArtDir => Path.Combine(Application.streamingAssetsPath, "Art");
+    // 素材根目录。Mac / Windows / iOS 上就是 StreamingAssets；
+    // 安卓上 StreamingAssets 压在 APK 里读不到，AssetUnpack 解包后把这里指到可写目录。
+    static string artDir;
+    public static string ArtDir => artDir ??= Path.Combine(Application.streamingAssetsPath, "Art");
+    public static void SetArtDir(string p) { artDir = p; }
 
     /// 素材可能还没生成的地方用这个：文件不在就回 null，调用方退回代码画的样式
     public static Texture2D TryLoad(string rel)

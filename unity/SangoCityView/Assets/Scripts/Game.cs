@@ -47,8 +47,20 @@ public partial class Game : MonoBehaviour
     System.Action afterBuild;         // 自检钩子：每次重建完重放一遍
     float resizeAt = -1f;             // 窗口尺寸变动的时刻，用来防抖
 
-    void Start()
+    /// 安卓要先把素材从 APK 里解到可写目录才能读（见 AssetUnpack），
+    /// 所以入口是协程；别的平台 Ensure() 立刻返回，等于没有这一层。
+    System.Collections.IEnumerator Start()
     {
+        UIKit.UIFont = font;                    // 解包界面那行字要用
+        yield return AssetUnpack.Ensure();
+        Boot();
+    }
+
+    bool booted;                      // Start 现在是协程，Boot 要晚一帧，这之前 Update 不能跑
+
+    void Boot()
+    {
+        booted = true;
         Application.targetFrameRate = 60;                                   // 手机默认 30 帧，拖地图发涩
         Application.lowMemory += () => { SheetView.DropCgCache(); Resources.UnloadUnusedAssets(); System.GC.Collect(); };   // iOS 内存警告
         UIKit.UIFont = font;
@@ -958,6 +970,7 @@ public partial class Game : MonoBehaviour
     float mapSubAt;
     void Update()
     {
+        if (!booted) return;          // 解包没完 / Boot 还没跑，界面都还不存在
         Music.Tick();
         if (Time.unscaledTime > mapSubAt) { mapSubAt = Time.unscaledTime + .5f; MapSub(); }   // 打下 / 丢了城随时变
         if (inBattle)                                   // 打仗的时候城池层整个停下，只跑战场
